@@ -910,6 +910,19 @@
       position: relative;
     }
 
+    .success-meme-img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     .meme-box-title {
       font-size: 11px;
       text-transform: uppercase;
@@ -1718,31 +1731,68 @@
       validationMessage.className = 'validation-message';
     }
 
-    // Lista de memes y chistes de la Universidad Nacional de Colombia (UNAL)
+    // Lista de memes y chistes de la Universidad Nacional de Colombia (UNAL) con sus plantillas de imagen
     const unalMemes = [
-      "¿Sabías que los perros de la Plaza Ché tienen más semestres cursados que tú y yo juntos? 🐶",
-      "El examen de la Nacho: 120 preguntas de opción múltiple y 5 años de crisis existencial. 📚",
-      "El verdadero examen de admisión de la Nacional es intentar inscribir materias en el SIA sin que se caiga el sistema. 💻",
-      "Entré a los 17 años a la Nacional con la ilusión de cambiar el mundo... Me gradué a los 28 queriendo cambiar de planeta. 🌌",
-      "En la Nacho no contamos el tiempo en semestres, sino en eras geológicas. 🦖",
-      "Ese momento en el que estás en clase de cálculo y escuchas a lo lejos la primera papa bomba... ¡A correr a la 26! 🥔💥",
-      "Tu promedio de 4.8 en el colegio entrando a la Nacional y convirtiéndose mágicamente en un humilde 2.1. 📉",
-      "El almuerzo subsidiado de la Nacho a 2.000 pesos: el único manjar que mantiene vivos a los futuros ingenieros. 🍛",
-      "¿Hacer una carrera de 5 años en solo 5 años? Eso en la Nacional es considerado un mito de la física cuántica. ⏳",
-      "Sobrevivir al examen de admisión para terminar perdiendo Cálculo I con un profesor que odia la vida. 🙃",
-      "La Plaza Ché ha visto pasar más siluetas y personajes pintados en su pared que el mismísimo museo del Louvre. 🎨",
-      "Si no has sentido el olor a lacrimógeno mezclado con el frío bogotano de las 3:00 PM, ¿realmente estudias en la Nacho? 🌬️",
-      "Cuando le dices a tus papás que pasaste a la Nacional y lo primero que hacen es comprarte un seguro de vida. 🛡️",
-      "Estudiar en la Nacho: donde la teoría de la relatividad de Einstein se aplica perfectamente a la duración de tu carrera. ⏰",
-      "El promedio general acumulado de la Nacional baja más rápido que las ganas de vivir en semana de parciales. 📉",
-      "Nos vemos en la Plaza Ché... si es que no nos cancelan el semestre antes de llegar. 🤝"
+      {
+        text: "¿Sabías que los perros de la Plaza Ché tienen más semestres cursados que tú y yo juntos? 🐶",
+        img: "https://i.imgflip.com/1h7in3.jpg" // Roll Safe
+      },
+      {
+        text: "El examen de la Nacho: 120 preguntas de opción múltiple y 5 años de crisis existencial. 📚",
+        img: "https://i.imgflip.com/3q3m1x.jpg" // Bernie Sanders
+      },
+      {
+        text: "El verdadero examen de admisión de la Nacional es intentar inscribir materias en el SIA sin que se caiga el sistema. 💻",
+        img: "https://i.imgflip.com/1g8my4.jpg" // Two Buttons
+      },
+      {
+        text: "Entré a los 17 años a la Nacional con la ilusión de cambiar el mundo... Me gradué a los 28 queriendo cambiar de planeta. 🌌",
+        img: "https://i.imgflip.com/3vx1.jpg" // Finding Neverland
+      },
+      {
+        text: "En la Nacho no contamos el tiempo en semestres, sino en eras geológicas. 🦖",
+        img: "https://i.imgflip.com/3q35e3.jpg" // Tuxedo Winnie the Pooh
+      },
+      {
+        text: "Ese momento en el que estás en clase de cálculo y escuchas a lo lejos la primera papa bomba... ¡A correr a la 26! 🥔💥",
+        img: "https://i.imgflip.com/23ls.jpg" // Disaster Girl
+      },
+      {
+        text: "Tu promedio de 4.8 en el colegio entrando a la Nacional y convirtiéndose mágicamente en un humilde 2.1. 📉",
+        img: "https://i.imgflip.com/2k35gg.jpg" // Surprised Pikachu
+      },
+      {
+        text: "El almuerzo subsidiado de la Nacho a 2.000 pesos: el único manjar que mantiene vivos a los futuros ingenieros. 🍛",
+        img: "https://i.imgflip.com/30b1gx.jpg" // Drake Hotline Bling
+      },
+      {
+        text: "¿Hacer una carrera de 5 años en solo 5 años? Eso en la Nacional es considerado un mito de la física cuántica. ⏳",
+        img: "https://i.imgflip.com/24y43o.jpg" // Change My Mind
+      },
+      {
+        text: "Sobrevivir al examen de admisión para terminar perdiendo Cálculo I con un profesor que odia la vida. 🙃",
+        img: "https://i.imgflip.com/5c7g69.jpg" // Anakin Padme
+      },
+      {
+        text: "La Plaza Ché ha visto pasar más siluetas y personajes pintados en su pared que el mismísimo museo del Louvre. 🎨",
+        img: "https://i.imgflip.com/1tk3ih.jpg" // Spiderman Pointing
+      },
+      {
+        text: "Si no has sentido el olor a lacrimógeno mezclado con el frío bogotano de las 3:00 PM, ¿realmente estudias en la Nacho? 🌬️",
+        img: "https://i.imgflip.com/2fm6x.jpg" // Epic Handshake
+      },
+      {
+        text: "Cuando le dices a tus papás que pasaste a la Nacional y lo primero que hacen es comprarte un seguro de vida. 🛡️",
+        img: "https://i.imgflip.com/1ur9ql.jpg" // Distracted Boyfriend
+      }
     ];
 
     function showSuccessModal(title, description) {
       const randomMeme = unalMemes[Math.floor(Math.random() * unalMemes.length)];
       document.getElementById('successTitle').textContent = title;
       document.getElementById('successDesc').textContent = description;
-      document.getElementById('memeText').textContent = `"${randomMeme}"`;
+      document.getElementById('memeImg').src = randomMeme.img;
+      document.getElementById('memeText').textContent = `"${randomMeme.text}"`;
       document.getElementById('successOverlay').style.display = 'flex';
     }
 
@@ -1835,7 +1885,8 @@
       
       <div class="meme-box">
         <span class="meme-box-title">Meme random de la Nacho 🏛️</span>
-        <p id="memeText">"¿Sabías que los perros de la Plaza Ché tienen más semestres cursados que tú?"</p>
+        <img id="memeImg" src="" class="success-meme-img" alt="Meme UNAL" />
+        <p id="memeText">...</p>
       </div>
       
       <button type="button" id="successCloseBtn" class="success-close-btn">Entendido</button>
