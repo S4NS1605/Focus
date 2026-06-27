@@ -570,158 +570,7 @@
     footer a:hover {
       color: var(--accent-hover);
       text-decoration: underline;
-    }
-
-    /* CONFIGURATION OVERLAY / MODAL (Dev Helper) */
-    .config-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 20px;
-      animation: fadeIn 0.3s ease;
-    }
-
-    .config-modal {
-      background: #1e293b;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      padding: 32px;
-      max-width: 550px;
-      width: 100%;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .config-title {
-      font-family: 'Sora', sans-serif;
-      font-size: 24px;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .config-desc {
-      color: var(--text-muted);
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 24px;
-    }
-
-    .sql-code-block {
-      background: #0f172a;
-      border-radius: 12px;
-      padding: 16px;
-      font-family: monospace;
-      font-size: 12px;
-      color: #e2e8f0;
-      margin: 16px 0;
-      position: relative;
-      overflow-x: auto;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .sql-copy-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      border: none;
-      border-radius: 6px;
-      color: #94a3b8;
-      padding: 4px 8px;
-      font-size: 11px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .sql-copy-btn:hover {
-      background: rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-    }
-
-    .config-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 24px;
-    }
-
-    .config-submit-btn {
-      background: var(--accent-color);
-      color: var(--text-dark);
-      border: none;
-      border-radius: 12px;
-      padding: 14px;
-      font-family: 'Sora', sans-serif;
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .config-submit-btn:hover {
-      background: var(--accent-hover);
-    }
-
-    .demo-mode-btn {
-      background: transparent;
-      color: var(--accent-color);
-      border: 1px solid rgba(65, 207, 65, 0.4);
-      border-radius: 12px;
-      padding: 14px;
-      font-family: 'Sora', sans-serif;
-      font-weight: 600;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .demo-mode-btn:hover {
-      background: rgba(65, 207, 65, 0.05);
-      border-color: var(--accent-color);
-    }
-
-    .config-badge {
-      display: inline-block;
-      background: rgba(251, 191, 36, 0.1);
-      border: 1px solid rgba(251, 191, 36, 0.2);
-      color: #fbbf24;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 11px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .settings-trigger {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: 8px;
-      vertical-align: middle;
-      transition: color 0.2s ease;
-    }
-
-    .settings-trigger:hover {
-      color: var(--accent-color);
-    }
+      }
 
     /* RESPONSIVE DESIGN */
     @media (min-width: 640px) {
@@ -968,54 +817,7 @@
 </head>
 <body>
 
-  <!-- MODAL DE CONFIGURACIÓN DE SUPABASE (Aparece si las claves son placeholders) -->
-  <div id="configOverlay" class="config-overlay" style="display: none;">
-    <div class="config-modal">
-      <div class="config-title">
-        <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        Configurar Supabase
-      </div>
-      <p class="config-desc">
-        Para habilitar la base de datos y actualizaciones en tiempo real, proporciona la URL y la Anon Key de tu proyecto de Supabase.
-      </p>
 
-      <div class="form-group">
-        <label class="form-label" for="configUrl">Supabase Project URL</label>
-        <input type="text" id="configUrl" class="username-input" style="padding-left: 16px;" placeholder="https://xxxx.supabase.co">
-      </div>
-
-      <div class="form-group" style="margin-bottom: 24px;">
-        <label class="form-label" for="configKey">Supabase Anon Key</label>
-        <input type="password" id="configKey" class="username-input" style="padding-left: 16px;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-      </div>
-
-      <div class="config-badge">Instrucciones de Base de Datos</div>
-      <p class="config-desc" style="margin-bottom: 8px;">
-        Crea la tabla ejecutando el siguiente SQL en el <strong>SQL Editor</strong> de Supabase:
-      </p>
-
-      <div class="sql-code-block">
-        <button class="sql-copy-btn" id="copySqlBtn">Copiar</button>
-        <pre id="sqlText">CREATE TABLE social_users (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  username text NOT NULL,
-  platform text NOT NULL CHECK (platform IN ('instagram', 'tiktok')),
-  created_at timestamptz DEFAULT now()
-);</pre>
-      </div>
-
-      <p class="config-desc" style="margin-top: 8px; font-size: 13px;">
-        ⚠️ <strong>Importante:</strong> Recuerda activar el servicio de <strong>Realtime</strong> en la tabla <code>social_users</code> desde la sección Database &rarr; Replication en Supabase para que las tarjetas carguen en tiempo real.
-      </p>
-
-      <div class="config-actions">
-        <button type="button" id="saveConfigBtn" class="config-submit-btn">Conectar y Guardar</button>
-      </div>
-    </div>
-  </div>
 
   <div class="container">
     <!-- HEADER -->
@@ -1137,12 +939,6 @@
   <footer>
     <div>
       Instamatia · Polimatia &rarr; UNAL 2027-1
-      <button class="settings-trigger" id="openSettingsBtn" title="Configurar conexión Supabase">
-        <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-      </button>
     </div>
   </footer>
 
@@ -1177,54 +973,22 @@
     const boardGrid = document.getElementById('boardGrid');
     const filterButtons = document.querySelectorAll('.filter-btn');
     
-    // Config Modal Elements
-    const configOverlay = document.getElementById('configOverlay');
-    const configUrl = document.getElementById('configUrl');
-    const configKey = document.getElementById('configKey');
-    const saveConfigBtn = document.getElementById('saveConfigBtn');
-    const copySqlBtn = document.getElementById('copySqlBtn');
-    const openSettingsBtn = document.getElementById('openSettingsBtn');
-
     // =========================================================================
     // INICIALIZACIÓN
     // =========================================================================
     document.addEventListener('DOMContentLoaded', () => {
       setupFormListeners();
       setupFilterListeners();
-      setupSettingsListeners();
       
-      // Intentar inicializar Supabase
-      if (checkSupabaseConfigured()) {
-        initSupabaseAndLoad();
-      } else {
-        // Si no está configurado, intentar leer de localStorage
-        const storedUrl = localStorage.getItem('instamatia_supabase_url');
-        const storedKey = localStorage.getItem('instamatia_supabase_key');
-        if (storedUrl && storedKey) {
-          initSupabaseAndLoad(storedUrl, storedKey);
-        } else {
-          // Mostrar overlay de configuración
-          configOverlay.style.display = 'flex';
-        }
-      }
+      initSupabaseAndLoad();
     });
 
-    // Comprueba si las constantes fijadas en el código han sido modificadas
-    function checkSupabaseConfigured() {
-      return SUPABASE_URL !== 'TU_URL_AQUI' && SUPABASE_URL.trim() !== '' &&
-             SUPABASE_ANON_KEY !== 'TU_ANON_KEY_AQUI' && SUPABASE_ANON_KEY.trim() !== '';
-    }
-
     // Inicializa el cliente e inicia carga de datos
-    async function initSupabaseAndLoad(customUrl = null, customKey = null) {
-      const url = customUrl || SUPABASE_URL;
-      const key = customKey || SUPABASE_ANON_KEY;
-      
+    async function initSupabaseAndLoad() {
       try {
         const { createClient } = window.supabase;
-        supabaseClient = createClient(url, key);
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         isDemoMode = false;
-        configOverlay.style.display = 'none';
         
         // Cargar usuarios y suscribirse a realtime
         await loadUsers();
@@ -1232,7 +996,6 @@
       } catch (err) {
         console.error("Error inicializando Supabase:", err);
         showValidation("Error de conexión. Verifica las credenciales de Supabase.", "error");
-        configOverlay.style.display = 'flex';
       }
     }
 
@@ -1796,47 +1559,7 @@
       document.getElementById('successOverlay').style.display = 'flex';
     }
 
-    // =========================================================================
-    // CONTROL DEL MODAL DE CONFIGURACIÓN Y DEMO
-    // =========================================================================
-    function setupSettingsListeners() {
-      // Botón abrir settings en el footer
-      openSettingsBtn.addEventListener('click', () => {
-        // Rellenar con los valores actuales (si existen)
-        configUrl.value = localStorage.getItem('instamatia_supabase_url') || '';
-        configKey.value = localStorage.getItem('instamatia_supabase_key') || '';
-        configOverlay.style.display = 'flex';
-      });
 
-      // Guardar configuración
-      saveConfigBtn.addEventListener('click', () => {
-        const url = configUrl.value.trim();
-        const key = configKey.value.trim();
-
-        if (!url || !key) {
-          alert("Por favor, ingresa tanto la URL como la Anon Key.");
-          return;
-        }
-
-        localStorage.setItem('instamatia_supabase_url', url);
-        localStorage.setItem('instamatia_supabase_key', key);
-        
-        initSupabaseAndLoad(url, key);
-      });
-
-      // Copiar código SQL
-      copySqlBtn.addEventListener('click', () => {
-        const sqlText = document.getElementById('sqlText').textContent;
-        navigator.clipboard.writeText(sqlText).then(() => {
-          copySqlBtn.textContent = 'Copiado!';
-          setTimeout(() => {
-            copySqlBtn.textContent = 'Copiar';
-          }, 2000);
-        }).catch(err => {
-          console.error('Error al copiar el texto: ', err);
-        });
-      });
-    }
 
     // Refrescar automáticamente el tiempo transcurrido en las tarjetas cada 30 segundos
     setInterval(() => {
