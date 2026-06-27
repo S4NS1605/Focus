@@ -421,6 +421,20 @@
       text-transform: uppercase;
       box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.15);
       flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .avatar-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
     .card-info {
@@ -1222,7 +1236,8 @@
 
       // Generar avatar
       const avatarColor = getAvatarColor(user.username);
-      const initial = user.username.charAt(0);
+      const initial = user.username ? user.username.charAt(0).toUpperCase() : '?';
+      const avatarUrl = `https://unavatar.io/${user.platform}/${user.username}`;
       
       // Ícono de plataforma
       const platformIcon = user.platform === 'instagram' ? getInstagramSvg() : getTiktokSvg('#010101');
@@ -1232,7 +1247,10 @@
 
       card.innerHTML = `
         <div class="avatar" style="background-color: ${avatarColor};">
-          ${initial}
+          <span class="avatar-text">${initial}</span>
+          <img src="${avatarUrl}" class="avatar-img" alt="${user.username}" 
+               onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';" 
+               onerror="this.remove();" />
         </div>
         <div class="card-info">
           <span class="card-username">@${user.username}</span>
@@ -1246,7 +1264,7 @@
       // Evento de clic en la tarjeta
       card.addEventListener('click', () => {
         const url = user.platform === 'instagram'
-          ? `https://ig.me/m/${user.username}`
+          ? `https://www.instagram.com/${user.username}/`
           : `https://www.tiktok.com/@${user.username}`;
         window.open(url, '_blank', 'noopener,noreferrer');
       });
