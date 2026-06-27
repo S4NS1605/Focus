@@ -744,6 +744,213 @@
         grid-template-columns: repeat(4, 1fr);
       }
     }
+
+    /* BOTÓN FLOTANTE INSTAGRAM - JulianGon16 */
+    .ig-floating-button {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 18px;
+      background: #0f172a;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 9999px;
+      font-family: 'Sora', sans-serif;
+      
+      /* Contorno con gradiente de Instagram */
+      border: 2px solid transparent;
+      background-image: linear-gradient(#0f172a, #0f172a), linear-gradient(135deg, #f77737 0%, #e1306c 50%, #c13584 100%);
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+      
+      box-shadow: 0 8px 24px rgba(225, 48, 108, 0.25);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    }
+
+    .ig-floating-button:hover {
+      transform: scale(1.06) translateY(-4px);
+      box-shadow: 0 12px 30px rgba(225, 48, 108, 0.45);
+    }
+
+    .ig-btn-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ig-btn-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .ig-btn-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.2;
+    }
+
+    .ig-btn-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .ig-btn-username {
+      font-size: 14px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f77737 0%, #e1306c 50%, #c13584 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    @media (max-width: 640px) {
+      .ig-floating-button {
+        bottom: 16px;
+        right: 16px;
+        padding: 8px 14px;
+        gap: 8px;
+      }
+      .ig-btn-icon {
+        width: 20px;
+        height: 20px;
+      }
+      .ig-btn-label {
+        font-size: 9px;
+      }
+      .ig-btn-username {
+        font-size: 12px;
+      }
+    }
+
+    /* CONFIRMATION / SUCCESS MODAL */
+    .success-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .success-modal {
+      background: #1e293b;
+      border: 1px solid rgba(65, 207, 65, 0.2);
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(65, 207, 65, 0.1);
+      text-align: center;
+      color: #ffffff;
+      animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .success-icon-container {
+      width: 64px;
+      height: 64px;
+      background: rgba(65, 207, 65, 0.1);
+      border: 2px solid var(--accent-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px auto;
+      box-shadow: 0 0 15px rgba(65, 207, 65, 0.2);
+    }
+
+    .success-icon-container svg {
+      width: 32px;
+      height: 32px;
+      color: var(--accent-color);
+    }
+
+    .success-modal-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .success-modal-desc {
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    /* Meme Box */
+    .meme-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 24px;
+      color: #fbbf24;
+      font-size: 14px;
+      line-height: 1.6;
+      font-style: italic;
+      position: relative;
+    }
+
+    .meme-box-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: block;
+      font-style: normal;
+    }
+
+    .success-close-btn {
+      background: var(--accent-color);
+      color: var(--text-dark);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(65, 207, 65, 0.3);
+    }
+
+    .success-close-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(65, 207, 65, 0.4);
+    }
+
+    @keyframes scaleUp {
+      from {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
   </style>
 </head>
 <body>
@@ -793,7 +1000,6 @@
 
       <div class="config-actions">
         <button type="button" id="saveConfigBtn" class="config-submit-btn">Conectar y Guardar</button>
-        <button type="button" id="startDemoBtn" class="demo-mode-btn">Probar Modo Demo (Sin Base de Datos)</button>
       </div>
     </div>
   </div>
@@ -963,7 +1169,6 @@
     const configUrl = document.getElementById('configUrl');
     const configKey = document.getElementById('configKey');
     const saveConfigBtn = document.getElementById('saveConfigBtn');
-    const startDemoBtn = document.getElementById('startDemoBtn');
     const copySqlBtn = document.getElementById('copySqlBtn');
     const openSettingsBtn = document.getElementById('openSettingsBtn');
 
@@ -1071,7 +1276,7 @@
       }
     }
 
-    // Insertar un nuevo usuario en la base de datos
+    // Insertar un nuevo usuario o volverlo a subir si ya existe
     async function addUser(username, platform) {
       const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
       
@@ -1081,17 +1286,33 @@
         return;
       }
       
-      // Duplicidad local para respuesta inmediata
-      const duplicate = users.find(u => u.username === cleanUsername && u.platform === platform);
-      if (duplicate) {
-        showValidation("Ya estás en la pizarra 👀", "error");
-        return;
-      }
-      
       setFormSubmitting(true);
       
       if (isDemoMode) {
-        // Flujo en Modo Demo
+        // En modo demo, buscamos si ya existe el usuario para esta misma plataforma
+        const duplicateIndex = users.findIndex(u => u.username === cleanUsername && u.platform === platform);
+        if (duplicateIndex !== -1) {
+          // Si ya existe, actualizamos su fecha y lo movemos arriba
+          const updatedUser = { 
+            ...users[duplicateIndex], 
+            created_at: new Date().toISOString() 
+          };
+          
+          // Simular retraso de red
+          setTimeout(() => {
+            users.splice(duplicateIndex, 1);
+            users.unshift(updatedUser);
+            renderCardsList(true, updatedUser.id);
+            updateCounters();
+            
+            resetForm();
+            showSuccessModal("¡Puesto actualizado! 🚀", `Tu usuario @${cleanUsername} ha sido subido al principio de la pizarra.`);
+            setFormSubmitting(false);
+          }, 600);
+          return;
+        }
+
+        // Flujo en Modo Demo (nuevo registro)
         const newDemoUser = {
           id: Math.random().toString(36).substring(2, 11),
           username: cleanUsername,
@@ -1106,8 +1327,7 @@
           updateCounters();
           
           resetForm();
-          showValidation("¡Añadido con éxito (Modo Demo)! 🎉", "success");
-          setTimeout(() => hideValidation(), 3000);
+          showSuccessModal("¡Registro exitoso! 🎉", `Tu usuario @${cleanUsername} ha sido añadido a la pizarra (Modo Demo).`);
           setFormSubmitting(false);
         }, 600);
         return;
@@ -1118,7 +1338,7 @@
         // Verificar duplicidad directamente en base de datos
         const { data: checkData, error: checkError } = await supabaseClient
           .from('social_users')
-          .select('id')
+          .select('*')
           .eq('username', cleanUsername)
           .eq('platform', platform)
           .limit(1);
@@ -1126,12 +1346,34 @@
         if (checkError) throw checkError;
         
         if (checkData && checkData.length > 0) {
-          showValidation("Ya estás en la pizarra 👀", "error");
-          setFormSubmitting(false);
+          // El usuario ya existe en esta plataforma, actualizamos created_at para subirlo
+          const existingUser = checkData[0];
+          const nowStr = new Date().toISOString();
+          
+          const { data, error } = await supabaseClient
+            .from('social_users')
+            .update({ created_at: nowStr })
+            .eq('id', existingUser.id)
+            .select();
+            
+          if (error) throw error;
+          
+          resetForm();
+          showSuccessModal("¡Puesto actualizado! 🚀", `Tu usuario @${cleanUsername} ha sido subido al principio de la pizarra.`);
+          
+          // Fallback por si Realtime falla o no está activado
+          if (data && data[0]) {
+            const updated = data[0];
+            users = users.filter(u => u.id !== updated.id);
+            users.unshift(updated);
+            users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            renderCardsList(true, updated.id);
+            updateCounters();
+          }
           return;
         }
 
-        // Insertar registro
+        // Insertar registro (nuevo)
         const { data, error } = await supabaseClient
           .from('social_users')
           .insert([{ username: cleanUsername, platform }])
@@ -1140,47 +1382,62 @@
         if (error) throw error;
         
         resetForm();
-        showValidation("¡Te has unido a la pizarra con éxito! 🎉", "success");
-        setTimeout(() => hideValidation(), 4000);
+        showSuccessModal("¡Te has unido a la pizarra! 🎉", `Tu usuario @${cleanUsername} ha sido añadido con éxito.`);
         
-        // Si Realtime está activado, la suscripción se encargará de renderizar.
-        // Como fallback por si Realtime falla o no se activó, refrescamos localmente.
+        // Fallback por si Realtime falla o no está activado
         if (data && data[0]) {
           const inserted = data[0];
           const alreadyRendered = users.some(u => u.id === inserted.id);
           if (!alreadyRendered) {
             users.unshift(inserted);
+            users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             renderCardsList(true, inserted.id);
             updateCounters();
           }
         }
       } catch (err) {
-        console.error("Error al añadir usuario:", err);
+        console.error("Error al añadir o actualizar usuario:", err);
         showValidation("Error al enviar los datos a Supabase. Inténtalo de nuevo.", "error");
       } finally {
         setFormSubmitting(false);
       }
     }
 
-    // Suscribirse a inserciones de Supabase en tiempo real
+    // Suscribirse a cambios de Supabase en tiempo real (insert, update, delete)
     function subscribeRealtime() {
       if (!supabaseClient) return;
       
       supabaseClient
         .channel('public:social_users')
         .on('postgres_changes', { 
-          event: 'INSERT', 
+          event: '*', 
           schema: 'public', 
           table: 'social_users' 
         }, (payload) => {
-          const newUser = payload.new;
+          const changedUser = payload.new;
+          if (!changedUser) return;
           
-          // Evitar renderizado duplicado en el mismo cliente que emitió
-          const exists = users.some(u => u.id === newUser.id);
-          if (!exists) {
-            users.unshift(newUser);
-            renderCardsList(true, newUser.id);
+          if (payload.eventType === 'INSERT') {
+            const exists = users.some(u => u.id === changedUser.id);
+            if (!exists) {
+              users.unshift(changedUser);
+              users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+              renderCardsList(true, changedUser.id);
+              updateCounters();
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            users = users.filter(u => u.id !== changedUser.id);
+            users.unshift(changedUser);
+            users.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            renderCardsList(true, changedUser.id);
             updateCounters();
+          } else if (payload.eventType === 'DELETE') {
+            const oldUser = payload.old;
+            if (oldUser) {
+              users = users.filter(u => u.id !== oldUser.id);
+              renderCardsList();
+              updateCounters();
+            }
           }
         })
         .subscribe((status) => {
@@ -1371,6 +1628,15 @@
           showValidation("Elige Instagram o TikTok primero", "error");
           return;
         }
+
+        // Cerrar modal al enviar por si estaba abierto
+        document.getElementById('successOverlay').style.display = 'none';
+      });
+
+      // Cerrar modal de éxito
+      document.getElementById('successCloseBtn').addEventListener('click', () => {
+        document.getElementById('successOverlay').style.display = 'none';
+      });
         
         addUser(username, selectedPlatform);
       });
@@ -1453,6 +1719,34 @@
       validationMessage.className = 'validation-message';
     }
 
+    // Lista de memes y chistes de la Universidad Nacional de Colombia (UNAL)
+    const unalMemes = [
+      "¿Sabías que los perros de la Plaza Ché tienen más semestres cursados que tú y yo juntos? 🐶",
+      "El examen de la Nacho: 120 preguntas de opción múltiple y 5 años de crisis existencial. 📚",
+      "El verdadero examen de admisión de la Nacional es intentar inscribir materias en el SIA sin que se caiga el sistema. 💻",
+      "Entré a los 17 años a la Nacional con la ilusión de cambiar el mundo... Me gradué a los 28 queriendo cambiar de planeta. 🌌",
+      "En la Nacho no contamos el tiempo en semestres, sino en eras geológicas. 🦖",
+      "Ese momento en el que estás en clase de cálculo y escuchas a lo lejos la primera papa bomba... ¡A correr a la 26! 🥔💥",
+      "Tu promedio de 4.8 en el colegio entrando a la Nacional y convirtiéndose mágicamente en un humilde 2.1. 📉",
+      "El almuerzo subsidiado de la Nacho a 2.000 pesos: el único manjar que mantiene vivos a los futuros ingenieros. 🍛",
+      "¿Hacer una carrera de 5 años en solo 5 años? Eso en la Nacional es considerado un mito de la física cuántica. ⏳",
+      "Sobrevivir al examen de admisión para terminar perdiendo Cálculo I con un profesor que odia la vida. 🙃",
+      "La Plaza Ché ha visto pasar más siluetas y personajes pintados en su pared que el mismísimo museo del Louvre. 🎨",
+      "Si no has sentido el olor a lacrimógeno mezclado con el frío bogotano de las 3:00 PM, ¿realmente estudias en la Nacho? 🌬️",
+      "Cuando le dices a tus papás que pasaste a la Nacional y lo primero que hacen es comprarte un seguro de vida. 🛡️",
+      "Estudiar en la Nacho: donde la teoría de la relatividad de Einstein se aplica perfectamente a la duración de tu carrera. ⏰",
+      "El promedio general acumulado de la Nacional baja más rápido que las ganas de vivir en semana de parciales. 📉",
+      "Nos vemos en la Plaza Ché... si es que no nos cancelan el semestre antes de llegar. 🤝"
+    ];
+
+    function showSuccessModal(title, description) {
+      const randomMeme = unalMemes[Math.floor(Math.random() * unalMemes.length)];
+      document.getElementById('successTitle').textContent = title;
+      document.getElementById('successDesc').textContent = description;
+      document.getElementById('memeText').textContent = `"${randomMeme}"`;
+      document.getElementById('successOverlay').style.display = 'flex';
+    }
+
     // =========================================================================
     // CONTROL DEL MODAL DE CONFIGURACIÓN Y DEMO
     // =========================================================================
@@ -1479,11 +1773,6 @@
         localStorage.setItem('instamatia_supabase_key', key);
         
         initSupabaseAndLoad(url, key);
-      });
-
-      // Botón Modo Demo
-      startDemoBtn.addEventListener('click', () => {
-        initDemoMode();
       });
 
       // Copiar código SQL
@@ -1533,5 +1822,45 @@
       `;
     }
   </script>
+
+  <!-- MODAL DE CONFIRMACIÓN CON MEME RANDOM -->
+  <div id="successOverlay" class="success-overlay" style="display: none;">
+    <div class="success-modal">
+      <div class="success-icon-container">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h3 class="success-modal-title" id="successTitle">¡Te has unido con éxito!</h3>
+      <p class="success-modal-desc" id="successDesc">Tu usuario ha sido añadido a la pizarra de Polimatia.</p>
+      
+      <div class="meme-box">
+        <span class="meme-box-title">Meme random de la Nacho 🏛️</span>
+        <p id="memeText">"¿Sabías que los perros de la Plaza Ché tienen más semestres cursados que tú?"</p>
+      </div>
+      
+      <button type="button" id="successCloseBtn" class="success-close-btn">Entendido</button>
+    </div>
+  </div>
+
+  <!-- BOTÓN FLOTANTE INSTAGRAM CREADOR -->
+  <a href="https://www.instagram.com/JulianGon16" target="_blank" rel="noopener noreferrer" class="ig-floating-button">
+    <div class="ig-btn-icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="ig-btn-grad" x1="4" y1="20" x2="20" y2="4" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#F77737"/>
+            <stop offset="50%" stop-color="#E1306C"/>
+            <stop offset="100%" stop-color="#C13584"/>
+          </linearGradient>
+        </defs>
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" fill="url(#ig-btn-grad)"/>
+      </svg>
+    </div>
+    <div class="ig-btn-text">
+      <span class="ig-btn-label">Creado por:</span>
+      <span class="ig-btn-username">JulianGon16</span>
+    </div>
+  </a>
 </body>
 </html>
