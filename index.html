@@ -1,88 +1,1519 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus Mentor | Élite v12</title>
-    <link rel="stylesheet" href="index.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instamatia</title>
+  
+  <!-- Google Fonts: Sora para títulos, DM Sans para el cuerpo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Supabase CDN (V2) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    /* VARIABLES Y DISEÑO BASE */
+    :root {
+      --bg-color: #0f172a;
+      --bg-gradient: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+      --accent-color: #41CF41;
+      --accent-hover: #4de04d;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dark: #0f172a;
+      --card-bg: #ffffff;
+      --card-border: rgba(15, 23, 42, 0.08);
+      --glass-bg: rgba(30, 41, 59, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      
+      --ig-gradient: linear-gradient(135deg, #f77737 0%, #e1306c 50%, #c13584 100%);
+      --tt-cyan: #00f2fe;
+      --tt-red: #fe2c55;
+      --tt-dark: #010101;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      background-image: 
+        var(--bg-gradient),
+        radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 24px 24px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* SCROLLBAR PERSONALIZADO */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-color);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      width: 100%;
+      flex-grow: 1;
+    }
+
+    /* HEADER */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .badge-pill {
+      background-color: var(--accent-color);
+      color: var(--text-dark);
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 14px rgba(65, 207, 65, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: default;
+    }
+
+    .badge-pill:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(65, 207, 65, 0.4);
+    }
+
+    .wordmark {
+      font-family: 'Sora', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff 60%, var(--accent-color) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.05));
+    }
+
+    .subtitle {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      letter-spacing: -0.2px;
+    }
+
+    .description {
+      font-size: 1rem;
+      color: #cbd5e1;
+      max-width: 600px;
+      line-height: 1.6;
+      margin: 0 auto;
+    }
+
+    /* FORMULARIO DE APORTE */
+    .form-container {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 500px;
+      margin: 40px auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+      transition: border-color 0.3s ease;
+    }
+
+    .form-container:focus-within {
+      border-color: rgba(65, 207, 65, 0.3);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-family: 'Sora', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .input-prefix {
+      position: absolute;
+      left: 16px;
+      color: var(--text-muted);
+      font-size: 18px;
+      font-weight: 600;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .username-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px 16px 14px 38px;
+      color: var(--text-main);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      transition: all 0.2s ease;
+    }
+
+    .username-input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 0 0 3px rgba(65, 207, 65, 0.15);
+    }
+
+    /* Botones de selección de red social */
+    .platform-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .platform-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.4);
+      border: 0.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .platform-btn svg {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.2s ease;
+    }
+
+    .platform-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .platform-btn:hover svg {
+      transform: scale(1.1);
+    }
+
+    .platform-btn.selected {
+      border: 2px solid var(--accent-color);
+      padding: 12.5px 14px; /* Compensa la diferencia de borde de 0.5px a 2px */
+      background: rgba(65, 207, 65, 0.08);
+      color: var(--text-main);
+      box-shadow: 0 0 12px rgba(65, 207, 65, 0.15);
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: var(--accent-color);
+      color: var(--text-dark);
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(65, 207, 65, 0.3);
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(65, 207, 65, 0.5);
+      background: var(--accent-hover);
+    }
+
+    .submit-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .submit-btn:disabled {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.3);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Mensajes de validación */
+    .validation-message {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+      font-weight: 500;
+      animation: fadeIn 0.3s ease;
+      line-height: 1.4;
+    }
+
+    .validation-message.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      display: block;
+    }
+
+    .validation-message.success {
+      background: rgba(65, 207, 65, 0.1);
+      border: 1px solid rgba(65, 207, 65, 0.2);
+      color: #41cd41;
+      display: block;
+    }
+
+    /* CONTADORES */
+    .counters-container {
+      text-align: center;
+      margin: 32px 0 24px 0;
+    }
+
+    .counter-main {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .counter-sub {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      font-weight: 500;
+    }
+
+    /* FILTROS */
+    .filters-container {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid var(--glass-border);
+      border-radius: 9999px;
+      padding: 8px 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    .filter-btn.active {
+      background: #ffffff;
+      color: var(--text-dark);
+      border-color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+    }
+
+    /* PIZARRA DE TARJETAS */
+    .board-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-bottom: 80px;
+    }
+
+    /* TARJETA */
+    .card {
+      background: var(--card-bg);
+      color: var(--text-dark);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-decoration: none;
+      outline: none;
+    }
+
+    .card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      border-color: rgba(65, 207, 65, 0.4);
+    }
+
+    .card:focus-visible {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(65, 207, 65, 0.3);
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      text-transform: uppercase;
+      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.15);
+      flex-shrink: 0;
+    }
+
+    .card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow: hidden;
+    }
+
+    .card-username {
+      font-family: 'Sora', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-time {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .card-platform-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-platform-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ANIMACIONES */
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .card-animate-in {
+      animation: fadeSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* ESTADO DE CARGA / SKELETONS */
+    .skeleton-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    .skeleton-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+
+    .skeleton-info {
+      flex: 1;
+    }
+
+    .skeleton-line {
+      height: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-line:last-child {
+      width: 60%;
+      margin-bottom: 0;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 0.3; }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-size: 16px;
+      grid-column: 1 / -1;
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      margin-top: auto;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    footer a {
+      color: var(--accent-color);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
+    }
+
+    /* CONFIGURATION OVERLAY / MODAL (Dev Helper) */
+    .config-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .config-modal {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 550px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .config-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .config-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .sql-code-block {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #e2e8f0;
+      margin: 16px 0;
+      position: relative;
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .sql-copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      border-radius: 6px;
+      color: #94a3b8;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sql-copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+
+    .config-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .config-submit-btn {
+      background: var(--accent-color);
+      color: var(--text-dark);
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .config-submit-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .demo-mode-btn {
+      background: transparent;
+      color: var(--accent-color);
+      border: 1px solid rgba(65, 207, 65, 0.4);
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .demo-mode-btn:hover {
+      background: rgba(65, 207, 65, 0.05);
+      border-color: var(--accent-color);
+    }
+
+    .config-badge {
+      display: inline-block;
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .settings-trigger {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      vertical-align: middle;
+      transition: color 0.2s ease;
+    }
+
+    .settings-trigger:hover {
+      color: var(--accent-color);
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (min-width: 640px) {
+      .board-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .wordmark {
+        font-size: 4rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .board-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .board-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+  </style>
 </head>
 <body>
-<!-- esto es la seccion de las estadisticas del usuario, el rango se actualiza segun el tiempo de enfoque acumulado, la inversion es el tiempo total acumulado y el exito es el porcentaje de sesiones exitosas sobre el total de sesiones realizadas -->
-    <div class="container">
-        <div class="stats-bar">
-            <div class="stat-item">
-                <span class="stat-label">Rango</span>
-                <span id="rankStatus" class="stat-value">Novato</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Inversión</span>
-                <span id="totalFocusTime" class="stat-value">0 min</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Éxito</span>
-                <span id="successRate" class="stat-value">0%</span>
-            </div>
-        </div>
 
-        <div class="card">
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            
-            <h1 class="title">TIMER CONCENTRACION</h1>
-<!-- Seccion de configuracion del timer y la meta a lograr en el bloque de tiempo seleccionado -->
-            <div class="setup-section">
-                <label class="step-label">1. Define el tiempo</label>
-                <div class="mode-selector">
-                    <button class="mode-btn" data-time="15">15 min</button>
-                    <button class="mode-btn active" data-time="25">25 min</button>
-                    <button class="mode-btn" data-time="45">45 min</button>
-                </div>
-                <div class="custom-time-wrapper">
-                    <input type="number" id="customMin" placeholder="Ej: 60" min="1" max="180">
-                    <button id="setCustomTime" class="btn-setup">Fijar Tiempo</button>
-                </div>
-            </div>
+  <!-- MODAL DE CONFIGURACIÓN DE SUPABASE (Aparece si las claves son placeholders) -->
+  <div id="configOverlay" class="config-overlay" style="display: none;">
+    <div class="config-modal">
+      <div class="config-title">
+        <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        Configurar Supabase
+      </div>
+      <p class="config-desc">
+        Para habilitar la base de datos y actualizaciones en tiempo real, proporciona la URL y la Anon Key de tu proyecto de Supabase.
+      </p>
 
-            <div class="timer-display" id="timer">25:00</div>
-            
-            <div class="setup-section">
-                <label class="step-label">2. Define tu misión</label>
-                <input type="text" id="goalInput" placeholder="¿Qué vas a lograr en este bloque?">
-            </div>
+      <div class="form-group">
+        <label class="form-label" for="configUrl">Supabase Project URL</label>
+        <input type="text" id="configUrl" class="username-input" style="padding-left: 16px;" placeholder="https://xxxx.supabase.co">
+      </div>
 
-            <p id="status">Paso 1: Elige tiempo. Paso 2: Escribe tu meta.</p>
-            
-            <div class="button-group">
-                <button id="mainButton" class="btn-primary">Ejecutar</button>
-                <button id="resetButton" class="btn-secondary">Abortar</button>
-            </div>
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label class="form-label" for="configKey">Supabase Anon Key</label>
+        <input type="password" id="configKey" class="username-input" style="padding-left: 16px;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      </div>
 
-            <!-- SECCION DE LOGOS -->
-            <div class="ambient-selector">
-                <button class="ambient-btn active" data-sound="none" title="Silencio">🔇</button>
-                <button class="ambient-btn" data-sound="rain" title="Lluvia">🌧️</button>
-                <button class="ambient-btn" data-sound="waves" title="Océano">🌊</button>
-                <button class="ambient-btn" data-sound="white" title="Ruido Blanco">🌫️</button>
-            </div>
-        </div>
-<!-- borrar el registro de batallas -->
-        <div class="log-container">
-            <div class="log-header">
-                <h3>Registro de Batallas completas</h3>
-                <button id="clearLog" class="text-btn">Borrar Historial</button>
-            </div>
-            <ul id="sessionLog"></ul>
-        </div>
+      <div class="config-badge">Instrucciones de Base de Datos</div>
+      <p class="config-desc" style="margin-bottom: 8px;">
+        Crea la tabla ejecutando el siguiente SQL en el <strong>SQL Editor</strong> de Supabase:
+      </p>
+
+      <div class="sql-code-block">
+        <button class="sql-copy-btn" id="copySqlBtn">Copiar</button>
+        <pre id="sqlText">CREATE TABLE social_users (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  username text NOT NULL,
+  platform text NOT NULL CHECK (platform IN ('instagram', 'tiktok')),
+  created_at timestamptz DEFAULT now()
+);</pre>
+      </div>
+
+      <p class="config-desc" style="margin-top: 8px; font-size: 13px;">
+        ⚠️ <strong>Importante:</strong> Recuerda activar el servicio de <strong>Realtime</strong> en la tabla <code>social_users</code> desde la sección Database &rarr; Replication en Supabase para que las tarjetas carguen en tiempo real.
+      </p>
+
+      <div class="config-actions">
+        <button type="button" id="saveConfigBtn" class="config-submit-btn">Conectar y Guardar</button>
+        <button type="button" id="startDemoBtn" class="demo-mode-btn">Probar Modo Demo (Sin Base de Datos)</button>
+      </div>
     </div>
+  </div>
 
-    <audio id="soundSuccess" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
-    <audio id="soundFail" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
-    <audio id="amb-rain" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3"></audio>
-    <audio id="amb-waves" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3"></audio>
-    <audio id="amb-white" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3"></audio>
+  <div class="container">
+    <!-- HEADER -->
+    <header>
+      <div class="badge-pill">Solo estudiantes de Polimatia</div>
+      <h1 class="wordmark">Instamatia</h1>
+      <h2 class="subtitle">Aspirantes a la Universidad Nacional · Admisión 2027-1</h2>
+      <p class="description">
+        Comparte tu Instagram o TikTok con tus compañeros de Polimatia y conéctense antes de llegar a la Nacional.
+      </p>
+    </header>
+
+    <!-- FORMULARIO DE APORTE -->
+    <section class="form-container">
+      <form id="submissionForm">
+        <div class="form-group">
+          <label class="form-label" for="username">Usuario de red social</label>
+          <div class="input-wrapper">
+            <span class="input-prefix">@</span>
+            <input 
+              type="text" 
+              id="username" 
+              class="username-input" 
+              placeholder="username" 
+              autocomplete="off" 
+              spellcheck="false"
+              maxlength="30"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Elige la plataforma</label>
+          <div class="platform-selector">
+            <!-- Botón Instagram -->
+            <button type="button" class="platform-btn" id="btnInstagram" data-platform="instagram">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="instagram-grad" x1="4" y1="20" x2="20" y2="4" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#F77737"/>
+                    <stop offset="50%" stop-color="#E1306C"/>
+                    <stop offset="100%" stop-color="#C13584"/>
+                  </linearGradient>
+                </defs>
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" fill="url(#instagram-grad)"/>
+              </svg>
+              Instagram
+            </button>
+            
+            <!-- Botón TikTok -->
+            <button type="button" class="platform-btn" id="btnTiktok" data-platform="tiktok">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Sombra Cyan de TikTok -->
+                <path class="tiktok-cyan" d="M11.6 3.1v13.5a3.5 3.5 0 1 1-3.5-3.5c.5 0 .97.1 1.41.29V9.3c-2-.5-4.1.2-4.9 2.1-.7 1.6-.4 3.3.3 4.9C6.1 19.1 9.2 20.5 12.1 19.5c2.2-.8 3.6-2.9 3.6-5.3V8.1c1.65.98 3.59 1.5 5.5 1.5V7.6c-2 0-3.7-1.3-4.3-3.1-.3-.9-.2-2-.2-2.4H11.6z" fill="#00f2fe"/>
+                <!-- Sombra Roja de TikTok -->
+                <path class="tiktok-red" d="M12.4 1.9v13.5a3.5 3.5 0 1 1-3.5-3.5c.5 0 .97.1 1.41.29V8.1c-2-.5-4.1.2-4.9 2.1-.7 1.6-.4 3.3.3 4.9 1.2 2.8 4.3 4.2 7.2 3.2 2.2-.8 3.6-2.9 3.6-5.3V6.9c1.65.98 3.59 1.5 5.5 1.5V6.4c-2 0-3.7-1.3-4.3-3.1-.3-.9-.2-2-.2-2.4H12.4z" fill="#fe2c55"/>
+                <!-- Nota musical principal blanca en tema oscuro del botón -->
+                <path class="tiktok-core" d="M12 2.5v13.5a3.5 3.5 0 1 1-3.5-3.5c.5 0 .97.1 1.41.29V8.7c-2-.5-4.1.2-4.9 2.1-.7 1.6-.4 3.3.3 4.9C6.5 18.5 9.6 19.9 12.5 18.9c2.2-.8 3.6-2.9 3.6-5.3V7.5c1.65.98 3.59 1.5 5.5 1.5V7c-2 0-3.7-1.3-4.3-3.1-.3-.9-.2-2-.2-2.4H12z" fill="#ffffff"/>
+              </svg>
+              TikTok
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="submit-btn" disabled>Aportar</button>
+        <div id="validationMessage" class="validation-message"></div>
+      </form>
+    </section>
+
+    <!-- CONTADORES -->
+    <section class="counters-container">
+      <div id="counterMain" class="counter-main">0 estudiantes de Polimatia en la pizarra</div>
+      <div id="counterSub" class="counter-sub">Instagram: 0 · TikTok: 0</div>
+    </section>
+
+    <!-- FILTROS -->
+    <section class="filters-container">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="instagram">Instagram</button>
+      <button class="filter-btn" data-filter="tiktok">TikTok</button>
+    </section>
+
+    <!-- PIZARRA DE TARJETAS -->
+    <main id="boardGrid" class="board-grid">
+      <!-- Los skeletons se mostrarán aquí por defecto durante la carga -->
+      <div class="skeleton-card">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-info">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-info">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-info">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-info">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>
+      Instamatia · Polimatia &rarr; UNAL 2027-1
+      <button class="settings-trigger" id="openSettingsBtn" title="Configurar conexión Supabase">
+        <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // CONFIGURACIÓN DE SUPABASE
+    // =========================================================================
+    // Reemplaza estas constantes con tus credenciales de Supabase antes de subir a Netlify.
+    const SUPABASE_URL = 'https://dookjszsqtpixxjgloj.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvb2tqc3pzcXRwaXh4anRnbG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1MTYwODcsImV4cCI6MjA5ODA5MjA4N30.wG08jtwTYbZuFQryHtil7vWeOI2a0MIV_JsRxtLJZn0';
+
+    // =========================================================================
+    // ESTADO LOCAL DE LA APLICACIÓN
+    // =========================================================================
+    let supabaseClient = null;
+    let users = [];
+    let selectedPlatform = null;
+    let activeFilter = 'all';
+    let isDemoMode = false;
+
+    // =========================================================================
+    // REFERENCIAS DEL DOM
+    // =========================================================================
+    const submissionForm = document.getElementById('submissionForm');
+    const usernameInput = document.getElementById('username');
+    const btnInstagram = document.getElementById('btnInstagram');
+    const btnTiktok = document.getElementById('btnTiktok');
+    const submitBtn = document.getElementById('submitBtn');
+    const validationMessage = document.getElementById('validationMessage');
+    const counterMain = document.getElementById('counterMain');
+    const counterSub = document.getElementById('counterSub');
+    const boardGrid = document.getElementById('boardGrid');
+    const filterButtons = document.querySelectorAll('.filter-btn');
     
-    <script src="index.js"></script>
+    // Config Modal Elements
+    const configOverlay = document.getElementById('configOverlay');
+    const configUrl = document.getElementById('configUrl');
+    const configKey = document.getElementById('configKey');
+    const saveConfigBtn = document.getElementById('saveConfigBtn');
+    const startDemoBtn = document.getElementById('startDemoBtn');
+    const copySqlBtn = document.getElementById('copySqlBtn');
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+
+    // =========================================================================
+    // INICIALIZACIÓN
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      setupFormListeners();
+      setupFilterListeners();
+      setupSettingsListeners();
+      
+      // Intentar inicializar Supabase
+      if (checkSupabaseConfigured()) {
+        initSupabaseAndLoad();
+      } else {
+        // Si no está configurado, intentar leer de localStorage
+        const storedUrl = localStorage.getItem('instamatia_supabase_url');
+        const storedKey = localStorage.getItem('instamatia_supabase_key');
+        if (storedUrl && storedKey) {
+          initSupabaseAndLoad(storedUrl, storedKey);
+        } else {
+          // Mostrar overlay de configuración
+          configOverlay.style.display = 'flex';
+        }
+      }
+    });
+
+    // Comprueba si las constantes fijadas en el código han sido modificadas
+    function checkSupabaseConfigured() {
+      return SUPABASE_URL !== 'TU_URL_AQUI' && SUPABASE_URL.trim() !== '' &&
+             SUPABASE_ANON_KEY !== 'TU_ANON_KEY_AQUI' && SUPABASE_ANON_KEY.trim() !== '';
+    }
+
+    // Inicializa el cliente e inicia carga de datos
+    async function initSupabaseAndLoad(customUrl = null, customKey = null) {
+      const url = customUrl || SUPABASE_URL;
+      const key = customKey || SUPABASE_ANON_KEY;
+      
+      try {
+        const { createClient } = window.supabase;
+        supabaseClient = createClient(url, key);
+        isDemoMode = false;
+        configOverlay.style.display = 'none';
+        
+        // Cargar usuarios y suscribirse a realtime
+        await loadUsers();
+        subscribeRealtime();
+      } catch (err) {
+        console.error("Error inicializando Supabase:", err);
+        showValidation("Error de conexión. Verifica las credenciales de Supabase.", "error");
+        configOverlay.style.display = 'flex';
+      }
+    }
+
+    // Inicializa el modo demo de prueba local
+    function initDemoMode() {
+      isDemoMode = true;
+      configOverlay.style.display = 'none';
+      
+      // Usuarios de prueba iniciales
+      users = [
+        { id: '1', username: 'santiago_unal', platform: 'instagram', created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+        { id: '2', username: 'mafe_polimatia', platform: 'tiktok', created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
+        { id: '3', username: 'david_unal27', platform: 'instagram', created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
+        { id: '4', username: 'laura.estudio', platform: 'instagram', created_at: new Date(Date.now() - 1000 * 60 * 600).toISOString() },
+        { id: '5', username: 'carlos_ing_27', platform: 'tiktok', created_at: new Date(Date.now() - 1000 * 60 * 3600 * 24).toISOString() }
+      ];
+      
+      renderCardsList();
+      updateCounters();
+      showValidation("Modo Demo Activo. Los datos se guardarán temporalmente en memoria.", "success");
+      setTimeout(() => hideValidation(), 4000);
+    }
+
+    // =========================================================================
+    // OPERACIONES DE BASE DE DATOS Y FLUJO
+    // =========================================================================
+
+    // Cargar todos los registros ordenados por created_at desc
+    async function loadUsers() {
+      if (!supabaseClient) return;
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('social_users')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        users = data || [];
+        renderCardsList();
+        updateCounters();
+      } catch (err) {
+        console.error("Error al cargar usuarios:", err);
+        showValidation("No se pudieron cargar los datos de Supabase. Revisa la consola.", "error");
+        
+        // Si hay error de tabla inexistente, sugerimos revisar configuración
+        boardGrid.innerHTML = `
+          <div class="empty-state">
+            Error al conectar con la base de datos.<br>
+            Asegúrate de haber creado la tabla <code>social_users</code> en Supabase y tener las credenciales correctas.
+          </div>
+        `;
+      }
+    }
+
+    // Insertar un nuevo usuario en la base de datos
+    async function addUser(username, platform) {
+      const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+      
+      // Validación previa
+      if (!validateUsername(cleanUsername)) {
+        showValidation("Usuario inválido. Usa letras, números, puntos y guiones bajos (máx 30).", "error");
+        return;
+      }
+      
+      // Duplicidad local para respuesta inmediata
+      const duplicate = users.find(u => u.username === cleanUsername && u.platform === platform);
+      if (duplicate) {
+        showValidation("Ya estás en la pizarra 👀", "error");
+        return;
+      }
+      
+      setFormSubmitting(true);
+      
+      if (isDemoMode) {
+        // Flujo en Modo Demo
+        const newDemoUser = {
+          id: Math.random().toString(36).substring(2, 11),
+          username: cleanUsername,
+          platform: platform,
+          created_at: new Date().toISOString()
+        };
+        
+        // Simular retraso de red
+        setTimeout(() => {
+          users.unshift(newDemoUser);
+          renderCardsList(true, newDemoUser.id);
+          updateCounters();
+          
+          resetForm();
+          showValidation("¡Añadido con éxito (Modo Demo)! 🎉", "success");
+          setTimeout(() => hideValidation(), 3000);
+          setFormSubmitting(false);
+        }, 600);
+        return;
+      }
+
+      // Flujo de Supabase
+      try {
+        // Verificar duplicidad directamente en base de datos
+        const { data: checkData, error: checkError } = await supabaseClient
+          .from('social_users')
+          .select('id')
+          .eq('username', cleanUsername)
+          .eq('platform', platform)
+          .limit(1);
+          
+        if (checkError) throw checkError;
+        
+        if (checkData && checkData.length > 0) {
+          showValidation("Ya estás en la pizarra 👀", "error");
+          setFormSubmitting(false);
+          return;
+        }
+
+        // Insertar registro
+        const { data, error } = await supabaseClient
+          .from('social_users')
+          .insert([{ username: cleanUsername, platform }])
+          .select();
+          
+        if (error) throw error;
+        
+        resetForm();
+        showValidation("¡Te has unido a la pizarra con éxito! 🎉", "success");
+        setTimeout(() => hideValidation(), 4000);
+        
+        // Si Realtime está activado, la suscripción se encargará de renderizar.
+        // Como fallback por si Realtime falla o no se activó, refrescamos localmente.
+        if (data && data[0]) {
+          const inserted = data[0];
+          const alreadyRendered = users.some(u => u.id === inserted.id);
+          if (!alreadyRendered) {
+            users.unshift(inserted);
+            renderCardsList(true, inserted.id);
+            updateCounters();
+          }
+        }
+      } catch (err) {
+        console.error("Error al añadir usuario:", err);
+        showValidation("Error al enviar los datos a Supabase. Inténtalo de nuevo.", "error");
+      } finally {
+        setFormSubmitting(false);
+      }
+    }
+
+    // Suscribirse a inserciones de Supabase en tiempo real
+    function subscribeRealtime() {
+      if (!supabaseClient) return;
+      
+      supabaseClient
+        .channel('public:social_users')
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'social_users' 
+        }, (payload) => {
+          const newUser = payload.new;
+          
+          // Evitar renderizado duplicado en el mismo cliente que emitió
+          const exists = users.some(u => u.id === newUser.id);
+          if (!exists) {
+            users.unshift(newUser);
+            renderCardsList(true, newUser.id);
+            updateCounters();
+          }
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log("Suscrito a cambios de Supabase Realtime con éxito.");
+          }
+        });
+    }
+
+    // =========================================================================
+    // COMPONENTES Y VISTA (RENDERIZADO)
+    // =========================================================================
+
+    // Renderiza la lista completa de tarjetas
+    // highlightId se utiliza para aplicar la animación CSS de entrada sólo al nuevo elemento
+    function renderCardsList(animateNew = false, highlightId = null) {
+      boardGrid.innerHTML = '';
+      
+      const filteredUsers = activeFilter === 'all' 
+        ? users 
+        : users.filter(u => u.platform === activeFilter);
+        
+      if (filteredUsers.length === 0) {
+        boardGrid.innerHTML = `
+          <div class="empty-state">
+            Aún no hay estudiantes de Polimatia con ${activeFilter === 'all' ? 'Instagram o TikTok' : activeFilter === 'instagram' ? 'Instagram' : 'TikTok'} en la pizarra. ¡Sé el primero!
+          </div>
+        `;
+        return;
+      }
+      
+      filteredUsers.forEach(user => {
+        const cardElement = createCardElement(user);
+        
+        // Aplicar animación de entrada si corresponde
+        if (animateNew && user.id === highlightId) {
+          cardElement.classList.add('card-animate-in');
+        }
+        
+        boardGrid.appendChild(cardElement);
+      });
+    }
+
+    // Genera el elemento DOM de la tarjeta de un estudiante
+    function createCardElement(user) {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.dataset.platform = user.platform;
+      card.dataset.createdAt = user.created_at;
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `Ver perfil de ${user.username} en ${user.platform}`);
+
+      // Generar avatar
+      const avatarColor = getAvatarColor(user.username);
+      const initial = user.username.charAt(0);
+      
+      // Ícono de plataforma
+      const platformIcon = user.platform === 'instagram' ? getInstagramSvg() : getTiktokSvg('#010101');
+      
+      // Tiempo transcurrido
+      const timeStr = timeAgo(user.created_at);
+
+      card.innerHTML = `
+        <div class="avatar" style="background-color: ${avatarColor};">
+          ${initial}
+        </div>
+        <div class="card-info">
+          <span class="card-username">@${user.username}</span>
+          <span class="card-time">${timeStr}</span>
+        </div>
+        <div class="card-platform-icon">
+          ${platformIcon}
+        </div>
+      `;
+
+      // Evento de clic en la tarjeta
+      card.addEventListener('click', () => {
+        const url = user.platform === 'instagram'
+          ? `https://ig.me/m/${user.username}`
+          : `https://www.tiktok.com/@${user.username}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      });
+
+      // Accesibilidad teclado
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+
+      return card;
+    }
+
+    // Actualiza los elementos del contador en la interfaz
+    function updateCounters() {
+      const total = users.length;
+      const instagramCount = users.filter(u => u.platform === 'instagram').length;
+      const tiktokCount = users.filter(u => u.platform === 'tiktok').length;
+      
+      counterMain.textContent = `${total} estudiante${total !== 1 ? 's' : ''} de Polimatia en la pizarra`;
+      counterSub.textContent = `Instagram: ${instagramCount} · TikTok: ${tiktokCount}`;
+    }
+
+    // Genera un color HSL único y consistente basado en el hash del nombre de usuario
+    function getAvatarColor(username) {
+      let hash = 0;
+      for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      
+      const hue = Math.abs(hash) % 360;
+      // Saturación (70%-85%) y luminosidad (42%-50%) para legibilidad con texto blanco
+      const saturation = 70 + (Math.abs(hash) % 15);
+      const lightness = 42 + (Math.abs(hash) % 8);
+      
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
+
+    // Calcula el tiempo relativo transcurrido en español
+    function timeAgo(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+      
+      if (seconds < 5) return 'ahora mismo';
+      if (seconds < 60) return `hace ${seconds} seg`;
+      
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) {
+        return minutes === 1 ? 'hace 1 min' : `hace ${minutes} min`;
+      }
+      
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) {
+        return hours === 1 ? 'hace 1 hora' : `hace ${hours} horas`;
+      }
+      
+      const days = Math.floor(hours / 24);
+      if (days < 30) {
+        return days === 1 ? 'hace 1 día' : `hace ${days} días`;
+      }
+      
+      const months = Math.floor(days / 30);
+      if (months < 12) {
+        return months === 1 ? 'hace 1 mes' : `hace ${months} meses`;
+      }
+      
+      const years = Math.floor(months / 12);
+      return years === 1 ? 'hace 1 año' : `hace ${years} años`;
+    }
+
+    // =========================================================================
+    // VALIDACIONES Y EVENTOS
+    // =========================================================================
+
+    // Configuración de oyentes del formulario principal
+    function setupFormListeners() {
+      // Inputs
+      usernameInput.addEventListener('input', () => {
+        // Eliminar @ inicial si el usuario lo ingresa
+        if (usernameInput.value.startsWith('@')) {
+          usernameInput.value = usernameInput.value.slice(1);
+        }
+        checkFormValidity();
+      });
+
+      // Selección de plataforma
+      btnInstagram.addEventListener('click', () => {
+        selectPlatform('instagram');
+      });
+
+      btnTiktok.addEventListener('click', () => {
+        selectPlatform('tiktok');
+      });
+
+      // Envío de formulario
+      submissionForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const username = usernameInput.value;
+        if (!username || !selectedPlatform) {
+          showValidation("Elige Instagram o TikTok primero", "error");
+          return;
+        }
+        
+        addUser(username, selectedPlatform);
+      });
+    }
+
+    // Filtros de la pizarra
+    function setupFilterListeners() {
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          activeFilter = btn.dataset.filter;
+          renderCardsList();
+        });
+      });
+    }
+
+    // Activa la plataforma seleccionada
+    function selectPlatform(platform) {
+      selectedPlatform = platform;
+      
+      if (platform === 'instagram') {
+        btnInstagram.classList.add('selected');
+        btnTiktok.classList.remove('selected');
+      } else {
+        btnTiktok.classList.add('selected');
+        btnInstagram.classList.remove('selected');
+      }
+      
+      hideValidation();
+      checkFormValidity();
+    }
+
+    // Valida caracteres correctos del username
+    function validateUsername(username) {
+      // Letras, números, puntos, guiones bajos. Máximo 30 caracteres.
+      const regex = /^[a-zA-Z0-9._]{1,30}$/;
+      return regex.test(username);
+    }
+
+    // Comprueba si el botón de enviar debe estar habilitado
+    function checkFormValidity() {
+      const username = usernameInput.value.trim();
+      const isValidUser = username.length > 0 && validateUsername(username.replace(/^@/, ''));
+      const isPlatformSelected = selectedPlatform !== null;
+      
+      submitBtn.disabled = !(isValidUser && isPlatformSelected);
+    }
+
+    // Estado del botón durante envío
+    function setFormSubmitting(isSubmitting) {
+      if (isSubmitting) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Enviando...';
+      } else {
+        submitBtn.textContent = 'Aportar';
+        checkFormValidity();
+      }
+    }
+
+    // Resetear formulario a su estado por defecto
+    function resetForm() {
+      usernameInput.value = '';
+      selectedPlatform = null;
+      btnInstagram.classList.remove('selected');
+      btnTiktok.classList.remove('selected');
+      checkFormValidity();
+    }
+
+    // Muestra alerta de validación
+    function showValidation(message, type) {
+      validationMessage.textContent = message;
+      validationMessage.className = `validation-message ${type}`;
+    }
+
+    // Oculta la alerta
+    function hideValidation() {
+      validationMessage.style.display = 'none';
+      validationMessage.className = 'validation-message';
+    }
+
+    // =========================================================================
+    // CONTROL DEL MODAL DE CONFIGURACIÓN Y DEMO
+    // =========================================================================
+    function setupSettingsListeners() {
+      // Botón abrir settings en el footer
+      openSettingsBtn.addEventListener('click', () => {
+        // Rellenar con los valores actuales (si existen)
+        configUrl.value = localStorage.getItem('instamatia_supabase_url') || '';
+        configKey.value = localStorage.getItem('instamatia_supabase_key') || '';
+        configOverlay.style.display = 'flex';
+      });
+
+      // Guardar configuración
+      saveConfigBtn.addEventListener('click', () => {
+        const url = configUrl.value.trim();
+        const key = configKey.value.trim();
+
+        if (!url || !key) {
+          alert("Por favor, ingresa tanto la URL como la Anon Key.");
+          return;
+        }
+
+        localStorage.setItem('instamatia_supabase_url', url);
+        localStorage.setItem('instamatia_supabase_key', key);
+        
+        initSupabaseAndLoad(url, key);
+      });
+
+      // Botón Modo Demo
+      startDemoBtn.addEventListener('click', () => {
+        initDemoMode();
+      });
+
+      // Copiar código SQL
+      copySqlBtn.addEventListener('click', () => {
+        const sqlText = document.getElementById('sqlText').textContent;
+        navigator.clipboard.writeText(sqlText).then(() => {
+          copySqlBtn.textContent = 'Copiado!';
+          setTimeout(() => {
+            copySqlBtn.textContent = 'Copiar';
+          }, 2000);
+        }).catch(err => {
+          console.error('Error al copiar el texto: ', err);
+        });
+      });
+    }
+
+    // Refrescar automáticamente el tiempo transcurrido en las tarjetas cada 30 segundos
+    setInterval(() => {
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        const createdAt = card.dataset.createdAt;
+        const timeSpan = card.querySelector('.card-time');
+        if (createdAt && timeSpan) {
+          timeSpan.textContent = timeAgo(createdAt);
+        }
+      });
+    }, 30000);
+
+    // =========================================================================
+    // ICONOS SVG INLINE (GENERADORES)
+    // =========================================================================
+    function getInstagramSvg() {
+      return `
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" fill="url(#instagram-grad)"/>
+        </svg>
+      `;
+    }
+
+    function getTiktokSvg(coreColor = '#ffffff') {
+      return `
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.6 3.1v13.5a3.5 3.5 0 1 1-3.5-3.5c.5 0 .97.1 1.41.29V9.3c-2-.5-4.1.2-4.9 2.1-.7 1.6-.4 3.3.3 4.9C6.1 19.1 9.2 20.5 12.1 19.5c2.2-.8 3.6-2.9 3.6-5.3V8.1c1.65.98 3.59 1.5 5.5 1.5V7.6c-2 0-3.7-1.3-4.3-3.1-.3-.9-.2-2-.2-2.4H11.6z" fill="#00f2fe"/>
+          <path d="M12.4 1.9v13.5a3.5 3.5 0 1 1-3.5-3.5c.5 0 .97.1 1.41.29V8.1c-2-.5-4.1.2-4.9 2.1-.7 1.6-.4 3.3.3 4.9 1.2 2.8 4.3 4.2 7.2 3.2 2.2-.8 3.6-2.9 3.6-5.3V6.9c1.65.98 3.59 1.5 5.5 1.5V6.4c-2 0-3.7-1.3-4.3-3.1-.3-.9-.2-2-.2-2.4H12.4z" fill="#fe2c55"/>
+          <path class="tiktok-core" d="M12 2.5v13.5a3.5 3.5 0 1 1-3.5-3.5c.5 0 .97.1 1.41.29V8.7c-2-.5-4.1.2-4.9 2.1-.7 1.6-.4 3.3.3 4.9C6.5 18.5 9.6 19.9 12.5 18.9c2.2-.8 3.6-2.9 3.6-5.3V7.5c1.65.98 3.59 1.5 5.5 1.5V7c-2 0-3.7-1.3-4.3-3.1-.3-.9-.2-2-.2-2.4H12z" fill="${coreColor}"/>
+        </svg>
+      `;
+    }
+  </script>
 </body>
 </html>
