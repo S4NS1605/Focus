@@ -1631,14 +1631,13 @@
 
         // Cerrar modal al enviar por si estaba abierto
         document.getElementById('successOverlay').style.display = 'none';
+        
+        addUser(username, selectedPlatform);
       });
 
       // Cerrar modal de éxito
       document.getElementById('successCloseBtn').addEventListener('click', () => {
         document.getElementById('successOverlay').style.display = 'none';
-      });
-        
-        addUser(username, selectedPlatform);
       });
     }
 
