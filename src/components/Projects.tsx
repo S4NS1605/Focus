@@ -17,7 +17,7 @@ export const Projects: React.FC = () => {
     {
       title: 'AutoSuite',
       description: t.projects.autosuiteDesc,
-      logoSrc: '/logoautosuite.png',
+      logoSrc: '/logoautosuite.webp',
       link: 'https://autosuite.online/',
     },
     {

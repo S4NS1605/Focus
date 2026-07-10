@@ -28,7 +28,7 @@ export const Navbar: React.FC = () => {
         {/* Monogram Logo on Left */}
         <a href="#hero" className="flex items-center gap-2 outline-none group" aria-label="Julian Gonzalez Portfolio Home">
           <img 
-            src="/imagenarribaJulianGonzalez.png" 
+            src="/imagenarribaJulianGonzalez.webp" 
             alt="Julian Gonzalez Monogram" 
             className="h-7 w-auto object-contain brightness-100 transition-opacity group-hover:opacity-80"
           />

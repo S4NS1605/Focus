@@ -121,7 +121,7 @@ export const Footer: React.FC = () => {
       <div className="mx-auto flex max-w-5xl flex-col items-center">
         
         {/* Social Icons Row */}
-        <div className="mb-10 flex gap-6">
+        <div className="mb-10 flex gap-4">
           {socialLinks.map((link) => (
             <motion.a
               key={link.name}
@@ -129,7 +129,7 @@ export const Footer: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.15, y: -2 }}
-              className="text-neutral-400 transition-colors hover:text-white"
+              className="p-2 text-neutral-400 transition-colors hover:text-white"
               aria-label={link.name}
             >
               {link.icon}

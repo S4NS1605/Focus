@@ -36,7 +36,7 @@ export const Hero: React.FC = () => {
           className="relative mb-8 h-36 w-36 overflow-hidden rounded-full border border-white/10 bg-neutral-900 shadow-2xl md:h-40 md:w-40"
         >
           <img 
-            src="/picture-profile.png" 
+            src="/picture-profile.webp" 
             alt="Julian Gonzalez Avatar" 
             className="h-full w-full object-cover rounded-full"
           />
