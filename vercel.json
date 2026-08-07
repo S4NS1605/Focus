@@ -2,20 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-
-  "comment": [
-    "Replaces the routing that lived in netlify.toml before the move to Vercel.",
-    "Without it /finanzas is a 404: the build emits dist/ecosistema/index.html,",
-    "and nothing maps the pretty URL onto that file.",
-    "",
-    "Order is load-bearing — the first matching rewrite wins, so the catch-all",
-    "MUST stay last or it swallows the app routes. Each app needs BOTH a bare",
-    "and a wildcard rule: '/finanzas/:path*' does not match a plain '/finanzas'.",
-    "",
-    "Static files that actually exist (assets, images, robots.txt) are served",
-    "before rewrites are considered, so they need no rules here."
-  ],
-
   "rewrites": [
     { "source": "/ecosistema", "destination": "/ecosistema/index.html" },
     { "source": "/ecosistema/:path*", "destination": "/ecosistema/index.html" },
@@ -25,7 +11,6 @@
     { "source": "/superadmin/:path*", "destination": "/ecosistema/index.html" },
     { "source": "/:path*", "destination": "/index.html" }
   ],
-
   "headers": [
     {
       "source": "/(ecosistema|finanzas|superadmin)",
