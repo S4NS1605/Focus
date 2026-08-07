@@ -161,10 +161,20 @@ app.post('/api/analizar-extracto', async (req, res) => {
 // ----------------------------------------------------------------------
 app.use(express.static(path.join(__dirname, 'dist')));
 
-app.get('/ecosistema*', (req, res) => res.sendFile(path.join(__dirname, 'dist', 'ecosistema', 'index.html')));
-app.get('/finanzas*', (req, res) => res.sendFile(path.join(__dirname, 'dist', 'ecosistema', 'index.html')));
-app.get('/superadmin*', (req, res) => res.sendFile(path.join(__dirname, 'dist', 'ecosistema', 'index.html')));
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'dist', 'index.html')));
+// Express 5 upgraded to path-to-regexp v8, which REJECTS unnamed wildcards: the
+// old '/ecosistema*' and '*' throw "Missing parameter name" at startup, taking
+// the whole server down before it can listen. The replacement syntax is a named
+// wildcard, and `{...}` makes the segment optional so one route still covers
+// both the bare path and everything under it — '/ecosistema/*splat' alone would
+// not match a plain '/ecosistema'.
+const shellEcosistema = (_req: express.Request, res: express.Response) =>
+  res.sendFile(path.join(__dirname, 'dist', 'ecosistema', 'index.html'));
+
+app.get('/ecosistema{/*splat}', shellEcosistema);
+app.get('/finanzas{/*splat}', shellEcosistema);
+app.get('/superadmin{/*splat}', shellEcosistema);
+
+app.get('/{*splat}', (_req, res) => res.sendFile(path.join(__dirname, 'dist', 'index.html')));
 
 app.listen(PORT, () => {
   console.log(`✅ Servidor Web/API corriendo en el puerto ${PORT}`);

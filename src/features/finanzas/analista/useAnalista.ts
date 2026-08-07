@@ -4,10 +4,9 @@ import type { AnalisisResultado, CodigoError, RespuestaAnalisis } from './tipos'
 const CLAVE_TOKEN = 'finanzas.analista.token';
 const RUTA_ANALIZAR = '/api/analizar-extracto';
 
-// Matches the server-side check in analizar-extracto.mts: comfortably under
-// Netlify's documented ~4.5 MB effective binary limit for a base64-encoded
-// synchronous-function request body (found the hard way — a real extracto
-// hit a 413 when this file assumed a plain 6 MB ceiling).
+// Must stay in step with MAX_BYTES_PDF in server.ts, which rejects anything
+// larger with a 413. The Express body parser is configured for 10 MB, so this
+// 4 MB ceiling is the deliberate product limit rather than a platform one.
 const MAX_BYTES = 4 * 1024 * 1024;
 
 export type FaseTrabajo = 'subiendo' | 'listo' | 'error';
@@ -143,12 +142,16 @@ export const useAnalista = (): UseAnalista => {
             body: JSON.stringify({ pdfBase64 }),
           });
 
+          // A 404 here does not mean "no such statement" — the endpoint itself
+          // was not reachable. In development that is almost always the API
+          // server not running alongside Vite, which proxies /api to it.
           if (respuesta.status === 404) {
             actualizarTrabajo(id, {
               fase: 'error',
               error: {
                 codigo: 'fallo-interno',
-                mensaje: 'La función no está desplegada todavía. Esto solo funciona en Netlify, no en el servidor local.',
+                mensaje:
+                  'No se encontró el servidor del analista. Si estás en local, arráncalo con "npm start" en otra terminal.',
               },
             });
             return;
