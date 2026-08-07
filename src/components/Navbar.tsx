@@ -71,7 +71,7 @@ export const Navbar: React.FC = () => {
               entry with its own bundle, so a client-side transition would only
               hand it to the portfolio's router and land back here. */}
           <a
-            href="/finanzas"
+            href="/ecosistema"
             aria-label={t.navbar.login}
             title={t.navbar.login}
             className="inline-flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-neutral-950/40 p-2 text-neutral-400 transition-colors hover:border-white/25 hover:text-white"

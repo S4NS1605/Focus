@@ -3,6 +3,7 @@ import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertT
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
+import { apiUrl } from '../lib/api';
 
 interface SuperadminPanelProps {
   onBack: () => void;
@@ -67,7 +68,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
         throw new Error('No hay sesión activa');
       }
 
-      const res = await fetch('/api/crear-usuario', {
+      const res = await fetch(apiUrl('/api/crear-usuario'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

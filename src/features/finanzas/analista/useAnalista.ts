@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AnalisisResultado, CodigoError, RespuestaAnalisis } from './tipos';
+import { apiUrl } from '../../../lib/api';
 
 const CLAVE_TOKEN = 'finanzas.analista.token';
-const RUTA_ANALIZAR = '/api/analizar-extracto';
+const RUTA_ANALIZAR = apiUrl('/api/analizar-extracto');
 
 // Must stay in step with MAX_BYTES_PDF in server.ts, which rejects anything
 // larger with a 413. The Express body parser is configured for 10 MB, so this

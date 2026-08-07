@@ -97,33 +97,25 @@ export const AppsRoot: React.FC = () => {
   }
 
   if (activeApp === 'finanzas') {
-    // Si el usuario NO es admin, no le mostramos el botón de "Volver al ecosistema"
-    return <FinanzasApp onBack={rol === 'admin' ? () => setActiveApp(null) : undefined} />;
+    // Everyone gets the way back now that the launcher is the landing screen —
+    // without it a non-admin who opens Finanzas is stuck there.
+    return <FinanzasApp onBack={() => setActiveApp(null)} />;
   }
 
-  if (activeApp === 'superadmin') {
-    if (rol !== 'admin') {
-      // Bloquear acceso por URL si no es admin
-      setActiveApp('finanzas');
-      return null;
-    }
+  if (activeApp === 'superadmin' && rol === 'admin') {
     return <SuperadminPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
   }
 
-  // Launcher dashboard (solo para el admin)
-  if (rol === 'admin') {
-    return (
-      <AppLauncher 
-        rol={rol} 
-        onSelectApp={setActiveApp} 
-        tema={tema} 
-        onCambiarTema={setTema}
-        onSalir={() => sesion.salir()} 
-      />
-    );
-  }
-
-  // Si es un usuario normal y por alguna razón llega aquí (ej: a /ecosistema), lo mandamos a finanzas
-  setActiveApp('finanzas');
-  return null;
+  // The launcher is the landing screen for every signed-in user, admin or not.
+  // Redirecting a regular user straight into Finanzas hid the fact that this is
+  // an ecosystem, and left them with nowhere to go when a second app appears.
+  return (
+    <AppLauncher
+      rol={rol}
+      onSelectApp={setActiveApp}
+      tema={tema}
+      onCambiarTema={setTema}
+      onSalir={() => sesion.salir()}
+    />
+  );
 };

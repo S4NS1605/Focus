@@ -49,7 +49,7 @@ const translations: Record<Language, Translations> = {
       about: 'Sobre Mi',
       contact: 'Contacto',
       menu: 'Abrir menú de navegación',
-      login: 'Entrar a Finanzas',
+      login: 'Entrar al ecosistema',
     },
     hero: {
       role: 'Software Developer',
@@ -89,7 +89,7 @@ const translations: Record<Language, Translations> = {
       about: 'About Me',
       contact: 'Contact',
       menu: 'Open navigation menu',
-      login: 'Sign in to Finanzas',
+      login: 'Sign in to the ecosystem',
     },
     hero: {
       role: 'Software Developer',
