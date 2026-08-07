@@ -201,6 +201,9 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
 export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImportar }) => {
   const analista = useAnalista();
   const [tokenBorrador, setTokenBorrador] = useState('');
+  // Without this the token screen was reachable only while no token was stored,
+  // so saving a wrong one locked the view into a permanent 401 with no way back.
+  const [cambiandoToken, setCambiandoToken] = useState(false);
   const [arrastrando, setArrastrando] = useState(false);
   const [contraidos, setContraidos] = useState<Set<string>>(new Set());
   const inputArchivo = useRef<HTMLInputElement>(null);
@@ -216,13 +219,15 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
   };
 
   // ---------- Token gate ----------
-  if (!analista.token) {
+  if (!analista.token || cambiandoToken) {
     return (
       <div className="mx-auto max-w-md">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             analista.guardarToken(tokenBorrador);
+            setTokenBorrador('');
+            setCambiandoToken(false);
           }}
           className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-center"
         >
@@ -270,6 +275,21 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
             <KeyRound className="h-4 w-4" strokeWidth={3} />
             Guardar
           </button>
+
+          {/* Only offered while replacing an existing token — with none stored
+              there is nothing to go back to. */}
+          {analista.token ? (
+            <button
+              type="button"
+              onClick={() => {
+                setTokenBorrador('');
+                setCambiandoToken(false);
+              }}
+              className="mt-2 w-full rounded-full px-6 py-2.5 text-xs font-bold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+            >
+              Cancelar
+            </button>
+          ) : null}
         </form>
       </div>
     );
@@ -278,6 +298,11 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
   const enCurso = analista.trabajos.filter((t) => t.fase === 'subiendo');
   const conError = analista.trabajos.filter((t) => t.fase === 'error');
   const listos = analista.trabajos.filter((t) => t.fase === 'listo');
+
+  // A rejected token is the one failure the user can actually fix from here, so
+  // it gets a direct action instead of leaving them to work out that the saved
+  // secret is the problem.
+  const tokenRechazado = conError.some((t) => t.error?.codigo === 'sin-autorizacion');
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
@@ -403,6 +428,33 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           Puedes seguir arrastrando más extractos mientras estos terminan.
         </p>
       ) : null}
+
+      {tokenRechazado ? (
+        <div className="rounded-2xl bg-[var(--fin-out-bg)] px-4 py-3 text-center">
+          <p className="text-[12px] leading-relaxed text-[var(--fin-out-ink)]">
+            El servidor rechazó el token guardado. Comprueba que coincida con
+            <code className="mx-1 font-mono">ANALISTA_TOKEN</code>
+            en el servidor.
+          </p>
+          <button
+            type="button"
+            onClick={() => setCambiandoToken(true)}
+            className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-accent)] px-4 py-2 text-xs font-bold text-[var(--fin-on-accent)]"
+          >
+            <KeyRound className="h-3.5 w-3.5" strokeWidth={3} />
+            Cambiar token
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setCambiandoToken(true)}
+          className="mx-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+        >
+          <KeyRound className="h-3 w-3" strokeWidth={3} />
+          Cambiar token
+        </button>
+      )}
     </div>
   );
 };
