@@ -56,23 +56,23 @@ export const AppsRoot: React.FC = () => {
       const fetchRol = async () => {
         const cliente = obtenerSupabase();
         if (cliente && sesion.estado.modo === 'autenticado') {
-          // Si el correo es el del admin principal, otorgar acceso directamente en la UI.
-          const emailUser = sesion.estado.email?.toLowerCase();
-          if (
-            emailUser === 'jsgonzalez1658@gmail.com' || 
-            emailUser === 'jsgonzalezdevs@gmail.com'
-          ) {
-            setRol('admin');
-            setLoadingRol(false);
-            return;
-          }
-
+          // The role comes from `perfiles` and nowhere else.
+          //
+          // A hard-coded list of admin addresses used to short-circuit this,
+          // which was two problems at once: the addresses shipped inside the
+          // public bundle for anyone to read, and the grant lived purely in
+          // client state, so editing it in devtools revealed the admin UI.
+          //
+          // This became safe to remove only once migration 0002 created the
+          // table — before that the query had nothing to read and the shortcut
+          // was the sole path to admin. The API re-checks the role server-side
+          // before doing anything privileged, so this only drives the UI.
           const { data } = await cliente
             .from('perfiles')
             .select('rol')
             .eq('id', sesion.estado.userId)
             .single();
-          if (data?.rol) {
+          if (data?.rol === 'admin' || data?.rol === 'usuario') {
             setRol(data.rol);
           }
         }
