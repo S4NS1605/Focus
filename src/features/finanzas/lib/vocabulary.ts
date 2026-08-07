@@ -67,10 +67,15 @@ export const MERCHANTS: Record<string, Category> = {
   nequi: 'transferencia', daviplata: 'transferencia', bancolombia: 'transferencia',
   davivienda: 'transferencia', bbva: 'transferencia', lulo: 'transferencia',
   claro: 'servicios', movistar: 'servicios', tigo: 'servicios', etb: 'servicios',
+  ptm: 'servicios',
   epm: 'servicios', codensa: 'servicios', vanti: 'servicios', enel: 'servicios',
   farmatodo: 'salud', cruzverde: 'salud', locatel: 'salud', colsubsidio: 'salud',
   netflix: 'entretenimiento', spotify: 'entretenimiento', hbo: 'entretenimiento',
   disney: 'entretenimiento', youtube: 'entretenimiento', steam: 'entretenimiento',
+  // App-store billing lines ("COMPRA EN APPLE COM BILL"), alongside the
+  // streaming services above rather than under servicios: on a personal
+  // statement these are overwhelmingly apps and media, not utilities.
+  apple: 'entretenimiento', playstore: 'entretenimiento',
   udemy: 'educacion', platzi: 'educacion', coursera: 'educacion',
   homecenter: 'hogar', falabella: 'ropa', zara: 'ropa', arturocalle: 'ropa',
 };
@@ -115,7 +120,8 @@ const KEYWORDS_BY_CATEGORY: Record<Category, readonly string[]> = {
     'tenis', 'chaqueta', 'vestido', 'gorra', 'sudadera'],
   educacion: ['curso', 'libro', 'libros', 'universidad', 'semestre',
     'matricula', 'colegio', 'cuaderno', 'cuadernos', 'utiles', 'clase',
-    'clases', 'certificacion', 'diplomado'],
+    'clases', 'certificacion', 'diplomado', 'preuniversitario', 'preicfes',
+    'instituto', 'academia'],
   transferencia: ['transferencia', 'giro', 'envio', 'retiro', 'cajero',
     'consignacion'],
   ahorro: ['ahorro', 'ahorros', 'cdt', 'inversion', 'fondo'],

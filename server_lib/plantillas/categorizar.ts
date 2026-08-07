@@ -9,8 +9,30 @@ import type { MotivoExclusion } from '../../src/features/finanzas/analista/tipos
  * same merchant table and category keywords the voice parser uses apply here
  * too, rather than duplicating that list.
  */
+/**
+ * Shapes a description can take that no single word reveals.
+ *
+ * Wallets like Nequi label person-to-person movements as just "De <NAME>" or
+ * "Para <NAME>". There is no merchant and no keyword in that — only structure —
+ * so a word-by-word lookup files every one of them under "otros". On a real
+ * statement that was 80 of 105 rows, which made the whole breakdown useless.
+ *
+ * Checked AFTER merchants and keywords on purpose: "Para Exito" is a shop, not
+ * a friend, and the merchant table has to win.
+ */
+const PATRONES_CATEGORIA: ReadonlyArray<{ patron: RegExp; categoria: Category }> = [
+  // Interest the wallet pays on the balance. Income, not a mystery expense.
+  { patron: /^pago de intereses|^intereses|^rendimientos?\b/, categoria: 'ingreso' },
+  // "Pago recibido de <BUSINESS>" — a payment collected, e.g. through a gateway.
+  { patron: /^pago recibido/, categoria: 'ingreso' },
+  // Two or more capitalised-name words after De/Para: a person, not a shop.
+  { patron: /^(de|para)\s+[a-z]{2,}(\s+[a-z.]+)+$/, categoria: 'transferencia' },
+];
+
 export const categorizarDescripcion = (descripcion: string): Category => {
-  const palabras = normalizeWord(descripcion).split(/\s+/).filter(Boolean);
+  const normalizada = normalizeWord(descripcion);
+  const palabras = normalizada.split(/\s+/).filter(Boolean);
+
   for (const palabra of palabras) {
     const categoria = MERCHANTS[palabra];
     if (categoria) return categoria;
@@ -18,6 +40,9 @@ export const categorizarDescripcion = (descripcion: string): Category => {
   for (const palabra of palabras) {
     const categoria = CATEGORY_KEYWORDS[palabra];
     if (categoria) return categoria;
+  }
+  for (const { patron, categoria } of PATRONES_CATEGORIA) {
+    if (patron.test(normalizada)) return categoria;
   }
   return 'otros';
 };
