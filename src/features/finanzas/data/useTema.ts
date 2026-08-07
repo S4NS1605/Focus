@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 export type Tema = 'sistema' | 'claro' | 'oscuro';
 
-export const TEMAS: ReadonlyArray<{ id: Tema; label: string; emoji: string }> = [
-  { id: 'claro', label: 'Claro', emoji: '☀️' },
-  { id: 'oscuro', label: 'Oscuro', emoji: '🌙' },
-  { id: 'sistema', label: 'Sistema', emoji: '💻' },
+// No icon here on purpose: this module is plain state and must stay free of
+// React, so the glyph for each option is chosen in TemaToggle instead.
+export const TEMAS: ReadonlyArray<{ id: Tema; label: string }> = [
+  { id: 'claro', label: 'Claro' },
+  { id: 'oscuro', label: 'Oscuro' },
+  { id: 'sistema', label: 'Sistema' },
 ];
 
 const CLAVE = 'finanzas:tema';

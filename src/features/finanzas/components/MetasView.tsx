@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, CheckCircle2, Trash2, icons, Target } from 'lucide-react';
+import { CheckCircle2, Plus, Target, Trash2 } from 'lucide-react';
 import { COPY } from '../copy';
+import { iconoDeMeta } from '../cajitaIconos';
 import type { Cajita, Meta } from '../data/modelos';
 import { CAJITA_ICONS } from '../data/modelos';
 import { metasConProgreso } from '../lib/metas';
@@ -112,7 +113,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
             <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">Ícono</legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {CAJITA_ICONS.map((option) => {
-                const Icon = icons[option as keyof typeof icons] || icons.Target;
+                const Icon = iconoDeMeta(option);
                 return (
                   <button
                     key={option}
@@ -224,7 +225,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                 aria-hidden="true"
               >
                 {(() => {
-                  const Icon = icons[meta.icon as keyof typeof icons] || icons.Target;
+                  const Icon = iconoDeMeta(meta.icon);
                   return <Icon className="h-5 w-5 text-[var(--fin-ink-soft)]" />;
                 })()}
               </span>

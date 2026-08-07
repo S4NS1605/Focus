@@ -1,14 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  AlertTriangle,
-  ChevronDown,
-  FileUp,
-  KeyRound,
-  Loader2,
-  RotateCcw,
-  X,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, Download, FileDown, FileText, FileUp, KeyRound, Loader2, RotateCcw, ShieldCheck, X } from 'lucide-react';
 import type { Transaction } from '../types';
 import { planearImportacion } from '../analista/aMovimientos';
 import type { Trabajo } from '../analista/useAnalista';
@@ -115,9 +107,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
         onClick={() => onToggle(trabajo.id)}
         className="flex w-full items-center gap-3 text-left"
       >
-        <span className="fin-emoji text-lg" aria-hidden="true">
-          ✅
-        </span>
+        <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--fin-in)]" strokeWidth={2.5} aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-extrabold">{trabajo.archivo.name}</p>
           <p className="truncate text-[11px] font-semibold text-[var(--fin-ink-faint)] capitalize">
@@ -152,7 +142,10 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
       {!contraido ? (
         <div className="mt-4 flex flex-col gap-5 border-t border-[var(--fin-line)] pt-4">
           <section className="rounded-2xl bg-[var(--fin-soft)] p-4">
-            <h3 className="text-xs font-bold text-[var(--fin-ink-soft)]">⬇️ Importar a tu historial</h3>
+            <h3 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+              <Download className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+              Importar a tu historial
+            </h3>
 
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               {[
@@ -233,9 +226,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           }}
           className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-center"
         >
-          <span className="fin-emoji block text-4xl" aria-hidden="true">
-            🔐
-          </span>
+          <KeyRound className="mx-auto h-9 w-9 text-[var(--fin-ink-faint)]" strokeWidth={1.75} aria-hidden="true" />
           <h2 className="mt-3 text-lg font-extrabold tracking-tight">Token de acceso</h2>
           <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             El endpoint pide un token para que nadie más que encuentre la URL pueda usarlo.
@@ -320,9 +311,11 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           arrastrando ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)]' : 'border-[var(--fin-line)] bg-[var(--fin-card)]'
         }`}
       >
-        <span className="fin-emoji block text-4xl" aria-hidden="true">
-          {arrastrando ? '📥' : '📄'}
-        </span>
+        {arrastrando ? (
+          <FileDown className="mx-auto h-9 w-9 text-[var(--fin-ink)]" strokeWidth={1.75} aria-hidden="true" />
+        ) : (
+          <FileText className="mx-auto h-9 w-9 text-[var(--fin-ink-faint)]" strokeWidth={1.75} aria-hidden="true" />
+        )}
         <h2 className="mt-3 text-lg font-extrabold tracking-tight">
           {arrastrando ? 'Suelta aquí' : 'Sube tus extractos'}
         </h2>
@@ -356,9 +349,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
         </motion.button>
 
         <p className="mx-auto mt-4 flex max-w-sm items-start gap-1.5 text-left text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
-          <span className="fin-emoji shrink-0" aria-hidden="true">
-            🛡️
-          </span>
+          <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
           <span>
             El análisis se hace con plantillas propias, sin inteligencia artificial: tu extracto
             nunca sale de este servidor. Soporta Nequi, Nu y Bancolombia.

@@ -17,9 +17,9 @@ export const COPY = {
     listening: 'Escuchando…',
     speak: 'Dictar',
     stop: 'Detener',
-    keyboardHint: 'Toca el campo y usa la tecla 🎤 del teclado para dictar.',
-    blocked: 'El dictado de un toque no funciona con la app instalada. Usa la tecla 🎤 del teclado.',
-    offline: 'El dictado de un toque necesita internet. La tecla 🎤 del teclado funciona sin conexión.',
+    keyboardHint: 'Toca el campo y usa la tecla del micrófono del teclado para dictar.',
+    blocked: 'El dictado de un toque no funciona con la app instalada. Usa la tecla del micrófono del teclado.',
+    offline: 'El dictado de un toque necesita internet. La tecla del micrófono del teclado funciona sin conexión.',
   },
 
   confirm: {

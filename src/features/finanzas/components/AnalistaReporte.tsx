@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle2, Info, ArrowUpCircle, ArrowDownCircle, ClipboardList, Target, AlertCircle, Lightbulb } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowDownCircle, ArrowUpCircle, CheckCircle2, ClipboardList, Info, Lightbulb, Target } from 'lucide-react';
 import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import { formatCop } from '../lib/formatCop';
 import type { AnalisisResultado } from '../analista/tipos';
@@ -216,7 +216,10 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Things the model could not read confidently */}
       {resultado.advertencias.length > 0 ? (
         <section className="rounded-3xl bg-[var(--fin-baja-bg)] p-5">
-          <h2 className="text-xs font-bold text-[var(--fin-baja-ink)]">⚠️ Lo que no quedó claro</h2>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-baja-ink)]">
+            <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+            Lo que no quedó claro
+          </h2>
           <ul className="mt-2.5 flex flex-col gap-1.5">
             {resultado.advertencias.map((adv, idx) => (
               <li key={idx} className="text-[12px] leading-relaxed text-[var(--fin-baja-ink)]">

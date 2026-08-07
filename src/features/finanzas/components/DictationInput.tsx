@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Info, Mic, Square } from 'lucide-react';
+import { Info, Mic, Sparkles, Square } from 'lucide-react';
 import { COPY } from '../copy';
 import { useDictation } from '../hooks/useDictation';
 
@@ -50,9 +50,7 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
           whileTap={{ scale: 0.97 }}
           className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--fin-accent)] px-6 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
         >
-          <span className="fin-emoji" aria-hidden="true">
-            ✨
-          </span>
+          <Sparkles className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
           {COPY.input.submit}
         </motion.button>
 

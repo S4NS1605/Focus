@@ -1,6 +1,14 @@
 import React from 'react';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { Tema } from '../data/useTema';
 import { TEMAS } from '../data/useTema';
+
+const ICONO: Record<Tema, LucideIcon> = {
+  claro: Sun,
+  oscuro: Moon,
+  sistema: Monitor,
+};
 
 interface TemaToggleProps {
   tema: Tema;
@@ -33,9 +41,10 @@ export const TemaToggle: React.FC<TemaToggleProps> = ({ tema, onCambiar, classNa
             activo ? 'bg-[var(--fin-soft)]' : 'opacity-45 hover:opacity-100'
           }`}
         >
-          <span className="fin-emoji" aria-hidden="true">
-            {opcion.emoji}
-          </span>
+          {(() => {
+            const Icono = ICONO[opcion.id];
+            return <Icono className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />;
+          })()}
           <span className="sr-only">{opcion.label}</span>
         </button>
       );

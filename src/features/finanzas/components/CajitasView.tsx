@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, PiggyBank, icons } from 'lucide-react';
+import { PiggyBank, Plus } from 'lucide-react';
 import { COPY } from '../copy';
+import { iconoDeCajita } from '../cajitaIconos';
 import type { Cajita, CajitaMovimiento, CajitaMovKind } from '../data/modelos';
 import { CAJITA_ICONS } from '../data/modelos';
 import { resumenDeCajitas, totalEnCajitas } from '../lib/cajitas';
@@ -83,7 +84,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">Ícono</legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {CAJITA_ICONS.map((option: string) => {
-                const IconComponent = icons[option as keyof typeof icons] || icons.PiggyBank;
+                const IconComponent = iconoDeCajita(option);
                 return (
                 <button
                   key={option}

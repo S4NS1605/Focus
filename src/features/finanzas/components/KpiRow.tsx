@@ -1,5 +1,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import {
+  CircleDashed,
+  Smile,
+  Frown,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+  AlertTriangle,
+  MinusCircle,
+  CheckCircle2,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { MonthTotals } from '../lib/aggregate';
 import { formatCop } from '../lib/formatCop';
 
@@ -8,7 +20,7 @@ interface KpiRowProps {
 }
 
 interface Kpi {
-  emoji: string;
+  Icono: LucideIcon;
   label: string;
   value: string;
   hint: string;
@@ -16,13 +28,17 @@ interface Kpi {
   ink: string;
 }
 
-/** Bands for the savings-rate tile. Paired with an emoji and words, never colour alone. */
-const savingsBand = (rate: number | null): { emoji: string; hint: string; bg: string; ink: string } => {
-  if (rate === null) return { emoji: '🫥', hint: 'sin ingresos aún', bg: 'var(--fin-soft)', ink: 'var(--fin-ink-soft)' };
-  if (rate < 0) return { emoji: '🔴', hint: 'gastaste más de lo que entró', bg: 'var(--fin-out-bg)', ink: 'var(--fin-out)' };
-  if (rate < 10) return { emoji: '🟠', hint: 'muy justo', bg: 'var(--fin-media-bg)', ink: 'var(--fin-media-ink)' };
-  if (rate < 20) return { emoji: '🟡', hint: 'aceptable', bg: 'var(--fin-baja-bg)', ink: 'var(--fin-baja-ink)' };
-  return { emoji: '🟢', hint: 'buen colchón', bg: 'var(--fin-in-bg)', ink: 'var(--fin-in)' };
+/**
+ * Bands for the savings-rate tile. The icon SHAPE differs per band, not just its
+ * colour — colour alone would leave the tile meaningless in greyscale or to a
+ * colour-blind reader, and the wording carries it a third time.
+ */
+const savingsBand = (rate: number | null): { Icono: LucideIcon; hint: string; bg: string; ink: string } => {
+  if (rate === null) return { Icono: CircleDashed, hint: 'sin ingresos aún', bg: 'var(--fin-soft)', ink: 'var(--fin-ink-soft)' };
+  if (rate < 0) return { Icono: AlertTriangle, hint: 'gastaste más de lo que entró', bg: 'var(--fin-out-bg)', ink: 'var(--fin-out)' };
+  if (rate < 10) return { Icono: MinusCircle, hint: 'muy justo', bg: 'var(--fin-media-bg)', ink: 'var(--fin-media-ink)' };
+  if (rate < 20) return { Icono: TrendingDown, hint: 'aceptable', bg: 'var(--fin-baja-bg)', ink: 'var(--fin-baja-ink)' };
+  return { Icono: CheckCircle2, hint: 'buen colchón', bg: 'var(--fin-in-bg)', ink: 'var(--fin-in)' };
 };
 
 export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
@@ -31,7 +47,7 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
 
   const kpis: Kpi[] = [
     {
-      emoji: positivo ? '🤑' : '😬',
+      Icono: positivo ? Smile : Frown,
       label: 'Balance',
       value: formatCop(totals.balance),
       hint: positivo ? 'te sobró' : 'te faltó',
@@ -39,7 +55,7 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
       ink: positivo ? 'var(--fin-in)' : 'var(--fin-out)',
     },
     {
-      emoji: '💰',
+      Icono: Wallet,
       label: 'Ingresos',
       value: formatCop(totals.ingresos),
       hint: 'entró este mes',
@@ -47,7 +63,7 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
       ink: 'var(--fin-in)',
     },
     {
-      emoji: '💸',
+      Icono: TrendingUp,
       label: 'Gastos',
       value: formatCop(totals.gastos),
       hint: 'salió este mes',
@@ -55,7 +71,7 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
       ink: 'var(--fin-out)',
     },
     {
-      emoji: band.emoji,
+      Icono: band.Icono,
       label: 'Tasa de ahorro',
       // The null case must not read as 0%: "saved nothing" and "no income
       // recorded" are different facts.
@@ -78,11 +94,11 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
         >
           <div className="flex items-center gap-2">
             <span
-              className="fin-emoji flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base"
-              style={{ backgroundColor: kpi.bg }}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+              style={{ backgroundColor: kpi.bg, color: kpi.ink }}
               aria-hidden="true"
             >
-              {kpi.emoji}
+              <kpi.Icono className="h-4 w-4" strokeWidth={2.5} />
             </span>
             <span className="truncate text-[11px] font-bold text-[var(--fin-ink-soft)]">{kpi.label}</span>
           </div>
