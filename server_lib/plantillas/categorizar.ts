@@ -66,8 +66,14 @@ const PATRONES_EXCLUSION: ReadonlyArray<{ patron: RegExp; motivo: MotivoExclusio
   { patron: /saldo anterior|saldo actual|saldo promedio/, motivo: 'saldo-informativo' },
   {
     // Deliberately no longer matches BRE-B on its own — see `esContraparteElTitular`.
+    //
+    // `bolsillo` is Davivienda's savings pocket inside the same account. Its
+    // statement prints BOTH sides of every move: the account section shows the
+    // debit and the pocket section shows the matching credit, same document
+    // number. Counting them would double the month's figures with money that
+    // never left.
     patron:
-      /\bnequi\b|\bbancolombia\b|recarga desde|recarga en corresponsal|retiro en corresponsal|transferencia cta suc virtual/,
+      /\bnequi\b|\bbancolombia\b|\bbolsillo\b|recarga desde|recarga en corresponsal|retiro en corresponsal|transferencia cta suc virtual/,
     motivo: 'traslado-propio',
   },
 ];

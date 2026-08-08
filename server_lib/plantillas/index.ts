@@ -5,13 +5,15 @@ import { CATEGORY_LABELS } from '../../src/features/finanzas/types.ts';
 import { pareceNequi, parsearNequi, periodoNequi } from './nequi.ts';
 import { pareceNu, parsearNu, periodoNu } from './nu.ts';
 import { pareceBancolombia, parsearBancolombia, periodoBancolombia } from './bancolombia.ts';
+import { pareceDavivienda, parsearDavivienda, periodoDavivienda } from './davivienda.ts';
 
-export type Banco = 'nequi' | 'nu' | 'bancolombia';
+export type Banco = 'nequi' | 'nu' | 'bancolombia' | 'davivienda';
 
 export const detectarBanco = (texto: string): Banco | null => {
   if (pareceNequi(texto)) return 'nequi';
   if (pareceNu(texto)) return 'nu';
   if (pareceBancolombia(texto)) return 'bancolombia';
+  if (pareceDavivienda(texto)) return 'davivienda';
   return null;
 };
 
@@ -19,6 +21,7 @@ const NOMBRE_BANCO: Record<Banco, string> = {
   nequi: 'Nequi',
   nu: 'Nu',
   bancolombia: 'Bancolombia',
+  davivienda: 'Davivienda',
 };
 
 /**
@@ -41,7 +44,9 @@ export const analizarConPlantilla = (texto: string): AnalisisResultado | null =>
       ? { movimientos: parsearNequi(texto), periodo: periodoNequi(texto) }
       : banco === 'nu'
         ? { movimientos: parsearNu(texto), periodo: periodoNu(texto) }
-        : { movimientos: parsearBancolombia(texto), periodo: periodoBancolombia(texto) };
+        : banco === 'bancolombia'
+          ? { movimientos: parsearBancolombia(texto), periodo: periodoBancolombia(texto) }
+          : { movimientos: parsearDavivienda(texto), periodo: periodoDavivienda(texto) };
 
   if (movimientos.length === 0) return null;
 

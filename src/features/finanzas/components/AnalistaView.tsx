@@ -377,7 +377,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
           <span>
             El análisis se hace con plantillas propias, sin inteligencia artificial: tu extracto
-            nunca sale de este servidor. Soporta Nequi, Nu y Bancolombia.
+            nunca sale de este servidor. Soporta Nequi, Nu, Bancolombia y Davivienda.
           </span>
         </p>
       </section>

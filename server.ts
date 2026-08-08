@@ -140,7 +140,7 @@ app.post('/api/analizar-extracto', async (req, res) => {
     return res.status(422).json({
       ok: false,
       codigo: 'banco-no-soportado',
-      mensaje: 'Este extracto no coincide con ninguna plantilla soportada (Nequi, Nu, Bancolombia).',
+      mensaje: 'Este extracto no coincide con ninguna plantilla soportada (Nequi, Nu, Bancolombia, Davivienda).',
     });
   }
 
