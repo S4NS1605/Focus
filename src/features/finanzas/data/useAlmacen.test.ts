@@ -74,7 +74,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Vacaciones', icon: '🏖️', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+      await result.current.crearCajita({ nombre: 'Vacaciones', icon: '🏖️', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
 
@@ -97,7 +97,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Carro', icon: '🚗', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+      await result.current.crearCajita({ nombre: 'Carro', icon: '🚗', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
     await act(async () => {
@@ -117,7 +117,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Viaje', icon: '✈️', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+      await result.current.crearCajita({ nombre: 'Viaje', icon: '✈️', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
     await act(async () => {
@@ -176,6 +176,7 @@ describe('useAlmacen', () => {
       await result.current.crearCajita({
         nombre: 'MacBook',
         icon: 'Laptop',
+        tipo: 'cajita',
         metaCop: null,
         tasaEaPct: 13,
         saldoInicialCop: 1_031_199,
@@ -198,6 +199,7 @@ describe('useAlmacen', () => {
       await result.current.crearCajita({
         nombre: 'Vacía',
         icon: 'PiggyBank',
+        tipo: 'cajita',
         metaCop: null,
         tasaEaPct: null,
         saldoInicialCop: 0,

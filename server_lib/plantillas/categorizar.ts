@@ -1,5 +1,6 @@
 import { MERCHANTS, CATEGORY_KEYWORDS } from '../../src/features/finanzas/lib/vocabulary.ts';
 import { normalizeWord } from '../../src/features/finanzas/lib/numerals.ts';
+import { extraerContraparte } from '../../src/features/finanzas/lib/contraparte.ts';
 import type { Category } from '../../src/features/finanzas/types.ts';
 import type { MotivoExclusion } from '../../src/features/finanzas/analista/tipos.ts';
 
@@ -78,13 +79,6 @@ const PATRONES_EXCLUSION: ReadonlyArray<{ patron: RegExp; motivo: MotivoExclusio
   },
 ];
 
-/** The counterparty a description names, for the shapes wallets actually emit. */
-const CONTRAPARTE = [
-  /^envio con bre-?b a:\s*(.+)$/,
-  /^recibi por bre-?b de:\s*(.+)$/,
-  /^(?:de|para)\s+(.+)$/,
-];
-
 /**
  * Whether the other side of a movement is the account holder themselves.
  *
@@ -110,20 +104,21 @@ export const esContraparteElTitular = (descripcion: string, titular: string): bo
   );
   if (propias.size === 0) return false;
 
-  const normalizada = normalizeWord(descripcion);
   const esSuyo = (texto: string): boolean => {
-    const palabras = texto.split(/\s+/).filter((w) => w.length >= 3);
+    const palabras = normalizeWord(texto)
+      .split(/\s+/)
+      .filter((w) => w.length >= 3);
     return palabras.length > 0 && palabras.every((w) => propias.has(w));
   };
 
-  for (const patron of CONTRAPARTE) {
-    const m = normalizada.match(patron);
-    if (m) return esSuyo(m[1]);
-  }
+  // One extractor shared with the analysis views, so the categoriser and the
+  // "who did I pay" breakdown can never disagree about who a movement was with.
+  const contraparte = extraerContraparte(descripcion);
+  if (contraparte) return esSuyo(contraparte);
 
   // No prefix at all — the wallet sometimes prints the counterparty bare, and
   // for movements between the holder's own products that is their own name.
-  return esSuyo(normalizada);
+  return esSuyo(descripcion);
 };
 
 export const exclusionDeDescripcion = (

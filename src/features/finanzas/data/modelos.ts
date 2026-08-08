@@ -1,11 +1,24 @@
 // Domain objects that live alongside transactions: Nu-style savings pockets and
 // the goals tracked on top of them. Transactions themselves stay in ../types.ts.
 
-/** A savings pocket ("cajita" in Nu). Tracked by hand — nothing talks to a bank. */
+/**
+ * What a balance belongs to.
+ *
+ * A bank account and a savings pocket are the same thing structurally: a balance
+ * the user maintains by hand, with a history of movements behind it. Splitting
+ * them into two entities would have duplicated the balance maths, the "just tell
+ * me what you have" flow, the history and the yield calculation — so they share
+ * one shape and differ only in how they are grouped and totalled.
+ */
+export type CajitaTipo = 'cuenta' | 'cajita';
+
+/** A balance tracked by hand — nothing here talks to a bank. */
 export interface Cajita {
   id: string;
   nombre: string;
   icon: string;
+  /** Defaults to 'cajita' so rows written before accounts existed still load. */
+  tipo: CajitaTipo;
   /** Optional target for this pocket alone, independent of any Meta. */
   metaCop: number | null;
   /**

@@ -1,4 +1,4 @@
-import type { Cajita, CajitaMovimiento } from '../data/modelos';
+import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 
 /**
  * A pocket's balance is always the sum of its movements — never a stored number.
@@ -102,4 +102,34 @@ export const resumenDeCajitas = (
       };
     })
     .sort((a, b) => b.saldoCop - a.saldoCop);
+};
+
+/** Live balances of one kind — accounts or pockets — added up. */
+export const totalPorTipo = (
+  cajitas: readonly Cajita[],
+  movimientos: readonly CajitaMovimiento[],
+  tipo: CajitaTipo,
+): number => totalEnCajitas(cajitas.filter((c) => c.tipo === tipo), movimientos);
+
+export interface Patrimonio {
+  cuentasCop: number;
+  cajitasCop: number;
+  /** Everything the user has told the app about. */
+  totalCop: number;
+}
+
+/**
+ * What the user actually has, split by where it sits.
+ *
+ * Deliberately separate from the month's income and expenses: a month can close
+ * in the red while the accounts are perfectly healthy, and conflating the two is
+ * how a summary ends up alarming for no reason.
+ */
+export const patrimonio = (
+  cajitas: readonly Cajita[],
+  movimientos: readonly CajitaMovimiento[],
+): Patrimonio => {
+  const cuentasCop = totalPorTipo(cajitas, movimientos, 'cuenta');
+  const cajitasCop = totalPorTipo(cajitas, movimientos, 'cajita');
+  return { cuentasCop, cajitasCop, totalCop: cuentasCop + cajitasCop };
 };

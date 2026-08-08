@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, Transaction, TxKind } from '../types';
-import type { Cajita, CajitaMovimiento, CajitaMovKind, Meta } from './modelos';
+import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
 
 /**
@@ -182,6 +182,7 @@ interface FilaCajita {
   id: string;
   nombre: string;
   emoji: string;
+  tipo: string | null;
   meta_cop: number | null;
   tasa_ea_pct: number | null;
   created_at: string;
@@ -192,6 +193,7 @@ const aCajita = (fila: FilaCajita): Cajita => ({
   id: fila.id,
   nombre: fila.nombre,
   icon: fila.emoji,
+  tipo: fila.tipo === 'cuenta' ? 'cuenta' : ('cajita' as CajitaTipo),
   metaCop: fila.meta_cop === null ? null : Number(fila.meta_cop),
   tasaEaPct: fila.tasa_ea_pct === null ? null : Number(fila.tasa_ea_pct),
   createdAt: fila.created_at,
@@ -203,6 +205,7 @@ const desdeCajita = (c: Cajita, userId: string) => ({
   user_id: userId,
   nombre: c.nombre,
   emoji: c.icon,
+  tipo: c.tipo,
   meta_cop: c.metaCop,
   tasa_ea_pct: c.tasaEaPct,
   created_at: c.createdAt,

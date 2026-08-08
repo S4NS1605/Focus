@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PiggyBank, Plus } from 'lucide-react';
 import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';
-import type { Cajita, CajitaMovimiento, CajitaMovKind } from '../data/modelos';
+import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS } from '../data/modelos';
 import { resumenDeCajitas, totalEnCajitas } from '../lib/cajitas';
 import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
@@ -14,6 +14,7 @@ interface CajitasViewProps {
   onCrear: (datos: {
     nombre: string;
     icon: string;
+    tipo: CajitaTipo;
     metaCop: number | null;
     tasaEaPct: number | null;
     saldoInicialCop: number;
@@ -34,6 +35,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
+  const [tipo, setTipo] = useState<CajitaTipo>('cajita');
   const [saldoTexto, setSaldoTexto] = useState('');
   const [metaTexto, setMetaTexto] = useState('');
   const [tasaTexto, setTasaTexto] = useState('');
@@ -51,6 +53,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     onCrear({
       nombre: limpio,
       icon,
+      tipo,
       metaCop: parseAmountInput(metaTexto),
       tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
       saldoInicialCop: parseAmountInput(saldoTexto) ?? 0,
@@ -58,6 +61,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     setNombre('');
     setIcon(CAJITA_ICONS[0]);
     setSaldoTexto('');
+    setTipo('cajita');
     setMetaTexto('');
     setTasaTexto('');
     setCreando(false);
@@ -97,6 +101,30 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             autoFocus
             className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
           />
+
+          <fieldset className="mt-4">
+            <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">¿Qué es?</legend>
+            <div className="mt-2 grid grid-cols-2 gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5">
+              {([
+                { id: 'cuenta', label: 'Cuenta bancaria' },
+                { id: 'cajita', label: 'Cajita de ahorro' },
+              ] as const).map((op) => (
+                <button
+                  key={op.id}
+                  type="button"
+                  onClick={() => setTipo(op.id)}
+                  aria-pressed={tipo === op.id}
+                  className={`rounded-xl px-3 py-2.5 text-[11px] font-bold transition-colors ${
+                    tipo === op.id
+                      ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]'
+                      : 'text-[var(--fin-ink-soft)]'
+                  }`}
+                >
+                  {op.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
 
           <label htmlFor="cajita-saldo" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
             {COPY.cajitas.saldoInicial}

@@ -1,0 +1,69 @@
+import React from 'react';
+import { Landmark, PiggyBank, Wallet } from 'lucide-react';
+import type { Cajita, CajitaMovimiento } from '../data/modelos';
+import { patrimonio } from '../lib/cajitas';
+import { formatCop } from '../lib/formatCop';
+
+interface PatrimonioCardProps {
+  cajitas: readonly Cajita[];
+  movimientos: readonly CajitaMovimiento[];
+}
+
+/**
+ * What the user has right now, as opposed to what moved this month.
+ *
+ * Kept apart from the month's balance on purpose: a month can close in the red
+ * while the accounts are perfectly healthy, and showing one number for both is
+ * how a summary ends up alarming for no reason.
+ */
+export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimientos }) => {
+  const total = patrimonio(cajitas, movimientos);
+
+  if (cajitas.length === 0) {
+    return (
+      <section className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-8 text-center">
+        <Wallet
+          className="mx-auto h-8 w-8 text-[var(--fin-ink-ghost)]"
+          strokeWidth={1.75}
+          aria-hidden="true"
+        />
+        <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">
+          Registra tus cuentas para ver cuánto tienes
+        </p>
+        <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">
+          En Ahorro puedes agregar una cuenta bancaria y decirle su saldo.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
+      <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+        <Wallet className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+        Lo que tienes ahora
+      </h2>
+
+      <p className="mt-1 font-display text-4xl font-extrabold tabular-nums text-[var(--fin-ink)]">
+        {formatCop(total.totalCop)}
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {[
+          { label: 'En cuentas', valor: total.cuentasCop, Icono: Landmark },
+          { label: 'En cajitas', valor: total.cajitasCop, Icono: PiggyBank },
+        ].map((fila) => (
+          <div key={fila.label} className="rounded-2xl bg-[var(--fin-bg)] px-3.5 py-3">
+            <p className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--fin-ink-faint)]">
+              <fila.Icono className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+              {fila.label}
+            </p>
+            <p className="mt-0.5 font-display text-lg font-extrabold tabular-nums text-[var(--fin-ink)]">
+              {formatCop(fila.valor)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};

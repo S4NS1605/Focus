@@ -15,6 +15,8 @@ import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
+import { PatrimonioCard } from './components/PatrimonioCard';
+import { DetalleMes } from './components/DetalleMes';
 import { CategoryBreakdown } from './components/CategoryBreakdown';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import type { ConfirmDraft } from './components/ConfirmSheet';
@@ -233,6 +235,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
           <div className="lg:hidden">{monthNav}</div>
 
+          <PatrimonioCard cajitas={cajitas} movimientos={cajitaMovimientos} />
+
           <KpiRow totals={totals} />
 
           <div className="grid gap-5 lg:grid-cols-2">
@@ -258,6 +262,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
               </section>
             </div>
           </div>
+
+          <DetalleMes delMes={delMes} transacciones={transacciones} mes={month} />
         </div>
       ) : null}
 

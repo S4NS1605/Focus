@@ -3,7 +3,7 @@ import type { Transaction } from '../types';
 import { bogotaDate } from '../lib/localDate';
 import { nuevoId } from '../lib/id';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
-import type { Cajita, CajitaMovimiento, CajitaMovKind, Meta } from './modelos';
+import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
@@ -24,6 +24,7 @@ export interface Almacen {
   crearCajita: (datos: {
     nombre: string;
     icon: string;
+    tipo: CajitaTipo;
     metaCop: number | null;
     tasaEaPct: number | null;
     /** What is already in the pocket. Recorded as its opening movement. */
@@ -171,12 +172,14 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     async ({
       nombre,
       icon,
+      tipo,
       metaCop,
       tasaEaPct,
       saldoInicialCop,
     }: {
       nombre: string;
       icon: string;
+      tipo: CajitaTipo;
       metaCop: number | null;
       tasaEaPct: number | null;
       saldoInicialCop: number;
@@ -185,6 +188,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         id: nuevoId('caj'),
         nombre,
         icon,
+        tipo,
         metaCop,
         tasaEaPct,
         createdAt: new Date().toISOString(),

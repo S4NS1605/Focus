@@ -23,6 +23,7 @@ const cajita = (over: Partial<Cajita> = {}): Cajita => ({
   id: 'caj-1',
   nombre: 'Vacaciones',
   icon: '🏖️',
+  tipo: 'cajita',
   metaCop: 2000000,
   tasaEaPct: null,
   createdAt: '2026-08-01T00:00:00.000Z',

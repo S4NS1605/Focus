@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import {
   ajusteHacia,
+  patrimonio,
   historialDeCajita,
   resumenDeCajitas,
   saldoDeCajita,
@@ -24,6 +25,7 @@ const caj = (over: Partial<Cajita> = {}): Cajita => ({
   id: 'c1',
   nombre: 'Vacaciones',
   icon: '🏖️',
+  tipo: 'cajita',
   metaCop: null,
   tasaEaPct: null,
   createdAt: '2026-08-01T00:00:00.000Z',
@@ -169,5 +171,37 @@ describe('resumenDeCajitas', () => {
     const [resumen] = resumenDeCajitas([caj({ metaCop: null })], [mov({ deltaCop: 100000 })]);
 
     expect(resumen.pct).toBeNull();
+  });
+});
+
+describe('patrimonio', () => {
+  it('separates accounts from pockets and totals both', () => {
+    const r = patrimonio(
+      [
+        caj({ id: 'c1', tipo: 'cuenta' }),
+        caj({ id: 'c2', tipo: 'cajita' }),
+        caj({ id: 'c3', tipo: 'cajita' }),
+      ],
+      [
+        mov({ id: 'a', cajitaId: 'c1', deltaCop: 600_000 }),
+        mov({ id: 'b', cajitaId: 'c2', deltaCop: 300_000 }),
+        mov({ id: 'c', cajitaId: 'c3', deltaCop: 100_000 }),
+      ],
+    );
+
+    expect(r).toEqual({ cuentasCop: 600_000, cajitasCop: 400_000, totalCop: 1_000_000 });
+  });
+
+  it('leaves archived balances out of the total', () => {
+    const r = patrimonio(
+      [caj({ id: 'c1', tipo: 'cuenta' }), caj({ id: 'c2', tipo: 'cuenta', archivedAt: '2026-01-01T00:00:00.000Z' })],
+      [mov({ id: 'a', cajitaId: 'c1', deltaCop: 500_000 }), mov({ id: 'b', cajitaId: 'c2', deltaCop: 900_000 })],
+    );
+
+    expect(r.cuentasCop).toBe(500_000);
+  });
+
+  it('is all zeroes with nothing registered', () => {
+    expect(patrimonio([], [])).toEqual({ cuentasCop: 0, cajitasCop: 0, totalCop: 0 });
   });
 });
