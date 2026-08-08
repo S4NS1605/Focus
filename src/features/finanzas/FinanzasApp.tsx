@@ -19,6 +19,8 @@ import { DeudasView } from './components/DeudasView';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { PatrimonioCard } from './components/PatrimonioCard';
 import { DetalleMes } from './components/DetalleMes';
+import { AnalisisMovimiento } from './components/AnalisisMovimiento';
+import { senalesDeMovimiento } from './lib/senales';
 import { CategoryBreakdown } from './components/CategoryBreakdown';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import type { ConfirmDraft } from './components/ConfirmSheet';
@@ -123,6 +125,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
   const [editando, setEditando] = useState<Transaction | null>(null);
+  const [analizando, setAnalizando] = useState<Transaction | null>(null);
   const [section, setSection] = useState<SectionId>('resumen');
   const [pestanaAhorro, setPestanaAhorro] = useState<PestanaAhorro>('cajitas');
 
@@ -147,6 +150,17 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         .filter((c) => c.archivedAt === null)
         .map((c) => ({ id: c.id, nombre: c.nombre })),
     [cajitas],
+  );
+
+  // Computed once for the visible month rather than per row: each check scans
+  // the whole ledger, so doing it inside the list would repeat that scan for
+  // every movement on screen.
+  const conSenal = useMemo(
+    () =>
+      new Set(
+        delMes.filter((t) => senalesDeMovimiento(t, transacciones).length > 0).map((t) => t.id),
+      ),
+    [delMes, transacciones],
   );
 
   const handleSubmit = (text: string) => setPending(parseTransaction(text));
@@ -273,6 +287,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
                 <div className="mt-3">
                   <TransactionList
                     transactions={delMes.slice(0, 5)}
+                    conSenal={conSenal}
+                    onAnalizar={setAnalizando}
                     onDelete={(id) => void almacen.borrarTransaccion(id)}
                     onEdit={setEditando}
                   />
@@ -291,6 +307,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           {registrar}
           <TransactionList
             transactions={delMes}
+            conSenal={conSenal}
+            onAnalizar={setAnalizando}
             onDelete={(id) => void almacen.borrarTransaccion(id)}
             onEdit={setEditando}
           />
@@ -401,6 +419,14 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           cuentas={cuentasParaElegir}
           onSave={handleSave}
           onCancel={() => setPending(null)}
+        />
+      ) : null}
+
+      {analizando ? (
+        <AnalisisMovimiento
+          tx={analizando}
+          historial={transacciones}
+          onCerrar={() => setAnalizando(null)}
         />
       ) : null}
 

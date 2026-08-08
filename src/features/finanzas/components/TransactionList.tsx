@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Hand, Pencil, Trash2 } from 'lucide-react';
+import { Hand, Pencil, Sparkles, Trash2 } from 'lucide-react';
 import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import type { Transaction } from '../types';
 import { COPY } from '../copy';
@@ -9,6 +9,15 @@ import { dayLabel } from '../lib/localDate';
 
 interface TransactionListProps {
   transactions: readonly Transaction[];
+  /**
+   * Ids worth a second look, precomputed by the parent.
+   *
+   * Passed in rather than derived here because the comparisons need the whole
+   * ledger, and recomputing them per row on every render would scan it once per
+   * visible movement.
+   */
+  conSenal?: ReadonlySet<string>;
+  onAnalizar?: (tx: Transaction) => void;
   onDelete: (id: string) => void;
   /** Optional so read-only listings (summaries) can omit the control entirely. */
   onEdit?: (tx: Transaction) => void;
@@ -40,6 +49,8 @@ const groupByDay = (transactions: readonly Transaction[]): DayGroup[] => {
 
 export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
+  conSenal,
+  onAnalizar,
   onDelete,
   onEdit,
 }) => {
@@ -92,7 +103,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-[var(--fin-ink)]">{tx.description}</p>
+                    <p className="flex items-center gap-1.5 truncate text-sm font-bold text-[var(--fin-ink)]">
+                      <span className="truncate">{tx.description}</span>
+                      {/* A quiet dot, not a badge: most movements are ordinary,
+                          and marking everything would mark nothing. */}
+                      {conSenal?.has(tx.id) ? (
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--fin-warn)]"
+                          aria-label="Tiene algo que revisar"
+                        />
+                      ) : null}
+                    </p>
                     <p className="text-[11px] font-medium" style={{ color }}>
                       {CATEGORY_LABELS[tx.category]}
                     </p>
@@ -104,6 +125,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                   >
                     {formatSigned(tx.amountCop, tx.kind)}
                   </span>
+
+                  {onAnalizar ? (
+                    <button
+                      type="button"
+                      onClick={() => onAnalizar(tx)}
+                      aria-label={`Analizar: ${tx.description}`}
+                      className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+                    >
+                      <Sparkles className="h-4 w-4" strokeWidth={2.5} />
+                    </button>
+                  ) : null}
 
                   {onEdit ? (
                     <button
