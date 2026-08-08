@@ -61,7 +61,9 @@ export const COPY = {
     nueva: 'Nueva cajita',
     nombre: 'Nombre',
     nombrePlaceholder: 'Ej: Vacaciones',
-    metaOpcional: 'Meta de la cajita (opcional)',
+    saldoInicial: '¿Cuánto tienes ahí ahora?',
+    saldoInicialHint: 'Escribe el saldo que ves en tu app. Puedes dejarlo en 0 y agregarlo después.',
+    metaOpcional: 'Meta a la que quieres llegar (opcional)',
     tasaOpcional: 'Rendimiento (opcional)',
     tasaHint:
       'La tasa efectiva anual que paga la cajita. La ves en tu app del banco — en Nu está en la cajita misma.',

@@ -74,7 +74,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Vacaciones', icon: '🏖️', metaCop: null, tasaEaPct: null });
+      await result.current.crearCajita({ nombre: 'Vacaciones', icon: '🏖️', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
 
@@ -97,7 +97,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Carro', icon: '🚗', metaCop: null, tasaEaPct: null });
+      await result.current.crearCajita({ nombre: 'Carro', icon: '🚗', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
     await act(async () => {
@@ -117,7 +117,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Viaje', icon: '✈️', metaCop: null, tasaEaPct: null });
+      await result.current.crearCajita({ nombre: 'Viaje', icon: '✈️', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
     await act(async () => {
@@ -166,5 +166,44 @@ describe('useAlmacen', () => {
 
     expect(result.current.error).toBe('IndexedDB bloqueado');
     expect(result.current.persistente).toBe(false);
+  });
+
+  it('records an opening balance as the first movement', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'MacBook',
+        icon: 'Laptop',
+        metaCop: null,
+        tasaEaPct: 13,
+        saldoInicialCop: 1_031_199,
+      });
+    });
+
+    const { cajitas, cajitaMovimientos } = await repo.cargarTodo();
+    // Not a stored field: the balance is the sum of movements, and the yield
+    // calculation needs a dated movement to know since when it has been earning.
+    expect(cajitaMovimientos).toHaveLength(1);
+    expect(cajitaMovimientos[0]).toMatchObject({ kind: 'deposito', deltaCop: 1_031_199 });
+    expect(saldoDeCajita(cajitaMovimientos, cajitas[0].id)).toBe(1_031_199);
+  });
+
+  it('creates no movement when the pocket starts empty', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Vacía',
+        icon: 'PiggyBank',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
+      });
+    });
+
+    expect((await repo.cargarTodo()).cajitaMovimientos).toEqual([]);
   });
 });

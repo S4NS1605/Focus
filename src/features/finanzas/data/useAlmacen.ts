@@ -26,6 +26,8 @@ export interface Almacen {
     icon: string;
     metaCop: number | null;
     tasaEaPct: number | null;
+    /** What is already in the pocket. Recorded as its opening movement. */
+    saldoInicialCop: number;
   }) => Promise<void>;
   actualizarCajita: (cajita: Cajita) => Promise<void>;
   borrarCajita: (id: string) => Promise<void>;
@@ -171,11 +173,13 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       icon,
       metaCop,
       tasaEaPct,
+      saldoInicialCop,
     }: {
       nombre: string;
       icon: string;
       metaCop: number | null;
       tasaEaPct: number | null;
+      saldoInicialCop: number;
     }) => {
       const cajita: Cajita = {
         id: nuevoId('caj'),
@@ -186,8 +190,34 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         createdAt: new Date().toISOString(),
         archivedAt: null,
       };
-      await aplicar({ ...datos, cajitas: [...datos.cajitas, cajita] }, () =>
-        repo.guardarCajita(cajita),
+      // An opening balance is a movement, not a stored field — the invariant is
+      // that a balance is the sum of its movements, and this is what the yield
+      // calculation walks to know since when the money has been earning.
+      const apertura: CajitaMovimiento[] =
+        saldoInicialCop > 0
+          ? [
+              {
+                id: nuevoId('mov'),
+                cajitaId: cajita.id,
+                kind: 'deposito',
+                deltaCop: saldoInicialCop,
+                occurredOn: bogotaDate(),
+                nota: 'Saldo inicial',
+                createdAt: new Date().toISOString(),
+              },
+            ]
+          : [];
+
+      await aplicar(
+        {
+          ...datos,
+          cajitas: [...datos.cajitas, cajita],
+          cajitaMovimientos: [...datos.cajitaMovimientos, ...apertura],
+        },
+        async () => {
+          await repo.guardarCajita(cajita);
+          await repo.guardarCajitaMovimientos(apertura);
+        },
       );
     },
     [aplicar, datos, repo],

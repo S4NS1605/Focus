@@ -16,6 +16,7 @@ interface CajitasViewProps {
     icon: string;
     metaCop: number | null;
     tasaEaPct: number | null;
+    saldoInicialCop: number;
   }) => void;
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
   onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => void;
@@ -33,6 +34,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
+  const [saldoTexto, setSaldoTexto] = useState('');
   const [metaTexto, setMetaTexto] = useState('');
   const [tasaTexto, setTasaTexto] = useState('');
 
@@ -51,9 +53,11 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       icon,
       metaCop: parseAmountInput(metaTexto),
       tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
+      saldoInicialCop: parseAmountInput(saldoTexto) ?? 0,
     });
     setNombre('');
     setIcon(CAJITA_ICONS[0]);
+    setSaldoTexto('');
     setMetaTexto('');
     setTasaTexto('');
     setCreando(false);
@@ -93,6 +97,24 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             autoFocus
             className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
           />
+
+          <label htmlFor="cajita-saldo" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
+            {COPY.cajitas.saldoInicial}
+          </label>
+          <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+            <span className="font-display text-xl font-extrabold text-[var(--fin-ink-faint)]">$</span>
+            <input
+              id="cajita-saldo"
+              value={saldoTexto}
+              onChange={(e) => setSaldoTexto(formatAmountInput(parseAmountInput(e.target.value)))}
+              inputMode="numeric"
+              placeholder="0"
+              className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+            />
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+            {COPY.cajitas.saldoInicialHint}
+          </p>
 
           <fieldset className="mt-4">
             <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">Ícono</legend>
