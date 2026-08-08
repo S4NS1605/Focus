@@ -28,11 +28,26 @@ interface CajitaCardProps {
 
 type Accion = 'saldo' | 'deposito' | 'retiro' | 'rendimiento';
 
-const ACCIONES: ReadonlyArray<{ id: Accion; label: string }> = [
+/**
+ * A bank account gets one action, not four.
+ *
+ * Deposits and withdrawals into an account are already recorded as income and
+ * expenses in Movimientos — offering them here too would build a second,
+ * disconnected history of the same money. What an account needs is simply to be
+ * told its current balance; the app works out the difference from there.
+ *
+ * Pockets are different: money moved into a pocket is not income or spending,
+ * so those movements have nowhere else to live.
+ */
+const ACCIONES_CAJITA: ReadonlyArray<{ id: Accion; label: string }> = [
   { id: 'saldo', label: COPY.cajitas.actualizarSaldo },
   { id: 'deposito', label: COPY.cajitas.depositar },
   { id: 'retiro', label: COPY.cajitas.retirar },
   { id: 'rendimiento', label: COPY.cajitas.rendimiento },
+];
+
+const ACCIONES_CUENTA: ReadonlyArray<{ id: Accion; label: string }> = [
+  { id: 'saldo', label: COPY.cajitas.actualizarSaldo },
 ];
 
 export const CajitaCard: React.FC<CajitaCardProps> = ({
@@ -48,8 +63,11 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   const [abierto, setAbierto] = useState(false);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
 
+  const esCuenta = cajita.tipo === 'cuenta';
+  const T = esCuenta ? COPY.cuentas : COPY.cajitas;
+  const ACCIONES = esCuenta ? ACCIONES_CUENTA : ACCIONES_CAJITA;
   const historial = historialDeCajita(movimientos, cajita.id);
-  const rendimiento = rendimientoEstimado(
+  const rendimiento = esCuenta ? null : rendimientoEstimado(
     movimientos,
     cajita.id,
     cajita.tasaEaPct,
@@ -105,7 +123,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
         <button
           type="button"
           onClick={() => setConfirmandoBorrado((v) => !v)}
-          aria-label={`${COPY.cajitas.eliminar}: ${cajita.nombre}`}
+          aria-label={`${T.eliminar}: ${cajita.nombre}`}
           className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
         >
           <Trash2 className="h-4 w-4" strokeWidth={2.5} />
@@ -165,7 +183,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
       {confirmandoBorrado ? (
         <div className="mt-3 rounded-2xl bg-[var(--fin-out-bg)] p-3">
           <p className="text-[11px] leading-relaxed text-[var(--fin-out-ink)]">
-            {COPY.cajitas.confirmarEliminar}
+            {T.confirmarEliminar}
           </p>
           <div className="mt-2.5 flex gap-2">
             <button
@@ -173,7 +191,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
               onClick={() => onEliminar(cajita.id)}
               className="rounded-full bg-[var(--fin-out)] px-4 py-2 text-xs font-bold text-white"
             >
-              {COPY.cajitas.eliminar}
+              {T.eliminar}
             </button>
             <button
               type="button"
@@ -218,9 +236,9 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             <div className="mt-3 rounded-2xl bg-[var(--fin-soft)] p-3">
               {accion === 'saldo' ? (
                 <>
-                  <p className="text-xs font-bold text-[var(--fin-ink)]">{COPY.cajitas.cuantoTienes}</p>
+                  <p className="text-xs font-bold text-[var(--fin-ink)]">{T.cuantoTienes}</p>
                   <p className="mt-1 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
-                    {COPY.cajitas.cuantoTienesHint}
+                    {T.cuantoTienesHint}
                   </p>
                 </>
               ) : null}
@@ -259,7 +277,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             aria-expanded={abierto}
             className="mt-3 flex w-full items-center justify-between rounded-xl px-1 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]"
           >
-            {COPY.cajitas.historial} ({historial.length})
+            {T.historial} ({historial.length})
             <ChevronDown
               className={`h-4 w-4 transition-transform ${abierto ? 'rotate-180' : ''}`}
               strokeWidth={3}
@@ -300,7 +318,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           ) : null}
         </>
       ) : (
-        <p className="mt-3 px-1 text-[11px] text-[var(--fin-ink-faint)]">{COPY.cajitas.sinMovimientos}</p>
+        <p className="mt-3 px-1 text-[11px] text-[var(--fin-ink-faint)]">{T.sinMovimientos}</p>
       )}
     </section>
   );

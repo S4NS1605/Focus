@@ -137,3 +137,52 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
     expect(screen.getByText('Aún no tienes cajitas.')).toBeInTheDocument();
   });
 });
+
+describe('CajitasView — una cuenta no se comporta como una cajita', () => {
+  const conSaldo = [mov({ cajitaId: 'banco', deltaCop: 500_000 })];
+
+  it('una cuenta ofrece solo actualizar el saldo', () => {
+    montar('cuenta', AMBOS, conSaldo);
+
+    expect(screen.getByRole('button', { name: 'Actualizar saldo' })).toBeInTheDocument();
+    // Lo que entra y sale de un banco ya son ingresos y gastos en Movimientos;
+    // repetirlo aquí sería un segundo historial del mismo dinero.
+    expect(screen.queryByRole('button', { name: 'Depositar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retirar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Rendimiento' })).not.toBeInTheDocument();
+  });
+
+  it('una cajita sí ofrece las cuatro', () => {
+    montar('cajita', AMBOS, [mov({ cajitaId: 'pote', deltaCop: 500_000 })]);
+
+    for (const accion of ['Actualizar saldo', 'Depositar', 'Retirar', 'Rendimiento']) {
+      expect(screen.getByRole('button', { name: accion })).toBeInTheDocument();
+    }
+  });
+
+  it('una cuenta no se llama "cajita" en ningún texto', () => {
+    montar('cuenta', AMBOS, conSaldo);
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar saldo' }));
+
+    expect(screen.getByText('¿Cuánto tienes ahora en esta cuenta?')).toBeInTheDocument();
+    expect(screen.queryByText(/en esta cajita/)).not.toBeInTheDocument();
+  });
+
+  it('borrar una cuenta avisa que los movimientos no se tocan', () => {
+    montar('cuenta', AMBOS, conSaldo);
+
+    fireEvent.click(screen.getByRole('button', { name: /Eliminar cuenta: Bancolombia/ }));
+
+    expect(screen.getByText(/Tus movimientos registrados no se tocan/)).toBeInTheDocument();
+  });
+
+  it('una cuenta no muestra rendimiento estimado, aunque tenga tasa', () => {
+    montar(
+      'cuenta',
+      [caj({ id: 'banco', nombre: 'Bancolombia', tipo: 'cuenta', tasaEaPct: 13 })],
+      conSaldo,
+    );
+
+    expect(screen.queryByText('Rendimiento estimado')).not.toBeInTheDocument();
+  });
+});

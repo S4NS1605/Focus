@@ -60,6 +60,14 @@ export const COPY = {
     nueva: 'Agregar cuenta bancaria',
     nombrePlaceholder: 'Ej: Nequi, Bancolombia',
     saldoInicial: '¿Cuánto tienes en esta cuenta?',
+    cuantoTienes: '¿Cuánto tienes ahora en esta cuenta?',
+    cuantoTienesHint:
+      'Escribe el saldo que ves en tu banco. La app calcula sola la diferencia y la deja anotada.',
+    historial: 'Ajustes de saldo',
+    sinMovimientos: 'Sin ajustes todavía.',
+    eliminar: 'Eliminar cuenta',
+    confirmarEliminar:
+      'Se elimina la cuenta y su historial de saldos. Tus movimientos registrados no se tocan.',
   },
 
   cajitas: {
