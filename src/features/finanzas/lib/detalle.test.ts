@@ -10,6 +10,7 @@ const tx = (over: Partial<Transaction> = {}): Transaction => ({
   category: 'transferencia',
   description: '',
   occurredOn: '2026-07-10',
+  cuentaId: null,
   rawTranscript: '',
   createdAt: '2026-07-10T00:00:00.000Z',
   ...over,

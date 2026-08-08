@@ -115,6 +115,15 @@ export interface Transaction {
   description: string;
   /** Bogota-local calendar day, 'YYYY-MM-DD'. Never a UTC timestamp. */
   occurredOn: string;
+  /**
+   * Which account or pocket the money actually moved through, when known.
+   *
+   * Optional on purpose: dictating "gasté 20 mil" must stay a one-tap action,
+   * and forcing an account choice on every entry would tax the fast path to
+   * serve the slow one. Unattributed movements still count in the month's
+   * totals — they simply do not move any balance.
+   */
+  cuentaId: string | null;
   /** The untouched dictation, kept so a mis-parse can always be reconstructed. */
   rawTranscript: string;
   createdAt: string;

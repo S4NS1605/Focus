@@ -1,3 +1,4 @@
+import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { ES_PASIVO } from '../data/modelos';
 
@@ -10,10 +11,22 @@ import { ES_PASIVO } from '../data/modelos';
  */
 export const saldosPorCajita = (
   movimientos: readonly CajitaMovimiento[],
+  /**
+   * Ledger entries attributed to an account. Optional so every caller that does
+   * not care about attribution keeps working unchanged.
+   */
+  transacciones: readonly Transaction[] = [],
 ): Map<string, number> => {
   const saldos = new Map<string, number>();
   for (const mov of movimientos) {
     saldos.set(mov.cajitaId, (saldos.get(mov.cajitaId) ?? 0) + mov.deltaCop);
+  }
+  // Income raises the account it landed in, spending lowers the one it left.
+  // This is what stops a balance going stale the moment something is recorded.
+  for (const tx of transacciones) {
+    if (!tx.cuentaId) continue;
+    const delta = tx.kind === 'ingreso' ? tx.amountCop : -tx.amountCop;
+    saldos.set(tx.cuentaId, (saldos.get(tx.cuentaId) ?? 0) + delta);
   }
   return saldos;
 };
@@ -21,8 +34,16 @@ export const saldosPorCajita = (
 export const saldoDeCajita = (
   movimientos: readonly CajitaMovimiento[],
   cajitaId: string,
+  transacciones: readonly Transaction[] = [],
 ): number =>
-  movimientos.reduce((total, mov) => (mov.cajitaId === cajitaId ? total + mov.deltaCop : total), 0);
+  movimientos.reduce((total, mov) => (mov.cajitaId === cajitaId ? total + mov.deltaCop : total), 0) +
+  transacciones.reduce(
+    (total, tx) =>
+      tx.cuentaId === cajitaId
+        ? total + (tx.kind === 'ingreso' ? tx.amountCop : -tx.amountCop)
+        : total,
+    0,
+  );
 
 /** The delta that turns `saldoActual` into `saldoObjetivo`. */
 export const ajusteHacia = (saldoActual: number, saldoObjetivo: number): number =>
@@ -69,8 +90,9 @@ export const historialDeCajita = (
 export const totalEnCajitas = (
   cajitas: readonly Cajita[],
   movimientos: readonly CajitaMovimiento[],
+  transacciones: readonly Transaction[] = [],
 ): number => {
-  const saldos = saldosPorCajita(movimientos);
+  const saldos = saldosPorCajita(movimientos, transacciones);
   return cajitas
     .filter((c) => c.archivedAt === null)
     .reduce((total, c) => total + (saldos.get(c.id) ?? 0), 0);
@@ -86,8 +108,9 @@ export interface ResumenCajita {
 export const resumenDeCajitas = (
   cajitas: readonly Cajita[],
   movimientos: readonly CajitaMovimiento[],
+  transacciones: readonly Transaction[] = [],
 ): ResumenCajita[] => {
-  const saldos = saldosPorCajita(movimientos);
+  const saldos = saldosPorCajita(movimientos, transacciones);
 
   return cajitas
     .filter((c) => c.archivedAt === null)
@@ -110,7 +133,9 @@ export const totalPorTipo = (
   cajitas: readonly Cajita[],
   movimientos: readonly CajitaMovimiento[],
   tipo: CajitaTipo,
-): number => totalEnCajitas(cajitas.filter((c) => c.tipo === tipo), movimientos);
+  transacciones: readonly Transaction[] = [],
+): number =>
+  totalEnCajitas(cajitas.filter((c) => c.tipo === tipo), movimientos, transacciones);
 
 export interface Patrimonio {
   cuentasCop: number;
@@ -133,11 +158,13 @@ export interface Patrimonio {
 export const patrimonio = (
   cajitas: readonly Cajita[],
   movimientos: readonly CajitaMovimiento[],
+  transacciones: readonly Transaction[] = [],
 ): Patrimonio => {
-  const cuentasCop = totalPorTipo(cajitas, movimientos, 'cuenta');
-  const cajitasCop = totalPorTipo(cajitas, movimientos, 'cajita');
+  const cuentasCop = totalPorTipo(cajitas, movimientos, 'cuenta', transacciones);
+  const cajitasCop = totalPorTipo(cajitas, movimientos, 'cajita', transacciones);
   const deudasCop =
-    totalPorTipo(cajitas, movimientos, 'deuda') + totalPorTipo(cajitas, movimientos, 'tarjeta');
+    totalPorTipo(cajitas, movimientos, 'deuda', transacciones) +
+    totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones);
   const totalCop = cuentasCop + cajitasCop;
 
   return { cuentasCop, cajitasCop, deudasCop, totalCop, netoCop: totalCop - deudasCop };
@@ -147,8 +174,9 @@ export const patrimonio = (
 export const resumenDePasivos = (
   cajitas: readonly Cajita[],
   movimientos: readonly CajitaMovimiento[],
+  transacciones: readonly Transaction[] = [],
 ): ResumenCajita[] =>
-  resumenDeCajitas(cajitas.filter((c) => ES_PASIVO[c.tipo]), movimientos);
+  resumenDeCajitas(cajitas.filter((c) => ES_PASIVO[c.tipo]), movimientos, transacciones);
 
 /** Live balances of the kinds that represent money held. */
 export const resumenDeActivos = (

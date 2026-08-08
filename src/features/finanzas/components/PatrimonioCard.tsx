@@ -1,10 +1,12 @@
 import React from 'react';
 import { Landmark, PiggyBank, Plus, Wallet } from 'lucide-react';
+import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import { patrimonio } from '../lib/cajitas';
 import { formatCop } from '../lib/formatCop';
 
 interface PatrimonioCardProps {
+  transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
   /** Jumps to where accounts are added, so the empty state is not a dead end. */
@@ -18,8 +20,8 @@ interface PatrimonioCardProps {
  * while the accounts are perfectly healthy, and showing one number for both is
  * how a summary ends up alarming for no reason.
  */
-export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimientos, onAgregar }) => {
-  const total = patrimonio(cajitas, movimientos);
+export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimientos, transacciones, onAgregar }) => {
+  const total = patrimonio(cajitas, movimientos, transacciones);
 
   if (cajitas.length === 0) {
     return (

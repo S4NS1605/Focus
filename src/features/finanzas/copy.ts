@@ -37,6 +37,9 @@ export const COPY = {
     saveEditar: 'Guardar cambios',
     cancel: 'Cancelar',
     amountMissing: 'No entendí el monto',
+    cuenta: '¿De qué cuenta salió? (opcional)',
+    sinCuenta: 'No indicar cuenta',
+    cuentaHint: 'Si la eliges, el saldo de esa cuenta se ajusta solo.',
   },
 
   list: {

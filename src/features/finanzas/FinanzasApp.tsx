@@ -140,6 +140,15 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     };
   }, [transacciones, month]);
 
+  // Only live balances money can actually sit in — a goal is not a place.
+  const cuentasParaElegir = useMemo(
+    () =>
+      cajitas
+        .filter((c) => c.archivedAt === null)
+        .map((c) => ({ id: c.id, nombre: c.nombre })),
+    [cajitas],
+  );
+
   const handleSubmit = (text: string) => setPending(parseTransaction(text));
 
   const handleSave = (draft: ConfirmDraft) => {
@@ -150,6 +159,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       category: draft.category,
       description: draft.description,
       occurredOn: bogotaDate(),
+      cuentaId: draft.cuentaId,
       rawTranscript: draft.rawTranscript,
       createdAt: new Date().toISOString(),
     });
@@ -167,6 +177,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       amountCop: draft.amountCop,
       category: draft.category,
       description: draft.description,
+      cuentaId: draft.cuentaId,
     });
     setEditando(null);
   };
@@ -239,6 +250,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
           <PatrimonioCard
             cajitas={cajitas}
+            transacciones={transacciones}
             movimientos={cajitaMovimientos}
             onAgregar={() => setSection('cuentas')}
           />
@@ -315,6 +327,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             <CajitasView
               tipo="cajita"
               cajitas={cajitas}
+              transacciones={transacciones}
               movimientos={cajitaMovimientos}
               onCrear={(datos) => void almacen.crearCajita(datos)}
               onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
@@ -340,6 +353,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         <CajitasView
           tipo="cuenta"
           cajitas={cajitas}
+          transacciones={transacciones}
           movimientos={cajitaMovimientos}
           onCrear={(datos) => void almacen.crearCajita(datos)}
           onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
@@ -366,6 +380,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       {section === 'configuracion' ? (
         <ConfiguracionView
           cajitas={cajitas}
+          transacciones={transacciones}
           movimientos={cajitaMovimientos}
           onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
           onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
@@ -381,13 +396,20 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
       {/* Confirmation always gates the write — see ConfirmSheet for why. */}
       {pending ? (
-        <ConfirmSheet parsed={pending} onSave={handleSave} onCancel={() => setPending(null)} />
+        <ConfirmSheet
+          parsed={pending}
+          cuentas={cuentasParaElegir}
+          onSave={handleSave}
+          onCancel={() => setPending(null)}
+        />
       ) : null}
 
       {editando ? (
         <ConfirmSheet
           modo="editar"
           parsed={comoParseado(editando)}
+          cuentas={cuentasParaElegir}
+          cuentaInicial={editando.cuentaId}
           onSave={handleUpdate}
           onCancel={() => setEditando(null)}
         />

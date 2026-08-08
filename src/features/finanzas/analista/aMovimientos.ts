@@ -44,6 +44,8 @@ export const planearImportacion = (
   existentes: readonly Transaction[],
   hacerId: () => string,
   ahora: () => string = () => new Date().toISOString(),
+  /** Account the statement belongs to, so imported rows move its balance. */
+  cuentaId: string | null = null,
 ): PlanDeImportacion => {
   const yaTengo = new Map<string, number>();
   for (const tx of existentes) {
@@ -89,6 +91,7 @@ export const planearImportacion = (
       occurredOn: mov.fecha,
       // Provenance, so a row imported from a statement is always distinguishable
       // from one that was dictated.
+      cuentaId,
       rawTranscript: `extracto: ${mov.descripcion}`,
       createdAt: ahora(),
     });

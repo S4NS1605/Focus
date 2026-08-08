@@ -291,7 +291,10 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
 
   const fijarSaldo = useCallback(
     async (cajitaId: string, saldoObjetivo: number, nota?: string) => {
-      const actual = saldoDeCajita(datos.cajitaMovimientos, cajitaId);
+      // Measured against the EFFECTIVE balance — pocket movements plus anything
+      // attributed to it. Against the raw sum, the adjustment would fight every
+      // recorded transaction and the correction would never land where asked.
+      const actual = saldoDeCajita(datos.cajitaMovimientos, cajitaId, datos.transacciones);
       const delta = ajusteHacia(actual, saldoObjetivo);
       // Nothing changed: recording a zero-delta row would clutter the history
       // with movements that say nothing happened.
@@ -304,7 +307,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         nota: nota ?? 'Saldo actualizado',
       });
     },
-    [datos.cajitaMovimientos, registrarMovimiento],
+    [datos.cajitaMovimientos, datos.transacciones, registrarMovimiento],
   );
 
   const borrarMovimiento = useCallback(

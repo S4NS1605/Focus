@@ -35,6 +35,7 @@ const montar = (cajitas: Cajita[] = [caj()], movimientos: CajitaMovimiento[] = [
     <ConfiguracionView
       cajitas={cajitas}
       movimientos={movimientos}
+      transacciones={[]}
       onActualizar={onActualizar}
       onFijarSaldo={onFijarSaldo}
     />,

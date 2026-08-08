@@ -151,6 +151,7 @@ interface FilaTransaccion {
   category: string;
   description: string;
   occurred_on: string;
+  cuenta_id: string | null;
   raw_transcript: string;
   created_at: string;
 }
@@ -162,6 +163,7 @@ const aTransaccion = (fila: FilaTransaccion): Transaction => ({
   category: fila.category as Category,
   description: fila.description,
   occurredOn: fila.occurred_on,
+  cuentaId: fila.cuenta_id,
   rawTranscript: fila.raw_transcript,
   createdAt: fila.created_at,
 });
@@ -174,6 +176,7 @@ const desdeTransaccion = (tx: Transaction, userId: string) => ({
   category: tx.category,
   description: tx.description,
   occurred_on: tx.occurredOn,
+  cuenta_id: tx.cuentaId,
   raw_transcript: tx.rawTranscript,
   created_at: tx.createdAt,
 });

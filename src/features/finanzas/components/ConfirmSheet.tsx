@@ -12,6 +12,8 @@ export interface ConfirmDraft {
   amountCop: number;
   category: Category;
   description: string;
+  /** Null when the user does not say where the money moved. */
+  cuentaId: string | null;
   rawTranscript: string;
 }
 
@@ -26,6 +28,9 @@ interface ConfirmSheetProps {
    * means a fix to the amount parser can never apply to only one of the two.
    */
   modo?: 'crear' | 'editar';
+  /** Accounts and pockets the money could have moved through. */
+  cuentas?: readonly { id: string; nombre: string }[];
+  cuentaInicial?: string | null;
 }
 
 /**
@@ -39,12 +44,15 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   onSave,
   onCancel,
   modo = 'crear',
+  cuentas = [],
+  cuentaInicial = null,
 }) => {
   const editando = modo === 'editar';
   const [amountText, setAmountText] = useState(() => formatAmountInput(parsed.amount));
   const [kind, setKind] = useState<TxKind>(parsed.kind);
   const [category, setCategory] = useState<Category>(parsed.category);
   const [description, setDescription] = useState(parsed.description);
+  const [cuentaId, setCuentaId] = useState<string | null>(cuentaInicial ?? null);
 
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +78,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
       amountCop,
       category,
       description: description.trim() || CATEGORY_LABELS[category],
+      cuentaId,
       rawTranscript: parsed.raw,
     });
   };
@@ -206,6 +215,33 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             })}
           </div>
         </fieldset>
+
+        {/* Which balance this moved. Optional, and last: the fast path is
+            dictate-and-confirm, so anything that is not needed to record the
+            movement correctly must not stand between the user and saving. */}
+        {cuentas.length > 0 ? (
+          <div className="mt-5">
+            <label htmlFor="fin-cuenta" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
+              {COPY.confirm.cuenta}
+            </label>
+            <select
+              id="fin-cuenta"
+              value={cuentaId ?? ''}
+              onChange={(e) => setCuentaId(e.target.value || null)}
+              className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+            >
+              <option value="">{COPY.confirm.sinCuenta}</option>
+              {cuentas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+              {COPY.confirm.cuentaHint}
+            </p>
+          </div>
+        ) : null}
 
         {/* Description */}
         <div className="mt-5">

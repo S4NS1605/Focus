@@ -30,6 +30,7 @@ const tx = (overrides: Partial<Transaction> = {}): Transaction => ({
   category: 'mercado',
   description: 'Mercado Éxito',
   occurredOn: '2026-07-15',
+  cuentaId: null,
   rawTranscript: '',
   createdAt: '2026-07-15T10:00:00.000Z',
   ...overrides,
@@ -72,9 +73,17 @@ describe('planearImportacion', () => {
       category: 'mercado',
       description: 'Mercado Éxito',
       occurredOn: '2026-07-15',
+      cuentaId: null,
       rawTranscript: 'extracto: Mercado Éxito',
       createdAt: '2026-07-30T12:00:00.000Z',
     });
+  });
+
+  it('attributes imported rows to the account the statement belongs to', () => {
+    const plan = planearImportacion([mov()], [], () => 'uuid-1', ahoraFijo, 'cuenta-nequi');
+
+    // This is what makes an import move a balance instead of only filling a list.
+    expect(plan.nuevos[0].cuentaId).toBe('cuenta-nequi');
   });
 
   it('never imports an excluded row', () => {

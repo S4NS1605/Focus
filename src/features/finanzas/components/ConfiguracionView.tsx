@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Pencil, Settings2, Wallet } from 'lucide-react';
+import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
@@ -7,6 +8,7 @@ import { saldosPorCajita } from '../lib/cajitas';
 import { formatAmountInput, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 
 interface ConfiguracionViewProps {
+  transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
   onActualizar: (cajita: Cajita) => void;
@@ -197,10 +199,11 @@ const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string }> = [
 export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
   cajitas,
   movimientos,
+  transacciones,
   onActualizar,
   onFijarSaldo,
 }) => {
-  const saldos = saldosPorCajita(movimientos);
+  const saldos = saldosPorCajita(movimientos, transacciones);
   const vivas = cajitas.filter((c) => c.archivedAt === null);
 
   if (vivas.length === 0) {

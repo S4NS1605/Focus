@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import {
   ajusteHacia,
@@ -238,5 +239,86 @@ describe('patrimonio', () => {
     );
 
     expect(r.netoCop).toBe(-800_000);
+  });
+});
+
+const tx = (over: Partial<Transaction> = {}): Transaction => ({
+  id: 't1',
+  kind: 'gasto',
+  amountCop: 45_000,
+  category: 'mercado',
+  description: 'Mercado',
+  occurredOn: '2026-08-10',
+  cuentaId: 'c1',
+  rawTranscript: '',
+  createdAt: '2026-08-10T00:00:00.000Z',
+  ...over,
+});
+
+/**
+ * The point of attribution: a balance that maintains itself. Before this, an
+ * account went stale the moment anything was recorded, and had to be corrected
+ * by hand every time.
+ */
+describe('saldos con movimientos atribuidos', () => {
+  it('un gasto atribuido baja el saldo de esa cuenta', () => {
+    const saldo = saldoDeCajita([mov({ deltaCop: 500_000 })], 'c1', [tx({ amountCop: 45_000 })]);
+
+    expect(saldo).toBe(455_000);
+  });
+
+  it('un ingreso atribuido lo sube', () => {
+    const saldo = saldoDeCajita([mov({ deltaCop: 500_000 })], 'c1', [
+      tx({ kind: 'ingreso', amountCop: 900_000 }),
+    ]);
+
+    expect(saldo).toBe(1_400_000);
+  });
+
+  it('un movimiento sin cuenta no toca ningún saldo', () => {
+    // Dictar "gasté 20 mil" sin decir de dónde sigue contando en el mes, pero
+    // no puede mover un saldo que nadie indicó.
+    const saldo = saldoDeCajita([mov({ deltaCop: 500_000 })], 'c1', [tx({ cuentaId: null })]);
+
+    expect(saldo).toBe(500_000);
+  });
+
+  it('un movimiento de OTRA cuenta no toca esta', () => {
+    const saldo = saldoDeCajita([mov({ deltaCop: 500_000 })], 'c1', [tx({ cuentaId: 'c2' })]);
+
+    expect(saldo).toBe(500_000);
+  });
+
+  it('el ajuste se mide contra el saldo ya afectado, sin doble conteo', () => {
+    // 500.000 iniciales, 45.000 gastados => la app cree 455.000.
+    // El banco dice 450.000: el ajuste debe ser -5.000, no -50.000.
+    const movimientos = [mov({ deltaCop: 500_000 })];
+    const transacciones = [tx({ amountCop: 45_000 })];
+    const actual = saldoDeCajita(movimientos, 'c1', transacciones);
+
+    const delta = ajusteHacia(actual, 450_000);
+    expect(delta).toBe(-5_000);
+
+    const despues = saldoDeCajita(
+      [...movimientos, mov({ id: 'ajuste', deltaCop: delta })],
+      'c1',
+      transacciones,
+    );
+    expect(despues).toBe(450_000);
+  });
+
+  it('el patrimonio refleja lo atribuido', () => {
+    const r = patrimonio(
+      [caj({ id: 'c1', tipo: 'cuenta' })],
+      [mov({ cajitaId: 'c1', deltaCop: 1_000_000 })],
+      [tx({ cuentaId: 'c1', amountCop: 200_000 })],
+    );
+
+    expect(r.cuentasCop).toBe(800_000);
+  });
+
+  it('sin transacciones se comporta igual que antes', () => {
+    // Compatibilidad: todo llamador que no sepa de atribución sigue igual.
+    expect(saldoDeCajita([mov({ deltaCop: 500_000 })], 'c1')).toBe(500_000);
   });
 });

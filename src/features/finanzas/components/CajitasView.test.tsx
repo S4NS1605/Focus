@@ -39,6 +39,7 @@ const montar = (tipo: CajitaTipo, cajitas: Cajita[] = AMBOS, movimientos: Cajita
       tipo={tipo}
       cajitas={cajitas}
       movimientos={movimientos}
+      transacciones={[]}
       onCrear={onCrear}
       onFijarSaldo={vi.fn()}
       onMovimiento={vi.fn()}
@@ -124,6 +125,7 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
         tipo="cuenta"
         cajitas={[]}
         movimientos={[]}
+        transacciones={[]}
         onCrear={vi.fn()}
         onFijarSaldo={vi.fn()}
         onMovimiento={vi.fn()}

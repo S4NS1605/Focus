@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PiggyBank, Plus } from 'lucide-react';
 import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';
+import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS } from '../data/modelos';
 import { resumenDeCajitas } from '../lib/cajitas';
@@ -9,6 +10,8 @@ import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop
 import { CajitaCard } from './CajitaCard';
 
 interface CajitasViewProps {
+  /** Attributed ledger entries, so a balance reflects what was recorded. */
+  transacciones: readonly Transaction[];
   /**
    * Which kind this screen manages. Accounts and pockets are the same structure
    * but different subjects, so each gets its own screen rather than a selector
@@ -33,6 +36,7 @@ interface CajitasViewProps {
 
 export const CajitasView: React.FC<CajitasViewProps> = ({
   tipo,
+  transacciones,
   cajitas,
   movimientos,
   onCrear,
@@ -48,7 +52,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const [tasaTexto, setTasaTexto] = useState('');
 
   const propias = cajitas.filter((c) => c.tipo === tipo);
-  const resumenes = resumenDeCajitas(propias, movimientos);
+  const resumenes = resumenDeCajitas(propias, movimientos, transacciones);
   const esCuenta = tipo === 'cuenta';
   const total = resumenes.reduce((t, r) => t + r.saldoCop, 0);
 

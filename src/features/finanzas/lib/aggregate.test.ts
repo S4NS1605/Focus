@@ -17,6 +17,7 @@ const tx = (
     category,
     description: category,
     occurredOn,
+    cuentaId: null,
     rawTranscript: '',
     createdAt: `2026-07-15T00:00:${String(seq).padStart(2, '0')}Z`,
   };

@@ -13,6 +13,7 @@ const tx = (over: Partial<Transaction> = {}): Transaction => ({
   category: 'comida',
   description: 'Almuerzo',
   occurredOn: '2026-08-06',
+  cuentaId: null,
   rawTranscript: '',
   createdAt: '2026-08-06T12:00:00.000Z',
   ...over,
