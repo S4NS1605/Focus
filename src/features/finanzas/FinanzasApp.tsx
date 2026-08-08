@@ -15,6 +15,8 @@ import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
+import { DeudasView } from './components/DeudasView';
+import { ConfiguracionView } from './components/ConfiguracionView';
 import { PatrimonioCard } from './components/PatrimonioCard';
 import { DetalleMes } from './components/DetalleMes';
 import { CategoryBreakdown } from './components/CategoryBreakdown';
@@ -327,6 +329,28 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             />
           )}
         </div>
+      ) : null}
+
+      {section === 'deudas' ? (
+        <DeudasView
+          cajitas={cajitas}
+          movimientos={cajitaMovimientos}
+          onCrear={(datos) => void almacen.crearCajita(datos)}
+          onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+          onMovimiento={(cajitaId, kind, deltaCop, categoria) =>
+            void almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria })
+          }
+          onEliminar={(id) => void almacen.borrarCajita(id)}
+        />
+      ) : null}
+
+      {section === 'configuracion' ? (
+        <ConfiguracionView
+          cajitas={cajitas}
+          movimientos={cajitaMovimientos}
+          onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
+          onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+        />
       ) : null}
 
       {section === 'analista' ? (

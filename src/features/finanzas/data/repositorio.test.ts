@@ -36,6 +36,7 @@ const movimiento = (over: Partial<CajitaMovimiento> = {}): CajitaMovimiento => (
   cajitaId: 'caj-1',
   kind: 'deposito',
   deltaCop: 100000,
+  categoria: null,
   occurredOn: '2026-08-02',
   nota: '',
   createdAt: '2026-08-02T00:00:00.000Z',

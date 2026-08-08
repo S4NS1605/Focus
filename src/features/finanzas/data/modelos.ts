@@ -1,3 +1,5 @@
+import type { Category } from '../types';
+
 // Domain objects that live alongside transactions: Nu-style savings pockets and
 // the goals tracked on top of them. Transactions themselves stay in ../types.ts.
 
@@ -10,7 +12,28 @@
  * me what you have" flow, the history and the yield calculation — so they share
  * one shape and differ only in how they are grouped and totalled.
  */
-export type CajitaTipo = 'cuenta' | 'cajita';
+export type CajitaTipo = 'cuenta' | 'cajita' | 'deuda' | 'tarjeta';
+
+/**
+ * Debts and credit cards are the same structure INVERTED: the balance is what
+ * you owe rather than what you have, so a purchase raises it and a payment
+ * lowers it. Sharing the shape keeps one implementation of the balance, the
+ * history and the "just tell me the number" flow; only the wording, the sign of
+ * each action and how it is totalled differ.
+ */
+export const ES_PASIVO: Record<CajitaTipo, boolean> = {
+  cuenta: false,
+  cajita: false,
+  deuda: true,
+  tarjeta: true,
+};
+
+export const TIPO_LABELS: Record<CajitaTipo, string> = {
+  cuenta: 'Cuenta bancaria',
+  cajita: 'Cajita de ahorro',
+  deuda: 'Deuda',
+  tarjeta: 'Tarjeta de crédito',
+};
 
 /** A balance tracked by hand — nothing here talks to a bank. */
 export interface Cajita {
@@ -42,7 +65,15 @@ export interface Cajita {
  * delta needed to reach X, so a correction never silently rewrites history and
  * the balance stays the sum of its movements.
  */
-export type CajitaMovKind = 'deposito' | 'retiro' | 'rendimiento' | 'ajuste';
+export type CajitaMovKind =
+  | 'deposito'
+  | 'retiro'
+  | 'rendimiento'
+  | 'ajuste'
+  /** A purchase on a card, or new money owed. Raises what you owe. */
+  | 'compra'
+  /** Money paid against a debt or card. Lowers what you owe. */
+  | 'abono';
 
 export interface CajitaMovimiento {
   id: string;
@@ -50,6 +81,12 @@ export interface CajitaMovimiento {
   kind: CajitaMovKind;
   /** Signed COP delta: positive adds to the pocket, negative takes out. */
   deltaCop: number;
+  /**
+   * What the money was for. Only meaningful on cards and debts, where the whole
+   * point is being able to say what each charge was — a balance that only goes
+   * up with no explanation is exactly the problem a card statement has.
+   */
+  categoria: Category | null;
   /** Bogota calendar day, 'YYYY-MM-DD'. */
   occurredOn: string;
   nota: string;
@@ -57,16 +94,20 @@ export interface CajitaMovimiento {
 }
 
 export const CAJITA_MOV_LABELS: Record<CajitaMovKind, string> = {
+  compra: 'Compra',
+  abono: 'Abono',
   deposito: 'Depósito',
   retiro: 'Retiro',
   rendimiento: 'Rendimiento',
   ajuste: 'Ajuste de saldo',
 };
 
-import { ArrowUp, ArrowDown, Sparkles, Pencil } from 'lucide-react';
+import { ArrowDown, ArrowUp, HandCoins, Pencil, ShoppingBag, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const CAJITA_MOV_ICON: Record<CajitaMovKind, LucideIcon> = {
+  compra: ShoppingBag,
+  abono: HandCoins,
   deposito: ArrowUp,
   retiro: ArrowDown,
   rendimiento: Sparkles,

@@ -14,6 +14,19 @@ interface DetalleMesProps {
   mes: string;
 }
 
+/** "3 movimientos · Mercado, Comida" for the day readout. */
+const contarDelDia = (transacciones: readonly Transaction[], fecha: string): string => {
+  const delDia = transacciones.filter((t) => t.occurredOn === fecha);
+  if (delDia.length === 0) return 'sin movimientos';
+
+  const categorias = [...new Set(delDia.filter((t) => t.kind === 'gasto').map((t) => t.category))]
+    .slice(0, 3)
+    .map((c) => CATEGORY_LABELS[c]);
+
+  const cuantos = `${delDia.length} movimiento${delDia.length === 1 ? '' : 's'}`;
+  return categorias.length > 0 ? `${cuantos} · ${categorias.join(', ')}` : cuantos;
+};
+
 const Contrapartes: React.FC<{ delMes: readonly Transaction[]; kind: TxKind }> = ({
   delMes,
   kind,
@@ -108,7 +121,12 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> =
 }) => {
   const dias = porDiaDelMes(transacciones, mes);
   const resumen = resumenDelMes(transacciones, mes);
+  // Index rather than the day object: a click has to be able to clear it by
+  // comparing identity, and days are rebuilt on every render.
+  const [activo, setActivo] = React.useState<number | null>(null);
   if (resumen.diasConGasto === 0) return null;
+
+  const dia = activo === null ? null : dias[activo];
 
   // Scaled to the heaviest day so the tallest bar always fills the track and the
   // rest stay honestly proportional to it.
@@ -121,18 +139,53 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> =
         En qué días se fue
       </h2>
 
+      {/* Fixed-height readout above the chart, not a floating tooltip: it never
+          covers the bars, and it works on touch, where hover does not exist. */}
+      <div className="mt-3 flex h-11 items-center justify-between rounded-2xl bg-[var(--fin-bg)] px-3.5">
+        {dia ? (
+          <>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold capitalize text-[var(--fin-ink)]">
+                {dayLabel(dia.fecha)}
+              </p>
+              <p className="text-[10px] text-[var(--fin-ink-faint)]">
+                {contarDelDia(transacciones, dia.fecha)}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-sm font-extrabold tabular-nums text-[var(--fin-out)]">
+                {formatCop(dia.gastoCop)}
+              </p>
+              {dia.ingresoCop > 0 ? (
+                <p className="text-[10px] font-bold tabular-nums text-[var(--fin-in)]">
+                  +{formatCop(dia.ingresoCop)}
+                </p>
+              ) : null}
+            </div>
+          </>
+        ) : (
+          <p className="text-[11px] text-[var(--fin-ink-faint)]">
+            Pasa el cursor o toca una barra para ver ese día.
+          </p>
+        )}
+      </div>
+
       {/* One column per day, empty ones included: the gaps are what show that
           spending was a few heavy days rather than a steady drip. */}
-      <div className="mt-4 flex h-24 items-end gap-[2px]">
-        {dias.map((d) => (
-          <div
+      <div className="mt-2 flex h-24 items-end gap-[2px]" onMouseLeave={() => setActivo(null)}>
+        {dias.map((d, i) => (
+          <button
             key={d.fecha}
-            className="group relative flex-1 rounded-t-sm bg-[var(--fin-out)] transition-opacity hover:opacity-100"
+            type="button"
+            onMouseEnter={() => setActivo(i)}
+            onFocus={() => setActivo(i)}
+            onClick={() => setActivo(activo === i ? null : i)}
+            aria-label={`${dayLabel(d.fecha)}: ${formatCop(d.gastoCop)}`}
+            className="flex-1 rounded-t-sm bg-[var(--fin-out)] transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fin-ink)]"
             style={{
               height: `${Math.max(d.gastoCop > 0 ? 4 : 1, (d.gastoCop / techo) * 100)}%`,
-              opacity: d.gastoCop > 0 ? 0.85 : 0.18,
+              opacity: activo === i ? 1 : d.gastoCop > 0 ? 0.85 : 0.18,
             }}
-            title={`${d.dia}: ${formatCop(d.gastoCop)}`}
           />
         ))}
       </div>

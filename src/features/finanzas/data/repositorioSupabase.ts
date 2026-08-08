@@ -217,6 +217,7 @@ interface FilaMovimiento {
   cajita_id: string;
   kind: string;
   delta_cop: number;
+  categoria: string | null;
   occurred_on: string;
   nota: string;
   created_at: string;
@@ -227,6 +228,7 @@ const aMovimiento = (fila: FilaMovimiento): CajitaMovimiento => ({
   cajitaId: fila.cajita_id,
   kind: fila.kind as CajitaMovKind,
   deltaCop: Number(fila.delta_cop),
+  categoria: (fila.categoria as Category | null) ?? null,
   occurredOn: fila.occurred_on,
   nota: fila.nota,
   createdAt: fila.created_at,
@@ -238,6 +240,7 @@ const desdeMovimiento = (m: CajitaMovimiento, userId: string) => ({
   cajita_id: m.cajitaId,
   kind: m.kind,
   delta_cop: m.deltaCop,
+  categoria: m.categoria,
   occurred_on: m.occurredOn,
   nota: m.nota,
   created_at: m.createdAt,

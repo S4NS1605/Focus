@@ -1,4 +1,5 @@
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
+import { ES_PASIVO } from '../data/modelos';
 
 /**
  * A pocket's balance is always the sum of its movements — never a stored number.
@@ -114,8 +115,12 @@ export const totalPorTipo = (
 export interface Patrimonio {
   cuentasCop: number;
   cajitasCop: number;
-  /** Everything the user has told the app about. */
+  /** What is owed on debts and cards. Always reported as a positive figure. */
+  deudasCop: number;
+  /** Accounts plus pockets, before subtracting anything. */
   totalCop: number;
+  /** What is actually yours once debts are paid. Can be negative. */
+  netoCop: number;
 }
 
 /**
@@ -131,5 +136,23 @@ export const patrimonio = (
 ): Patrimonio => {
   const cuentasCop = totalPorTipo(cajitas, movimientos, 'cuenta');
   const cajitasCop = totalPorTipo(cajitas, movimientos, 'cajita');
-  return { cuentasCop, cajitasCop, totalCop: cuentasCop + cajitasCop };
+  const deudasCop =
+    totalPorTipo(cajitas, movimientos, 'deuda') + totalPorTipo(cajitas, movimientos, 'tarjeta');
+  const totalCop = cuentasCop + cajitasCop;
+
+  return { cuentasCop, cajitasCop, deudasCop, totalCop, netoCop: totalCop - deudasCop };
 };
+
+/** Live balances of the kinds that represent money owed. */
+export const resumenDePasivos = (
+  cajitas: readonly Cajita[],
+  movimientos: readonly CajitaMovimiento[],
+): ResumenCajita[] =>
+  resumenDeCajitas(cajitas.filter((c) => ES_PASIVO[c.tipo]), movimientos);
+
+/** Live balances of the kinds that represent money held. */
+export const resumenDeActivos = (
+  cajitas: readonly Cajita[],
+  movimientos: readonly CajitaMovimiento[],
+): ResumenCajita[] =>
+  resumenDeCajitas(cajitas.filter((c) => !ES_PASIVO[c.tipo]), movimientos);

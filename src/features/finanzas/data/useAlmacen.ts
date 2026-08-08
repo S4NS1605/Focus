@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Transaction } from '../types';
+import type { Category, Transaction } from '../types';
 import { bogotaDate } from '../lib/localDate';
 import { nuevoId } from '../lib/id';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
@@ -39,6 +39,7 @@ export interface Almacen {
     deltaCop: number;
     occurredOn?: string;
     nota?: string;
+    categoria?: Category | null;
   }) => Promise<void>;
   /** "I have X in this pocket" — records the delta needed to reach X. */
   fijarSaldo: (cajitaId: string, saldoObjetivo: number, nota?: string) => Promise<void>;
@@ -205,6 +206,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
                 cajitaId: cajita.id,
                 kind: 'deposito',
                 deltaCop: saldoInicialCop,
+                categoria: null,
                 occurredOn: bogotaDate(),
                 nota: 'Saldo inicial',
                 createdAt: new Date().toISOString(),
@@ -260,12 +262,14 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       deltaCop,
       occurredOn,
       nota,
+      categoria,
     }: {
       cajitaId: string;
       kind: CajitaMovKind;
       deltaCop: number;
       occurredOn?: string;
       nota?: string;
+      categoria?: Category | null;
     }) => {
       const movimiento: CajitaMovimiento = {
         id: nuevoId('mov'),
@@ -274,6 +278,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         deltaCop,
         occurredOn: occurredOn ?? bogotaDate(),
         nota: nota ?? '',
+        categoria: categoria ?? null,
         createdAt: new Date().toISOString(),
       };
       await aplicar(

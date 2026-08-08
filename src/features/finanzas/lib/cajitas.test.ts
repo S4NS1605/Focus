@@ -15,6 +15,7 @@ const mov = (over: Partial<CajitaMovimiento> = {}): CajitaMovimiento => ({
   cajitaId: 'c1',
   kind: 'deposito',
   deltaCop: 100000,
+  categoria: null,
   occurredOn: '2026-08-01',
   nota: '',
   createdAt: '2026-08-01T10:00:00.000Z',
@@ -189,7 +190,7 @@ describe('patrimonio', () => {
       ],
     );
 
-    expect(r).toEqual({ cuentasCop: 600_000, cajitasCop: 400_000, totalCop: 1_000_000 });
+    expect(r).toMatchObject({ cuentasCop: 600_000, cajitasCop: 400_000, totalCop: 1_000_000 });
   });
 
   it('leaves archived balances out of the total', () => {
@@ -202,6 +203,40 @@ describe('patrimonio', () => {
   });
 
   it('is all zeroes with nothing registered', () => {
-    expect(patrimonio([], [])).toEqual({ cuentasCop: 0, cajitasCop: 0, totalCop: 0 });
+    expect(patrimonio([], [])).toMatchObject({ cuentasCop: 0, cajitasCop: 0, totalCop: 0 });
+  });
+
+  it('subtracts debts and cards from the net, without hiding the gross', () => {
+    const r = patrimonio(
+      [
+        caj({ id: 'c1', tipo: 'cuenta' }),
+        caj({ id: 'd1', tipo: 'deuda' }),
+        caj({ id: 't1', tipo: 'tarjeta' }),
+      ],
+      [
+        mov({ id: 'a', cajitaId: 'c1', deltaCop: 1_000_000 }),
+        mov({ id: 'b', cajitaId: 'd1', deltaCop: 300_000 }),
+        mov({ id: 'c', cajitaId: 't1', deltaCop: 200_000 }),
+      ],
+    );
+
+    // Debts are reported positive: "you owe 500.000", not "-500.000".
+    expect(r.deudasCop).toBe(500_000);
+    // The gross stays visible — what you have and what you owe are different
+    // facts and merging them into one number hides both.
+    expect(r.totalCop).toBe(1_000_000);
+    expect(r.netoCop).toBe(500_000);
+  });
+
+  it('lets the net go negative when debts exceed what is held', () => {
+    const r = patrimonio(
+      [caj({ id: 'c1', tipo: 'cuenta' }), caj({ id: 'd1', tipo: 'deuda' })],
+      [
+        mov({ id: 'a', cajitaId: 'c1', deltaCop: 100_000 }),
+        mov({ id: 'b', cajitaId: 'd1', deltaCop: 900_000 }),
+      ],
+    );
+
+    expect(r.netoCop).toBe(-800_000);
   });
 });

@@ -1,5 +1,5 @@
-import React from 'react';
-import { SECTIONS, sectionLabel } from '../sections';
+import React, { useState } from 'react';
+import { ICONO_MAS, SECCIONES_BARRA, SECCIONES_MAS, SECTIONS, sectionLabel } from '../sections';
 import type { SectionId } from '../sections';
 import { BrandMark } from './BrandMark';
 
@@ -37,7 +37,11 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
   temaToggle,
   onBack,
   children,
-}) => (
+}) => {
+  const [masAbierto, setMasAbierto] = useState(false);
+  const enMas = SECCIONES_MAS.includes(section);
+
+  return (
   <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased lg:flex">
     {/* ---------- Desktop: persistent sidebar ---------- */}
     <aside className="hidden lg:flex lg:h-[100dvh] lg:w-60 lg:shrink-0 lg:flex-col lg:justify-between lg:border-r lg:border-[var(--fin-line)] lg:bg-[var(--fin-card)] lg:px-4 lg:py-6 lg:sticky lg:top-0">
@@ -144,7 +148,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
       className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--fin-line)] bg-[var(--fin-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       aria-label="Secciones"
     >
-      {SECTIONS.map((item) => {
+      {SECTIONS.filter((item) => SECCIONES_BARRA.includes(item.id)).map((item) => {
         const active = item.id === section;
         return (
           <button
@@ -176,6 +180,73 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
           </button>
         );
       })}
+
+      {/* Everything past the fourth tab lives here. Four plus "Más" keeps the
+          targets wide enough to hit; a fifth real tab would not have. */}
+      <button
+        type="button"
+        onClick={() => setMasAbierto(true)}
+        aria-current={enMas ? 'page' : undefined}
+        aria-haspopup="dialog"
+        className="flex min-w-0 flex-col items-center gap-0.5 px-0.5 py-2.5"
+      >
+        <span
+          className={`rounded-full px-3 py-1 transition-colors ${enMas ? 'bg-[var(--fin-soft)]' : ''}`}
+          aria-hidden="true"
+        >
+          <ICONO_MAS className={`h-5 w-5 ${enMas ? 'text-[var(--fin-ink)]' : ''}`} />
+        </span>
+        <span
+          className={`max-w-full truncate text-[9px] transition-colors ${
+            enMas ? 'font-extrabold text-[var(--fin-ink)]' : 'font-semibold text-[var(--fin-ink-faint)]'
+          }`}
+        >
+          Más
+        </span>
+      </button>
     </nav>
+
+    {masAbierto ? (
+      <div
+        className="fixed inset-0 z-40 flex items-end bg-[var(--fin-scrim)] backdrop-blur-sm lg:hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Más secciones"
+        onClick={() => setMasAbierto(false)}
+      >
+        <div
+          className="w-full rounded-t-[2rem] bg-[var(--fin-card)] px-4 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--fin-line)]" aria-hidden="true" />
+          <ul className="flex flex-col gap-1">
+            {SECTIONS.filter((item) => SECCIONES_MAS.includes(item.id)).map((item) => {
+              const active = item.id === section;
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSectionChange(item.id);
+                      setMasAbierto(false);
+                    }}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-colors ${
+                      active
+                        ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
+                        : 'text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]'
+                    }`}
+                  >
+                    <item.icon className={`h-4 w-4 shrink-0 ${active ? '' : item.color}`} aria-hidden="true" />
+                    {item.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    ) : null}
   </div>
-);
+  );
+};
