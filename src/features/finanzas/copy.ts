@@ -62,6 +62,16 @@ export const COPY = {
     nombre: 'Nombre',
     nombrePlaceholder: 'Ej: Vacaciones',
     metaOpcional: 'Meta de la cajita (opcional)',
+    tasaOpcional: 'Rendimiento (opcional)',
+    tasaHint:
+      'La tasa efectiva anual que paga la cajita. La ves en tu app del banco — en Nu está en la cajita misma.',
+    rendimientoTitulo: 'Rendimiento estimado',
+    rendimientoAcumulado: 'acumulado en',
+    rendimientoDias: 'días',
+    rendimientoDiario: 'al día',
+    rendimientoAnual: 'al año si no la mueves',
+    rendimientoNota:
+      'Es una estimación calculada con tu tasa y tus movimientos, no lo que el banco ya te pagó. Cuando te lo abonen, regístralo como Rendimiento.',
     crear: 'Crear cajita',
     saldo: 'Saldo',
     actualizarSaldo: 'Actualizar saldo',

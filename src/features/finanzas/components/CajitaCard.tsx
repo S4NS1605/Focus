@@ -7,6 +7,8 @@ import type { CajitaMovKind } from '../data/modelos';
 import { CAJITA_MOV_ICON, CAJITA_MOV_LABELS } from '../data/modelos';
 import type { ResumenCajita } from '../lib/cajitas';
 import { historialDeCajita } from '../lib/cajitas';
+import { rendimientoEstimado } from '../lib/rendimiento';
+import { bogotaDate } from '../lib/localDate';
 import type { CajitaMovimiento } from '../data/modelos';
 import {
   formatCop,
@@ -47,6 +49,12 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
 
   const historial = historialDeCajita(movimientos, cajita.id);
+  const rendimiento = rendimientoEstimado(
+    movimientos,
+    cajita.id,
+    cajita.tasaEaPct,
+    bogotaDate(),
+  );
 
   const abrirAccion = (siguiente: Accion) => {
     const misma = accion === siguiente;
@@ -116,6 +124,41 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           <p className="mt-1.5 text-[11px] font-semibold text-[var(--fin-ink-soft)] tabular-nums">
             {pct}% de {formatCop(cajita.metaCop)}
           </p>
+        </div>
+      ) : null}
+
+      {/* Estimated yield. Derived, never stored: the balance must stay the sum of
+          its movements, so inventing interest rows would make these numbers
+          disagree with the bank's. */}
+      {rendimiento ? (
+        <div className="mt-3 rounded-2xl bg-[var(--fin-in-bg)] px-4 py-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[11px] font-bold text-[var(--fin-in)]">
+              {COPY.cajitas.rendimientoTitulo}
+            </span>
+            <span className="text-[10px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
+              {cajita.tasaEaPct}% E.A.
+            </span>
+          </div>
+
+          <p className="mt-1 font-display text-xl font-extrabold tabular-nums text-[var(--fin-in)]">
+            +{formatCop(rendimiento.acumuladoCop)}
+          </p>
+          <p className="text-[10px] text-[var(--fin-ink-faint)]">
+            {COPY.cajitas.rendimientoAcumulado} {rendimiento.dias}{' '}
+            {COPY.cajitas.rendimientoDias}
+          </p>
+
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--fin-ink-soft)] tabular-nums">
+            <span>
+              <b className="text-[var(--fin-ink)]">{formatCop(rendimiento.diarioCop)}</b>{' '}
+              {COPY.cajitas.rendimientoDiario}
+            </span>
+            <span>
+              <b className="text-[var(--fin-ink)]">{formatCop(rendimiento.anualCop)}</b>{' '}
+              {COPY.cajitas.rendimientoAnual}
+            </span>
+          </div>
         </div>
       ) : null}
 

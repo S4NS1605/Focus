@@ -8,6 +8,14 @@ export interface Cajita {
   icon: string;
   /** Optional target for this pocket alone, independent of any Meta. */
   metaCop: number | null;
+  /**
+   * Annual effective rate the pocket earns, as a percentage (13.5 for 13.5% E.A.).
+   *
+   * Stored as E.A. rather than a daily rate because that is the only figure
+   * Colombian banks publish, so it is the number the user can actually read off
+   * their app and type in without converting anything.
+   */
+  tasaEaPct: number | null;
   createdAt: string;
   /** Set when retired. Archived pockets keep their history but leave the totals. */
   archivedAt: string | null;

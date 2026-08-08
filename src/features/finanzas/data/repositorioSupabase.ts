@@ -183,6 +183,7 @@ interface FilaCajita {
   nombre: string;
   emoji: string;
   meta_cop: number | null;
+  tasa_ea_pct: number | null;
   created_at: string;
   archived_at: string | null;
 }
@@ -192,6 +193,7 @@ const aCajita = (fila: FilaCajita): Cajita => ({
   nombre: fila.nombre,
   icon: fila.emoji,
   metaCop: fila.meta_cop === null ? null : Number(fila.meta_cop),
+  tasaEaPct: fila.tasa_ea_pct === null ? null : Number(fila.tasa_ea_pct),
   createdAt: fila.created_at,
   archivedAt: fila.archived_at,
 });
@@ -202,6 +204,7 @@ const desdeCajita = (c: Cajita, userId: string) => ({
   nombre: c.nombre,
   emoji: c.icon,
   meta_cop: c.metaCop,
+  tasa_ea_pct: c.tasaEaPct,
   created_at: c.createdAt,
   archived_at: c.archivedAt,
 });

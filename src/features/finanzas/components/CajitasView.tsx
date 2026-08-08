@@ -11,7 +11,12 @@ import { CajitaCard } from './CajitaCard';
 interface CajitasViewProps {
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
-  onCrear: (datos: { nombre: string; icon: string; metaCop: number | null }) => void;
+  onCrear: (datos: {
+    nombre: string;
+    icon: string;
+    metaCop: number | null;
+    tasaEaPct: number | null;
+  }) => void;
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
   onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => void;
   onEliminar: (cajitaId: string) => void;
@@ -29,6 +34,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const [nombre, setNombre] = useState('');
   const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
   const [metaTexto, setMetaTexto] = useState('');
+  const [tasaTexto, setTasaTexto] = useState('');
 
   const resumenes = resumenDeCajitas(cajitas, movimientos);
   const total = totalEnCajitas(cajitas, movimientos);
@@ -38,10 +44,18 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     const limpio = nombre.trim();
     if (!limpio) return;
 
-    onCrear({ nombre: limpio, icon, metaCop: parseAmountInput(metaTexto) });
+    // Comma is the decimal separator on a Colombian keyboard; accept both.
+    const tasa = Number.parseFloat(tasaTexto.replace(',', '.'));
+    onCrear({
+      nombre: limpio,
+      icon,
+      metaCop: parseAmountInput(metaTexto),
+      tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
+    });
     setNombre('');
     setIcon(CAJITA_ICONS[0]);
     setMetaTexto('');
+    setTasaTexto('');
     setCreando(false);
   };
 
@@ -118,6 +132,24 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
             />
           </div>
+
+          <label htmlFor="cajita-tasa" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
+            {COPY.cajitas.tasaOpcional}
+          </label>
+          <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+            <input
+              id="cajita-tasa"
+              value={tasaTexto}
+              onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
+              inputMode="decimal"
+              placeholder="13,5"
+              className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+            />
+            <span className="shrink-0 text-xs font-bold text-[var(--fin-ink-faint)]">% E.A.</span>
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+            {COPY.cajitas.tasaHint}
+          </p>
 
           <div className="mt-5 flex gap-2">
             <button

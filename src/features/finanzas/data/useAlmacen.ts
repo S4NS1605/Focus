@@ -21,7 +21,12 @@ export interface Almacen {
   actualizarTransaccion: (tx: Transaction) => Promise<void>;
   borrarTransaccion: (id: string) => Promise<void>;
 
-  crearCajita: (datos: { nombre: string; icon: string; metaCop: number | null }) => Promise<void>;
+  crearCajita: (datos: {
+    nombre: string;
+    icon: string;
+    metaCop: number | null;
+    tasaEaPct: number | null;
+  }) => Promise<void>;
   actualizarCajita: (cajita: Cajita) => Promise<void>;
   borrarCajita: (id: string) => Promise<void>;
 
@@ -161,12 +166,23 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
   );
 
   const crearCajita = useCallback(
-    async ({ nombre, icon, metaCop }: { nombre: string; icon: string; metaCop: number | null }) => {
+    async ({
+      nombre,
+      icon,
+      metaCop,
+      tasaEaPct,
+    }: {
+      nombre: string;
+      icon: string;
+      metaCop: number | null;
+      tasaEaPct: number | null;
+    }) => {
       const cajita: Cajita = {
         id: nuevoId('caj'),
         nombre,
         icon,
         metaCop,
+        tasaEaPct,
         createdAt: new Date().toISOString(),
         archivedAt: null,
       };

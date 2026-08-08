@@ -24,6 +24,7 @@ const cajita = (over: Partial<Cajita> = {}): Cajita => ({
   nombre: 'Vacaciones',
   icon: '🏖️',
   metaCop: 2000000,
+  tasaEaPct: null,
   createdAt: '2026-08-01T00:00:00.000Z',
   archivedAt: null,
   ...over,
