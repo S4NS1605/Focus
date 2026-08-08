@@ -240,10 +240,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           <PatrimonioCard
             cajitas={cajitas}
             movimientos={cajitaMovimientos}
-            onAgregar={() => {
-              setPestanaAhorro('cajitas');
-              setSection('ahorro');
-            }}
+            onAgregar={() => setSection('cuentas')}
           />
 
           <KpiRow totals={totals} />
@@ -316,6 +313,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
           {pestanaAhorro === 'cajitas' ? (
             <CajitasView
+              tipo="cajita"
               cajitas={cajitas}
               movimientos={cajitaMovimientos}
               onCrear={(datos) => void almacen.crearCajita(datos)}
@@ -336,6 +334,20 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             />
           )}
         </div>
+      ) : null}
+
+      {section === 'cuentas' ? (
+        <CajitasView
+          tipo="cuenta"
+          cajitas={cajitas}
+          movimientos={cajitaMovimientos}
+          onCrear={(datos) => void almacen.crearCajita(datos)}
+          onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+          onMovimiento={(cajitaId, kind, deltaCop) =>
+            void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
+          }
+          onEliminar={(id) => void almacen.borrarCajita(id)}
+        />
       ) : null}
 
       {section === 'deudas' ? (

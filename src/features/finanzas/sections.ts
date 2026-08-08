@@ -3,6 +3,7 @@
 // react/only-export-components.
 import {
   BarChart2,
+  Landmark,
   CreditCard,
   FileText,
   MoreHorizontal,
@@ -21,6 +22,7 @@ import {
 export const SECTIONS = [
   { id: 'resumen', icon: BarChart2, label: 'Resumen', color: 'text-sky-500 dark:text-sky-400' },
   { id: 'movimientos', icon: ReceiptText, label: 'Movimientos', color: 'text-amber-500 dark:text-amber-400' },
+  { id: 'cuentas', icon: Landmark, label: 'Cuentas', color: 'text-sky-500 dark:text-sky-400' },
   { id: 'ahorro', icon: PiggyBank, label: 'Ahorro', color: 'text-emerald-500 dark:text-emerald-400' },
   { id: 'deudas', icon: CreditCard, label: 'Deudas', color: 'text-rose-500 dark:text-rose-400' },
   { id: 'tendencias', icon: TrendingUp, label: 'Tendencias', color: 'text-violet-500 dark:text-violet-400' },
@@ -36,11 +38,16 @@ export const SECTIONS = [
 export const SECCIONES_BARRA: readonly SectionId[] = [
   'resumen',
   'movimientos',
+  'cuentas',
   'ahorro',
-  'deudas',
 ];
 
-export const SECCIONES_MAS: readonly SectionId[] = ['tendencias', 'analista', 'configuracion'];
+export const SECCIONES_MAS: readonly SectionId[] = [
+  'deudas',
+  'tendencias',
+  'analista',
+  'configuracion',
+];
 
 export type SectionId = typeof SECTIONS[number]['id'];
 
@@ -49,7 +56,7 @@ export const sectionLabel = (section: SectionId): string =>
 
 /** The two halves of the Ahorro section. */
 export const PESTANAS_AHORRO = [
-  { id: 'cajitas', icon: PiggyBank, label: 'Cuentas y cajitas', color: 'text-emerald-500 dark:text-emerald-400' },
+  { id: 'cajitas', icon: PiggyBank, label: 'Cajitas', color: 'text-emerald-500 dark:text-emerald-400' },
   { id: 'metas', icon: Target, label: 'Metas', color: 'text-violet-500 dark:text-violet-400' },
 ] as const;
 

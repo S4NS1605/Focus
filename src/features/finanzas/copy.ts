@@ -53,14 +53,23 @@ export const COPY = {
     descartar: 'Entendido',
   },
 
+  cuentas: {
+    total: 'Total en tus cuentas',
+    vacio: 'Aún no tienes cuentas.',
+    vacioHint: 'Crea una para llevarle el rastro a lo que vas ahorrando.',
+    nueva: 'Agregar cuenta bancaria',
+    nombrePlaceholder: 'Ej: Nequi, Bancolombia',
+    saldoInicial: '¿Cuánto tienes en esta cuenta?',
+  },
+
   cajitas: {
     titulo: 'Cajitas',
     total: 'Total guardado',
     enCuentas: 'En cuentas',
     enCajitas: 'En cajitas',
-    vacio: 'Aún no tienes cuentas ni cajitas.',
+    vacio: 'Aún no tienes cajitas.',
     vacioHint: 'Agrega tu banco y dile cuánto tienes: la app lleva el resto.',
-    nueva: 'Agregar cuenta o cajita',
+    nueva: 'Nueva cajita',
     grupoCuentas: 'Cuentas bancarias',
     grupoCajitas: 'Cajitas de ahorro',
     nombre: 'Nombre',
