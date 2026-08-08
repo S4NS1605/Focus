@@ -49,7 +49,7 @@ export const sectionLabel = (section: SectionId): string =>
 
 /** The two halves of the Ahorro section. */
 export const PESTANAS_AHORRO = [
-  { id: 'cajitas', icon: PiggyBank, label: 'Cajitas', color: 'text-emerald-500 dark:text-emerald-400' },
+  { id: 'cajitas', icon: PiggyBank, label: 'Cuentas y cajitas', color: 'text-emerald-500 dark:text-emerald-400' },
   { id: 'metas', icon: Target, label: 'Metas', color: 'text-violet-500 dark:text-violet-400' },
 ] as const;
 

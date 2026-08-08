@@ -4,7 +4,7 @@ import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS } from '../data/modelos';
-import { resumenDeCajitas, totalEnCajitas } from '../lib/cajitas';
+import { patrimonio, resumenDeCajitas } from '../lib/cajitas';
 import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
 
@@ -41,7 +41,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const [tasaTexto, setTasaTexto] = useState('');
 
   const resumenes = resumenDeCajitas(cajitas, movimientos);
-  const total = totalEnCajitas(cajitas, movimientos);
+  const total = patrimonio(cajitas, movimientos);
 
   const crear = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,12 +76,22 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
           {COPY.cajitas.total}
         </h2>
         <p className="mt-1 font-display text-4xl font-extrabold tabular-nums text-[var(--fin-ink)]">
-          {formatCop(total)}
+          {formatCop(total.totalCop)}
         </p>
         {resumenes.length > 0 ? (
-          <p className="mt-1 text-[11px] text-[var(--fin-ink-faint)]">
-            repartido en {resumenes.length} cajita{resumenes.length === 1 ? '' : 's'}
-          </p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {[
+              { label: COPY.cajitas.enCuentas, valor: total.cuentasCop },
+              { label: COPY.cajitas.enCajitas, valor: total.cajitasCop },
+            ].map((fila) => (
+              <div key={fila.label} className="rounded-2xl bg-[var(--fin-bg)] px-3.5 py-2.5">
+                <p className="text-[10px] font-bold text-[var(--fin-ink-faint)]">{fila.label}</p>
+                <p className="font-display text-lg font-extrabold tabular-nums text-[var(--fin-ink)]">
+                  {formatCop(fila.valor)}
+                </p>
+              </div>
+            ))}
+          </div>
         ) : null}
       </section>
 
@@ -89,19 +99,6 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       {creando ? (
         <form onSubmit={crear} className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
           <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">{COPY.cajitas.nueva}</h2>
-
-          <label htmlFor="cajita-nombre" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
-            {COPY.cajitas.nombre}
-          </label>
-          <input
-            id="cajita-nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            placeholder={COPY.cajitas.nombrePlaceholder}
-            autoFocus
-            className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
-          />
-
           <fieldset className="mt-4">
             <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">¿Qué es?</legend>
             <div className="mt-2 grid grid-cols-2 gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5">
@@ -125,6 +122,19 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               ))}
             </div>
           </fieldset>
+
+          <label htmlFor="cajita-nombre" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
+            {COPY.cajitas.nombre}
+          </label>
+          <input
+            id="cajita-nombre"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            placeholder={tipo === 'cuenta' ? 'Ej: Nequi, Bancolombia' : COPY.cajitas.nombrePlaceholder}
+            autoFocus
+            className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+          />
+
 
           <label htmlFor="cajita-saldo" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
             {COPY.cajitas.saldoInicial}
@@ -207,7 +217,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               disabled={nombre.trim() === ''}
               className="flex-1 rounded-full bg-[var(--fin-accent)] px-6 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
             >
-              {COPY.cajitas.crear}
+              {tipo === 'cuenta' ? COPY.cajitas.crearCuenta : COPY.cajitas.crearCajita}
             </button>
             <button
               type="button"
@@ -240,16 +250,30 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
         </div>
       ) : null}
 
-      {resumenes.map((resumen) => (
-        <CajitaCard
-          key={resumen.cajita.id}
-          resumen={resumen}
-          movimientos={movimientos}
-          onFijarSaldo={onFijarSaldo}
-          onMovimiento={onMovimiento}
-          onEliminar={onEliminar}
-        />
-      ))}
+      {/* Grouped so an account reads as an account. Ungrouped, a bank sat in a
+          list titled "cajitas" and the whole feature looked absent. */}
+      {([
+        { tipo: 'cuenta' as const, titulo: COPY.cajitas.grupoCuentas },
+        { tipo: 'cajita' as const, titulo: COPY.cajitas.grupoCajitas },
+      ]).map((grupo) => {
+        const delGrupo = resumenes.filter((r) => r.cajita.tipo === grupo.tipo);
+        if (delGrupo.length === 0) return null;
+        return (
+          <section key={grupo.tipo} className="flex flex-col gap-3">
+            <h2 className="px-1 text-xs font-bold text-[var(--fin-ink-soft)]">{grupo.titulo}</h2>
+            {delGrupo.map((resumen) => (
+              <CajitaCard
+                key={resumen.cajita.id}
+                resumen={resumen}
+                movimientos={movimientos}
+                onFijarSaldo={onFijarSaldo}
+                onMovimiento={onMovimiento}
+                onEliminar={onEliminar}
+              />
+            ))}
+          </section>
+        );
+      })}
     </div>
   );
 };
