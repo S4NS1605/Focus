@@ -65,16 +65,70 @@ const PATRONES_EXCLUSION: ReadonlyArray<{ patron: RegExp; motivo: MotivoExclusio
   { patron: /reverso|devolucion|nota credito|anulacion/, motivo: 'reverso' },
   { patron: /saldo anterior|saldo actual|saldo promedio/, motivo: 'saldo-informativo' },
   {
+    // Deliberately no longer matches BRE-B on its own — see `esContraparteElTitular`.
     patron:
-      /\bnequi\b|\bbancolombia\b|bre-?b|recarga desde|recarga en corresponsal|retiro en corresponsal|transferencia cta suc virtual/,
+      /\bnequi\b|\bbancolombia\b|recarga desde|recarga en corresponsal|retiro en corresponsal|transferencia cta suc virtual/,
     motivo: 'traslado-propio',
   },
 ];
 
-export const exclusionDeDescripcion = (descripcion: string): MotivoExclusion | null => {
+/** The counterparty a description names, for the shapes wallets actually emit. */
+const CONTRAPARTE = [
+  /^envio con bre-?b a:\s*(.+)$/,
+  /^recibi por bre-?b de:\s*(.+)$/,
+  /^(?:de|para)\s+(.+)$/,
+];
+
+/**
+ * Whether the other side of a movement is the account holder themselves.
+ *
+ * This replaces treating every BRE-B line as an internal transfer. BRE-B is
+ * Colombia's instant payment rail, not an own-accounts feature: it moves money
+ * to shops and to other people just as readily. Excluding all of it removed
+ * real spending from the totals — on one statement, payments to another person
+ * and a QR payment at a restaurant were all filed as "moved between my own
+ * accounts", quietly understating what was actually spent.
+ *
+ * The test is deliberately strict: EVERY word of the counterparty must be one
+ * of the holder's own name words. "JULIAN" against "Julian Santiago Gonzalez
+ * Reina" is theirs; "LEIDYS" and "ASADOS" are not. Requiring a subset rather
+ * than any single shared word keeps a payment to a different Julián from being
+ * swallowed — though a namesake remains genuinely ambiguous, which is why these
+ * rows stay visible in the exclusions list instead of vanishing.
+ */
+export const esContraparteElTitular = (descripcion: string, titular: string): boolean => {
+  const propias = new Set(
+    normalizeWord(titular)
+      .split(/\s+/)
+      .filter((w) => w.length >= 3),
+  );
+  if (propias.size === 0) return false;
+
+  const normalizada = normalizeWord(descripcion);
+  const esSuyo = (texto: string): boolean => {
+    const palabras = texto.split(/\s+/).filter((w) => w.length >= 3);
+    return palabras.length > 0 && palabras.every((w) => propias.has(w));
+  };
+
+  for (const patron of CONTRAPARTE) {
+    const m = normalizada.match(patron);
+    if (m) return esSuyo(m[1]);
+  }
+
+  // No prefix at all — the wallet sometimes prints the counterparty bare, and
+  // for movements between the holder's own products that is their own name.
+  return esSuyo(normalizada);
+};
+
+export const exclusionDeDescripcion = (
+  descripcion: string,
+  /** Account holder as printed on the statement, when the template found it. */
+  titular?: string,
+): MotivoExclusion | null => {
   const normalizada = normalizeWord(descripcion);
   for (const { patron, motivo } of PATRONES_EXCLUSION) {
     if (patron.test(normalizada)) return motivo;
   }
+  if (titular && esContraparteElTitular(descripcion, titular)) return 'traslado-propio';
   return null;
 };

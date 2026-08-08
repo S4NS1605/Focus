@@ -101,7 +101,7 @@ const KEYWORDS_BY_CATEGORY: Record<Category, readonly string[]> = {
   comida: ['almuerzo', 'desayuno', 'cena', 'comida', 'restaurante', 'domicilio',
     'domicilios', 'pizza', 'hamburguesa', 'empanada', 'empanadas', 'cafe',
     'tinto', 'helado', 'pan', 'panaderia', 'corrientazo', 'bandeja', 'asado',
-    'sushi', 'onces', 'algo'],
+    'sushi', 'onces', 'algo', 'asados', 'asadero', 'carnes'],
   transporte: ['gasolina', 'transporte', 'taxi', 'bus', 'pasaje', 'pasajes',
     'peaje', 'parqueadero', 'parqueo', 'moto', 'carro', 'avion', 'vuelo',
     'tiquete', 'tiquetes', 'soat', 'mecanico', 'llantas', 'lavado'],

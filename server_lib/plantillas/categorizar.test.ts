@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { categorizarDescripcion, exclusionDeDescripcion } from './categorizar';
+import {
+  categorizarDescripcion,
+  esContraparteElTitular,
+  exclusionDeDescripcion,
+} from './categorizar';
 
 describe('categorizarDescripcion', () => {
   it('reconoce comercios conocidos', () => {
@@ -67,5 +71,45 @@ describe('exclusionDeDescripcion', () => {
 
   it('no marca movimientos reales', () => {
     expect(exclusionDeDescripcion('COMPRA EN FARMATODO')).toBeNull();
+  });
+});
+
+/**
+ * BRE-B is Colombia's instant payment rail, not an own-accounts feature. Every
+ * BRE-B line used to be written off as an internal transfer, which removed real
+ * spending from the totals — payments to other people and a QR payment at a
+ * restaurant all vanished from what the user had actually spent.
+ */
+describe('traslados propios por nombre del titular', () => {
+  const TITULAR = 'JULIAN SANTIAGO GONZALEZ REINA';
+
+  it('reconoce un envio a uno mismo', () => {
+    expect(esContraparteElTitular('ENVIO CON BRE-B A: JULIAN', TITULAR)).toBe(true);
+    expect(esContraparteElTitular('RECIBI POR BRE-B DE: Julián', TITULAR)).toBe(true);
+    expect(esContraparteElTitular('Julian Gonzalez', TITULAR)).toBe(true);
+  });
+
+  it('NO marca un envio a otra persona', () => {
+    expect(esContraparteElTitular('ENVIO CON BRE-B A: LEIDYS', TITULAR)).toBe(false);
+    expect(esContraparteElTitular('Para SOLMAR BRILLYD LEON', TITULAR)).toBe(false);
+  });
+
+  it('NO marca un pago a un comercio', () => {
+    expect(esContraparteElTitular('PAGO EN QR BRE-B: ASADOS', TITULAR)).toBe(false);
+  });
+
+  it('exige que TODAS las palabras sean del titular, no una suelta', () => {
+    // Un tocayo distinto no es el titular.
+    expect(esContraparteElTitular('Para JULIAN MEJIA', TITULAR)).toBe(false);
+  });
+
+  it('sin titular no excluye nada por nombre', () => {
+    expect(exclusionDeDescripcion('ENVIO CON BRE-B A: JULIAN')).toBeNull();
+    expect(exclusionDeDescripcion('ENVIO CON BRE-B A: JULIAN', TITULAR)).toBe('traslado-propio');
+  });
+
+  it('sigue excluyendo las recargas y retiros de siempre', () => {
+    expect(exclusionDeDescripcion('Recarga en corresponsal', TITULAR)).toBe('traslado-propio');
+    expect(exclusionDeDescripcion('Retiro en corresponsales', TITULAR)).toBe('traslado-propio');
   });
 });

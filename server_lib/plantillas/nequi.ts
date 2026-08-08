@@ -36,8 +36,21 @@ export const periodoNequi = (texto: string): PeriodoExtraido | null => {
   };
 };
 
+/**
+ * Account holder, printed on the statement's first lines.
+ *
+ * Worth extracting because it is the only reliable way to tell a transfer to
+ * oneself from a transfer to someone else — the wallet shows only a first name
+ * as the counterparty, and without this the two are indistinguishable.
+ */
+const TITULAR = /dep[oó]sito de bajo monto de:\s*\n\s*(.+)/i;
+
+export const titularNequi = (texto: string): string | null =>
+  texto.match(TITULAR)?.[1]?.trim() || null;
+
 export const parsearNequi = (texto: string): MovimientoExtraido[] => {
   const movimientos: MovimientoExtraido[] = [];
+  const titular = titularNequi(texto) ?? undefined;
 
   for (const linea of texto.split('\n')) {
     const m = linea.match(LINEA_MOVIMIENTO);
@@ -53,7 +66,7 @@ export const parsearNequi = (texto: string): MovimientoExtraido[] => {
       tipo: monto < 0 ? 'gasto' : 'ingreso',
       categoria: categorizarDescripcion(descripcion),
       confianza: 'alta',
-      exclusion: exclusionDeDescripcion(descripcion),
+      exclusion: exclusionDeDescripcion(descripcion, titular),
     });
   }
 

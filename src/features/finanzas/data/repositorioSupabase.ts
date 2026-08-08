@@ -27,6 +27,24 @@ export class RepositorioSupabase implements Repositorio {
   private fallar(contexto: string, error: { message: string } | null): void {
     if (!error) return;
 
+    // Constraint names are the schema's vocabulary, not the user's. Postgres
+    // reports the rule that failed; this says what to do about it.
+    if (error.message.includes('amount_cop_check')) {
+      throw new Error('El monto debe ser mayor que cero.');
+    }
+    if (error.message.includes('objetivo_cop_check')) {
+      throw new Error('El objetivo de la meta debe ser mayor que cero.');
+    }
+    if (error.message.includes('_kind_check') || error.message.includes('_rol_check')) {
+      throw new Error('Ese valor no es uno de los permitidos.');
+    }
+    if (error.message.includes('violates row-level security')) {
+      throw new Error('Tu sesión no tiene permiso para este cambio. Vuelve a entrar.');
+    }
+    if (error.message.includes('duplicate key')) {
+      throw new Error('Ese registro ya existe.');
+    }
+
     // PostgREST reports an unmigrated database as a missing table in its schema
     // cache. Raw, that reads like a bug in the app; it is almost always the
     // migration simply not having been run yet, so say that instead.

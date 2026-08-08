@@ -61,6 +61,15 @@ export const planearImportacion = (
       continue;
     }
 
+    // A movement of nothing is not a movement. Statements do carry such rows —
+    // sub-peso interest that rounds to zero, informational lines — and the
+    // schema rejects them outright (`check (amount_cop > 0)`), which surfaced
+    // to the user as a raw Postgres constraint name. Dropping them here keeps
+    // one bad row from failing the entire import.
+    if (!Number.isFinite(mov.montoCop) || Math.round(mov.montoCop) <= 0) {
+      continue;
+    }
+
     const clave = claveDeMovimiento(mov.fecha, mov.tipo, mov.montoCop, mov.descripcion);
     const restantes = yaTengo.get(clave) ?? 0;
 
