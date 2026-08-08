@@ -1,5 +1,5 @@
 import React from 'react';
-import { Landmark, PiggyBank, Wallet } from 'lucide-react';
+import { Landmark, PiggyBank, Plus, Wallet } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import { patrimonio } from '../lib/cajitas';
 import { formatCop } from '../lib/formatCop';
@@ -7,6 +7,8 @@ import { formatCop } from '../lib/formatCop';
 interface PatrimonioCardProps {
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
+  /** Jumps to where accounts are added, so the empty state is not a dead end. */
+  onAgregar?: () => void;
 }
 
 /**
@@ -16,7 +18,7 @@ interface PatrimonioCardProps {
  * while the accounts are perfectly healthy, and showing one number for both is
  * how a summary ends up alarming for no reason.
  */
-export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimientos }) => {
+export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimientos, onAgregar }) => {
   const total = patrimonio(cajitas, movimientos);
 
   if (cajitas.length === 0) {
@@ -31,8 +33,21 @@ export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimie
           Registra tus cuentas para ver cuánto tienes
         </p>
         <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">
-          En Ahorro puedes agregar una cuenta bancaria y decirle su saldo.
+          Agrega tu banco y dile cuánto tienes: la app lleva el resto.
         </p>
+
+        {/* Telling someone where to go and not taking them there is what made
+            this feature look absent — the instruction was the dead end. */}
+        {onAgregar ? (
+          <button
+            type="button"
+            onClick={onAgregar}
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--fin-accent)] px-5 py-2.5 text-xs font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)]"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+            Agregar cuenta bancaria
+          </button>
+        ) : null}
       </section>
     );
   }
@@ -47,6 +62,17 @@ export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimie
       <p className="mt-1 font-display text-4xl font-extrabold tabular-nums text-[var(--fin-ink)]">
         {formatCop(total.totalCop)}
       </p>
+
+      {onAgregar ? (
+        <button
+          type="button"
+          onClick={onAgregar}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)] px-3.5 py-2 text-[11px] font-bold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
+        >
+          <Plus className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+          Agregar o actualizar cuentas
+        </button>
+      ) : null}
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         {[

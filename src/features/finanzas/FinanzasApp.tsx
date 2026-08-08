@@ -237,7 +237,14 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
           <div className="lg:hidden">{monthNav}</div>
 
-          <PatrimonioCard cajitas={cajitas} movimientos={cajitaMovimientos} />
+          <PatrimonioCard
+            cajitas={cajitas}
+            movimientos={cajitaMovimientos}
+            onAgregar={() => {
+              setPestanaAhorro('cajitas');
+              setSection('ahorro');
+            }}
+          />
 
           <KpiRow totals={totals} />
 
