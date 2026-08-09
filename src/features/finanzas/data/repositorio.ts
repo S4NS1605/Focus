@@ -1,5 +1,6 @@
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
+import type { CategoriaPersonal } from '../categorias';
 
 /**
  * Everything the app is allowed to know about storage.
@@ -28,6 +29,9 @@ export interface Repositorio {
   guardarMeta(meta: Meta): Promise<void>;
   borrarMeta(id: string): Promise<void>;
 
+  guardarCategoria(categoria: CategoriaPersonal): Promise<void>;
+  borrarCategoria(id: string): Promise<void>;
+
   /** Wipes every store. Used by the restore flow before importing a backup. */
   vaciar(): Promise<void>;
 }
@@ -38,6 +42,7 @@ export interface Instantanea {
   cajitas: Cajita[];
   cajitaMovimientos: CajitaMovimiento[];
   metas: Meta[];
+  categorias: CategoriaPersonal[];
 }
 
 export const instantaneaVacia = (): Instantanea => ({
@@ -45,6 +50,7 @@ export const instantaneaVacia = (): Instantanea => ({
   cajitas: [],
   cajitaMovimientos: [],
   metas: [],
+  categorias: [],
 });
 
 /**
@@ -70,6 +76,7 @@ export class RepositorioMemoria implements Repositorio {
       cajitas: this.datos.cajitas.map((c) => ({ ...c })),
       cajitaMovimientos: this.datos.cajitaMovimientos.map((m) => ({ ...m })),
       metas: this.datos.metas.map((m) => ({ ...m })),
+      categorias: this.datos.categorias.map((c) => ({ ...c })),
     };
   }
 
@@ -117,6 +124,17 @@ export class RepositorioMemoria implements Repositorio {
 
   async borrarMeta(id: string): Promise<void> {
     this.datos.metas = this.datos.metas.filter((m) => m.id !== id);
+  }
+
+  async guardarCategoria(categoria: CategoriaPersonal): Promise<void> {
+    this.datos.categorias = this.upsert(this.datos.categorias, [categoria]);
+  }
+
+  async borrarCategoria(id: string): Promise<void> {
+    // Unlike a pocket, the movements filed here are NOT removed. Their category
+    // key stays exactly as it was — deleting a category is a decision about the
+    // picker, never a decision to rewrite what already happened.
+    this.datos.categorias = this.datos.categorias.filter((c) => c.id !== id);
   }
 
   async vaciar(): Promise<void> {

@@ -18,6 +18,9 @@ export const CATEGORIES = [
 
 export type Category = typeof CATEGORIES[number];
 
+/** A `Category`, or a user-created category's id. See categorias.ts. */
+export type CategoriaClave = string;
+
 export type TxKind = 'gasto' | 'ingreso';
 
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -111,7 +114,16 @@ export interface Transaction {
   id: string;
   kind: TxKind;
   amountCop: number;
-  category: Category;
+  /**
+   * A built-in `Category` slug, or the id of a category the user created.
+   *
+   * Deliberately widened to `string`. The alternative — a second `categoriaId`
+   * column beside this one — means every reader has to remember to check both,
+   * and the one that forgets silently files the movement under the wrong thing.
+   * One column, one class of value; `hacerCatalogo` in categorias.ts is what
+   * turns a key back into a name, an icon and a colour.
+   */
+  category: CategoriaClave;
   description: string;
   /** Bogota-local calendar day, 'YYYY-MM-DD'. Never a UTC timestamp. */
   occurredOn: string;

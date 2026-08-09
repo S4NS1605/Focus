@@ -11,9 +11,9 @@ import {
   Zap,
 } from 'lucide-react';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
+import { useCatalogo } from '../catalogoContexto';
 import type { LucideIcon } from 'lucide-react';
 import type { Transaction } from '../types';
-import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS } from '../types';
 import type { Senal, Tono, TipoSenal } from '../lib/senales';
 import { senalesDeMovimiento } from '../lib/senales';
 import { formatCop, formatSigned } from '../lib/formatCop';
@@ -77,9 +77,11 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
   onCerrar,
 }) => {
   useBloqueoScroll(true);
+  const catalogo = useCatalogo();
   const senales = senalesDeMovimiento(tx, historial);
-  const color = CATEGORY_COLOR[tx.category];
-  const Icono = CATEGORY_ICON[tx.category];
+  const cat = catalogo.de(tx.category);
+  const color = cat.color;
+  const Icono = cat.Icono;
   const esIngreso = tx.kind === 'ingreso';
 
   return (
@@ -114,7 +116,7 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
                 {tx.description}
               </h2>
               <p className="text-[11px] text-[var(--fin-ink-faint)]">
-                {dayLabel(tx.occurredOn)} · {CATEGORY_LABELS[tx.category]}
+                {dayLabel(tx.occurredOn)} · {cat.nombre}
               </p>
             </div>
           </div>
@@ -146,7 +148,7 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-ink-faint)]" strokeWidth={2.5} aria-hidden="true" />
             <p className="text-[12px] leading-relaxed text-[var(--fin-ink-soft)]">
               Nada raro con este movimiento: encaja con lo que sueles gastar en{' '}
-              {CATEGORY_LABELS[tx.category]}.
+              {cat.nombre}.
             </p>
           </div>
         )}

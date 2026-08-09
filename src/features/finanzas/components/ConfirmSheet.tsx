@@ -1,17 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, X, ArrowDownCircle, ArrowUpCircle, Ear, CheckCircle2 } from 'lucide-react';
-import { CATEGORIES, CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
-import type { Category, TxKind } from '../types';
+import { tint } from '../types';
+import type { CategoriaClave } from '../types';
+import type { TxKind } from '../types';
 import { COPY } from '../copy';
 import { formatAmountInput, parseAmountInput } from '../lib/formatCop';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
+import { useCatalogo } from '../catalogoContexto';
 
 export interface ConfirmDraft {
   kind: TxKind;
   amountCop: number;
-  category: Category;
+  category: CategoriaClave;
   description: string;
   /** Null when the user does not say where the money moved. */
   cuentaId: string | null;
@@ -51,7 +53,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   const editando = modo === 'editar';
   const [amountText, setAmountText] = useState(() => formatAmountInput(parsed.amount));
   const [kind, setKind] = useState<TxKind>(parsed.kind);
-  const [category, setCategory] = useState<Category>(parsed.category);
+  const [category, setCategory] = useState<CategoriaClave>(parsed.category);
   const [description, setDescription] = useState(parsed.description);
   const [cuentaId, setCuentaId] = useState<string | null>(cuentaInicial ?? null);
 
@@ -65,10 +67,17 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   const amountCop = parseAmountInput(amountText);
 
   useBloqueoScroll(true);
+  const catalogo = useCatalogo();
 
   useEffect(() => {
     if (amountWeak) amountRef.current?.focus();
   }, [amountWeak]);
+
+  // The archived category a movement is already filed under stays selectable,
+  // so opening an old movement to fix its amount cannot silently re-file it.
+  const opciones = catalogo.lista.some((c) => c.clave === category)
+    ? catalogo.lista
+    : [...catalogo.lista, catalogo.de(category)];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +89,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
       kind,
       amountCop,
       category,
-      description: description.trim() || CATEGORY_LABELS[category],
+      description: description.trim() || catalogo.de(category).nombre,
       cuentaId,
       rawTranscript: parsed.raw,
     });
@@ -108,7 +117,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           <div>
             <h2 className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-[var(--fin-ink)]">
               {(() => {
-                  const Icon = CATEGORY_ICON[category];
+                  const Icon = catalogo.de(category).Icono;
                   return <Icon className="h-6 w-6 mr-1" aria-hidden="true" />;
               })()}
               {editando ? COPY.confirm.titleEditar : COPY.confirm.title}
@@ -192,9 +201,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         <fieldset className="mt-5">
           <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">{COPY.confirm.category}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
-            {CATEGORIES.map((option) => {
+            {opciones.map((entrada) => {
+              const option = entrada.clave;
               const active = category === option;
-              const color = CATEGORY_COLOR[option];
+              const color = entrada.color;
               return (
                 <button
                   key={option}
@@ -209,10 +219,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                   }}
                 >
                   {(() => {
-                    const Icon = CATEGORY_ICON[option];
+                    const Icon = entrada.Icono;
                     return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
                   })()}
-                  {CATEGORY_LABELS[option]}
+                  {entrada.nombre}
                 </button>
               );
             })}

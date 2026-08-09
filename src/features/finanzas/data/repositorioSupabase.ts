@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, Transaction, TxKind } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
+import type { CategoriaPersonal } from '../categorias';
 import type { Instantanea, Repositorio } from './repositorio';
 import { ES_PASIVO } from './modelos';
 
@@ -72,23 +73,26 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async cargarTodo(): Promise<Instantanea> {
-    const [transacciones, cajitas, movimientos, metas] = await Promise.all([
+    const [transacciones, cajitas, movimientos, metas, categorias] = await Promise.all([
       this.cliente.from('transacciones').select('*').eq('user_id', this.userId),
       this.cliente.from('cajitas').select('*').eq('user_id', this.userId),
       this.cliente.from('cajita_movimientos').select('*').eq('user_id', this.userId),
       this.cliente.from('metas').select('*').eq('user_id', this.userId),
+      this.cliente.from('categorias').select('*').eq('user_id', this.userId),
     ]);
 
     this.fallar('No se pudieron leer los movimientos', transacciones.error);
     this.fallar('No se pudieron leer las cajitas', cajitas.error);
     this.fallar('No se pudo leer el historial de cajitas', movimientos.error);
     this.fallar('No se pudieron leer las metas', metas.error);
+    this.fallar('No se pudieron leer las categorías', categorias.error);
 
     return {
       transacciones: (transacciones.data ?? []).map(aTransaccion),
       cajitas: (cajitas.data ?? []).map(aCajita),
       cajitaMovimientos: (movimientos.data ?? []).map(aMovimiento),
       metas: (metas.data ?? []).map(aMeta),
+      categorias: (categorias.data ?? []).map(aCategoria),
     };
   }
 
@@ -143,11 +147,24 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudo eliminar la meta', error);
   }
 
+  async guardarCategoria(categoria: CategoriaPersonal): Promise<void> {
+    const { error } = await this.cliente
+      .from('categorias')
+      .upsert(desdeCategoria(categoria, this.userId));
+    this.fallar('No se pudo guardar la categoría', error);
+  }
+
+  async borrarCategoria(id: string): Promise<void> {
+    // Movements keep their category key — see RepositorioMemoria.
+    const { error } = await this.cliente.from('categorias').delete().eq('id', id);
+    this.fallar('No se pudo eliminar la categoría', error);
+  }
+
   async vaciar(): Promise<void> {
     // Pockets last: deleting them cascades into their movements, so removing
     // movements first is redundant but keeps the intent explicit if the schema
     // ever loses that cascade.
-    for (const tabla of ['transacciones', 'metas', 'cajita_movimientos', 'cajitas']) {
+    for (const tabla of ['transacciones', 'metas', 'cajita_movimientos', 'cajitas', 'categorias']) {
       const { error } = await this.cliente.from(tabla).delete().eq('user_id', this.userId);
       this.fallar(`No se pudo vaciar ${tabla}`, error);
     }
@@ -285,6 +302,34 @@ const aMeta = (fila: FilaMeta): Meta => ({
   ahorradoCop: Number(fila.ahorrado_cop),
   createdAt: fila.created_at,
   completedAt: fila.completed_at,
+});
+
+interface FilaCategoria {
+  id: string;
+  nombre: string;
+  icon: string | null;
+  color: string | null;
+  created_at: string;
+  archived_at: string | null;
+}
+
+const aCategoria = (fila: FilaCategoria): CategoriaPersonal => ({
+  id: fila.id,
+  nombre: fila.nombre,
+  icon: fila.icon ?? 'Package',
+  color: fila.color ?? '#A8A29E',
+  createdAt: fila.created_at,
+  archivedAt: fila.archived_at,
+});
+
+const desdeCategoria = (c: CategoriaPersonal, userId: string) => ({
+  id: c.id,
+  user_id: userId,
+  nombre: c.nombre,
+  icon: c.icon,
+  color: c.color,
+  created_at: c.createdAt,
+  archived_at: c.archivedAt,
 });
 
 const desdeMeta = (m: Meta, userId: string) => ({

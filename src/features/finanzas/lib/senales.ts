@@ -1,5 +1,7 @@
 import type { Transaction } from '../types';
-import { CATEGORY_LABELS } from '../types';
+import type { CategoriaClave } from '../types';
+import { CATALOGO_BASE } from '../categorias';
+import type { Catalogo } from '../categorias';
 import { extraerContraparte } from './contraparte';
 import { formatCop } from './formatCop';
 import { monthKey, shiftMonth } from './localDate';
@@ -61,13 +63,24 @@ export interface IndiceSenales {
   porDiaMontoParte: Map<string, number>;
   /** Earliest date seen for a counterparty. */
   primeraFechaPorParte: Map<string, string>;
+  /**
+   * How to name a category in the prose.
+   *
+   * Carried on the index rather than passed to each signal because the index is
+   * already the one context object every signal receives, and because a signal
+   * that says "3× tu gasto habitual en p-a1b2f" is worse than no signal at all.
+   */
+  nombreCategoria: (clave: CategoriaClave) => string;
 }
 
 const sumar = <K>(mapa: Map<K, number>, clave: K, valor: number): void => {
   mapa.set(clave, (mapa.get(clave) ?? 0) + valor);
 };
 
-export const crearIndiceSenales = (historial: readonly Transaction[]): IndiceSenales => {
+export const crearIndiceSenales = (
+  historial: readonly Transaction[],
+  catalogo: Catalogo = CATALOGO_BASE,
+): IndiceSenales => {
   const montosPorCategoria = new Map<string, number[]>();
   const montosPorParte = new Map<string, number[]>();
   const mesesVistosPorParte = new Map<string, Set<string>>();
@@ -126,6 +139,7 @@ export const crearIndiceSenales = (historial: readonly Transaction[]): IndiceSen
     cuantosPorMesYParte,
     porDiaMontoParte,
     primeraFechaPorParte,
+    nombreCategoria: (clave) => catalogo.de(clave).nombre,
   };
 };
 
@@ -157,7 +171,7 @@ const senalInusual = (tx: Transaction, indice: IndiceSenales): Senal | null => {
 
   return {
     tipo: 'inusual',
-    titulo: `${veces.toFixed(1)}× tu gasto habitual en ${CATEGORY_LABELS[tx.category]}`,
+    titulo: `${veces.toFixed(1)}× tu gasto habitual en ${indice.nombreCategoria(tx.category)}`,
     detalle: `Sueles gastar cerca de ${formatCop(base)}. Este fue ${formatCop(tx.amountCop)}.`,
     tono: veces >= 5 ? 'alerta' : 'aviso',
   };
@@ -311,4 +325,5 @@ export const senalesConIndice = (tx: Transaction, indice: IndiceSenales): Senal[
 export const senalesDeMovimiento = (
   tx: Transaction,
   historial: readonly Transaction[],
-): Senal[] => senalesConIndice(tx, crearIndiceSenales(historial));
+  catalogo: Catalogo = CATALOGO_BASE,
+): Senal[] => senalesConIndice(tx, crearIndiceSenales(historial, catalogo));

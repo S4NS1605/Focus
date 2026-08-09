@@ -1,5 +1,5 @@
 import { CATEGORY_LABELS } from '../types';
-import type { Category, TxKind } from '../types';
+import type { CategoriaClave, Category, TxKind } from '../types';
 import { normalizeNumericToken, normalizeWord, readNumberAt } from './numerals';
 import {
   AMOUNT_CUES,
@@ -19,7 +19,13 @@ export type CategorySource = 'merchant' | 'keyword' | 'default';
 export interface ParsedTransaction {
   kind: TxKind;
   amount: number | null;
-  category: Category;
+  /**
+   * The parser itself only ever produces a built-in — it matches vocabulary, it
+   * does not invent keys. The type is wider because this same shape is the edit
+   * buffer for an existing movement, which may well be filed under a category
+   * the user created, and narrowing here would silently drop it on every edit.
+   */
+  category: CategoriaClave;
   description: string;
   /** The untouched input, always. A mis-parse must stay reconstructable. */
   raw: string;

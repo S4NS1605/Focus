@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Category, Transaction } from '../types';
 import { bogotaDate } from '../lib/localDate';
 import { nuevoId } from '../lib/id';
+import { nuevaClaveCategoria } from '../categorias';
+import type { CategoriaPersonal } from '../categorias';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
@@ -48,6 +50,17 @@ export interface Almacen {
   crearMeta: (datos: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => Promise<void>;
   actualizarMeta: (meta: Meta) => Promise<void>;
   borrarMeta: (id: string) => Promise<void>;
+
+  crearCategoria: (datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>) => Promise<void>;
+  actualizarCategoria: (categoria: CategoriaPersonal) => Promise<void>;
+  /** Archives it. The movements filed under it keep pointing here. */
+  archivarCategoria: (id: string) => Promise<void>;
+  /**
+   * Removes the row outright. Only offered for a category nothing uses — with
+   * movements attached, archiving is the only honest option, since the key
+   * would otherwise survive with nothing left to explain it.
+   */
+  borrarCategoria: (id: string) => Promise<void>;
 }
 
 const mensajeDeError = (e: unknown): string =>
@@ -352,6 +365,52 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     [aplicar, datos, repo],
   );
 
+  const crearCategoria = useCallback(
+    async (entrada: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>) => {
+      const categoria: CategoriaPersonal = {
+        ...entrada,
+        id: nuevaClaveCategoria(),
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      };
+      await aplicar({ ...datos, categorias: [...datos.categorias, categoria] }, () =>
+        repo.guardarCategoria(categoria),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const guardarCategoria = useCallback(
+    async (categoria: CategoriaPersonal) => {
+      await aplicar(
+        {
+          ...datos,
+          categorias: datos.categorias.map((c) => (c.id === categoria.id ? categoria : c)),
+        },
+        () => repo.guardarCategoria(categoria),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const archivarCategoria = useCallback(
+    async (id: string) => {
+      const actual = datos.categorias.find((c) => c.id === id);
+      if (!actual) return;
+      await guardarCategoria({ ...actual, archivedAt: new Date().toISOString() });
+    },
+    [datos.categorias, guardarCategoria],
+  );
+
+  const borrarCategoria = useCallback(
+    async (id: string) => {
+      await aplicar({ ...datos, categorias: datos.categorias.filter((c) => c.id !== id) }, () =>
+        repo.borrarCategoria(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
   return {
     datos,
     cargando,
@@ -371,5 +430,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     crearMeta,
     actualizarMeta,
     borrarMeta,
+    crearCategoria,
+    actualizarCategoria: guardarCategoria,
+    archivarCategoria,
+    borrarCategoria,
   };
 };

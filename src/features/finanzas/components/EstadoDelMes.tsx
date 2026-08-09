@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { CheckCircle2, TrendingDown, TriangleAlert } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Transaction } from '../types';
-import { CATEGORY_LABELS } from '../types';
 import type { MonthTotals } from '../lib/aggregate';
 import { byCategory } from '../lib/aggregate';
 import { colorDeCategoria, COLOR_OTROS } from '../lib/paletaViz';
 import { useEsOscuro } from '../data/useEsOscuro';
 import { formatCop } from '../lib/formatCop';
+import { useCatalogo } from '../catalogoContexto';
 
 interface EstadoDelMesProps {
   totals: MonthTotals;
@@ -47,6 +47,7 @@ const MAX_SEGMENTOS = 5;
  * into "Otros" and the full list below is the table that carries the detail.
  */
 export const EstadoDelMes: React.FC<EstadoDelMesProps> = ({ totals, delMes }) => {
+  const catalogo = useCatalogo();
   const oscuro = useEsOscuro();
   const [activo, setActivo] = useState<string | null>(null);
   const { Icono, titulo, tono } = estado(totals);
@@ -59,7 +60,7 @@ export const EstadoDelMes: React.FC<EstadoDelMesProps> = ({ totals, delMes }) =>
   const segmentos = [
     ...visibles.map((s) => ({
       clave: s.category as string,
-      etiqueta: CATEGORY_LABELS[s.category],
+      etiqueta: catalogo.de(s.category).nombre,
       total: s.total,
       color: colorDeCategoria(s.category, oscuro),
     })),

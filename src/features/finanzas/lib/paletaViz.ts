@@ -1,4 +1,4 @@
-import type { Category } from '../types';
+import type { CategoriaClave, Category } from '../types';
 
 /**
  * Chart colours, separate from the identity colours in `types.ts`.
@@ -69,8 +69,29 @@ const SLOT_DE: Record<Category, number> = {
   otros: 6,
 };
 
-export const colorDeCategoria = (categoria: Category, oscuro: boolean): string => {
-  const slot = SLOTS[SLOT_DE[categoria]];
+/**
+ * A slot for a category this file has never heard of — one the user created.
+ *
+ * Derived from the key rather than from position in the list, for the same
+ * reason the built-in table is fixed: a colour that followed rank would repaint
+ * every chart as the month changed. The key never changes, so neither does the
+ * colour.
+ *
+ * The category's own colour, the one picked when creating it, is not used here.
+ * That colour identifies it on chips and icons; charts draw from this validated
+ * ramp instead, exactly as the built-in categories already do — a chart whose
+ * hues came from thirteen independent choices is where adjacent segments start
+ * reading as the same colour.
+ */
+const slotDerivado = (clave: string): number => {
+  let h = 0;
+  for (let i = 0; i < clave.length; i += 1) h = (h * 31 + clave.charCodeAt(i)) | 0;
+  return Math.abs(h) % SLOTS.length;
+};
+
+export const colorDeCategoria = (categoria: CategoriaClave, oscuro: boolean): string => {
+  const indice = categoria in SLOT_DE ? SLOT_DE[categoria as Category] : slotDerivado(categoria);
+  const slot = SLOTS[indice];
   return oscuro ? slot.oscuro : slot.claro;
 };
 

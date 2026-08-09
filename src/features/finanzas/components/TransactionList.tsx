@@ -1,11 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Hand, Pencil, Sparkles, Trash2 } from 'lucide-react';
-import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
+import { tint } from '../types';
 import type { Transaction } from '../types';
 import { COPY } from '../copy';
 import { formatCop, formatSigned } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
+import { useCatalogo } from '../catalogoContexto';
 
 interface TransactionListProps {
   transactions: readonly Transaction[];
@@ -54,6 +55,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   onDelete,
   onEdit,
 }) => {
+  const catalogo = useCatalogo();
   if (transactions.length === 0) {
     return (
       <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
@@ -80,10 +82,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
           <ul className="flex flex-col gap-2">
             {group.items.map((tx, idx) => {
-              const color = CATEGORY_COLOR[tx.category];
+              const entrada = catalogo.de(tx.category);
+              const color = entrada.color;
               const esIngreso = tx.kind === 'ingreso';
 
-                const Icon = CATEGORY_ICON[tx.category];
+                const Icon = entrada.Icono;
 
               return (
                 <motion.li
@@ -115,7 +118,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       ) : null}
                     </p>
                     <p className="text-[11px] font-medium" style={{ color }}>
-                      {CATEGORY_LABELS[tx.category]}
+                      {entrada.nombre}
                     </p>
                   </div>
 

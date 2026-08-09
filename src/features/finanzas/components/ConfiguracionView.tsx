@@ -4,6 +4,8 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
+import { CategoriasEditor } from './CategoriasEditor';
+import type { CategoriasEditorProps } from './CategoriasEditor';
 import { saldosPorCajita } from '../lib/cajitas';
 import { formatAmountInput, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 
@@ -13,6 +15,11 @@ interface ConfiguracionViewProps {
   movimientos: readonly CajitaMovimiento[];
   onActualizar: (cajita: Cajita) => void;
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
+  categorias: CategoriasEditorProps['categorias'];
+  onCrearCategoria: CategoriasEditorProps['onCrear'];
+  onActualizarCategoria: CategoriasEditorProps['onActualizar'];
+  onArchivarCategoria: CategoriasEditorProps['onArchivar'];
+  onBorrarCategoria: CategoriasEditorProps['onBorrar'];
 }
 
 /**
@@ -202,31 +209,39 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
   transacciones,
   onActualizar,
   onFijarSaldo,
+  categorias,
+  onCrearCategoria,
+  onActualizarCategoria,
+  onArchivarCategoria,
+  onBorrarCategoria,
 }) => {
   const saldos = saldosPorCajita(movimientos, transacciones);
   const vivas = cajitas.filter((c) => c.archivedAt === null);
 
-  if (vivas.length === 0) {
-    return (
-      <div className="mx-auto max-w-3xl rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
-        <Wallet className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]" strokeWidth={1.5} aria-hidden="true" />
-        <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">Nada que configurar todavía.</p>
-        <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">
-          Crea una cuenta en Ahorro o una tarjeta en Deudas y aparecerá aquí.
-        </p>
-      </div>
-    );
-  }
+  // Having no accounts is the empty state of the BALANCES block, not of the
+  // page: categories have nothing to do with accounts, and returning early here
+  // left the only place to edit them unreachable until a pocket existed.
+  const sinCuentas = vivas.length === 0;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
-      <section className="rounded-3xl bg-[var(--fin-soft)] px-4 py-3">
-        <p className="flex items-start gap-2 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
-          <Settings2 className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
-          Escribe el saldo que ves en tu banco y confirma con el visto. La app calcula sola la
-          diferencia y la deja anotada en el historial.
-        </p>
-      </section>
+      {sinCuentas ? (
+        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-10 text-center">
+          <Wallet className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]" strokeWidth={1.5} aria-hidden="true" />
+          <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">Todavía no tienes cuentas.</p>
+          <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">
+            Crea una cuenta en Ahorro o una tarjeta en Deudas y aparecerá aquí.
+          </p>
+        </div>
+      ) : (
+        <section className="rounded-3xl bg-[var(--fin-soft)] px-4 py-3">
+          <p className="flex items-start gap-2 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
+            <Settings2 className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+            Escribe el saldo que ves en tu banco y confirma con el visto. La app calcula sola la
+            diferencia y la deja anotada en el historial.
+          </p>
+        </section>
+      )}
 
       {GRUPOS.map((grupo) => {
         const delGrupo = vivas.filter((c) => grupo.tipos.includes(c.tipo));
@@ -250,6 +265,16 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
         );
       })}
 
+      <CategoriasEditor
+        categorias={categorias}
+        transacciones={transacciones}
+        onCrear={onCrearCategoria}
+        onActualizar={onActualizarCategoria}
+        onArchivar={onArchivarCategoria}
+        onBorrar={onBorrarCategoria}
+      />
+
+      {sinCuentas ? null : (
       <p className="px-1 text-[11px] text-[var(--fin-ink-faint)]">
         Total en cuentas y cajitas:{' '}
         <b className="text-[var(--fin-ink)]">
@@ -260,6 +285,7 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
           )}
         </b>
       </p>
+      )}
     </div>
   );
 };

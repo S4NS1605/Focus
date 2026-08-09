@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
+import type { CategoriaPersonal } from '../categorias';
 import type { Repositorio } from './repositorio';
 import { RepositorioMemoria } from './repositorio';
 import { RepositorioIndexedDB } from './indexeddb';
@@ -196,6 +197,73 @@ const contrato = (nombre: string, crear: () => Repositorio) => {
 
       const segunda = await repo.cargarTodo();
       expect(segunda.transacciones[0].amountCop).toBe(20000);
+    });
+
+    // ------------------------------------------------------ categorías propias
+    const categoria = (over: Partial<CategoriaPersonal> = {}): CategoriaPersonal => ({
+      id: 'p-suscripciones',
+      nombre: 'Suscripciones',
+      icon: 'Smartphone',
+      color: '#6366F1',
+      createdAt: '2026-08-01T00:00:00.000Z',
+      archivedAt: null,
+      ...over,
+    });
+
+    it('guarda y relee una categoría propia', async () => {
+      await repo.guardarCategoria(categoria());
+
+      expect((await repo.cargarTodo()).categorias).toEqual([categoria()]);
+    });
+
+    it('guardar con el mismo id edita, no duplica', async () => {
+      await repo.guardarCategoria(categoria());
+      await repo.guardarCategoria(categoria({ nombre: 'Streaming', color: '#EC4899' }));
+
+      const { categorias } = await repo.cargarTodo();
+      expect(categorias).toHaveLength(1);
+      expect(categorias[0].nombre).toBe('Streaming');
+    });
+
+    it('archivar es un guardado, no un borrado', async () => {
+      await repo.guardarCategoria(categoria());
+      await repo.guardarCategoria(categoria({ archivedAt: '2026-08-06T00:00:00.000Z' }));
+
+      const { categorias } = await repo.cargarTodo();
+      expect(categorias).toHaveLength(1);
+      expect(categorias[0].archivedAt).toBe('2026-08-06T00:00:00.000Z');
+    });
+
+    it('borrar una categoría NO toca los movimientos que la usaban', async () => {
+      // Lo contrario reescribiría el pasado: un gasto de julio cambiaría de
+      // categoría porque en agosto se ordenó la lista.
+      await repo.guardarCategoria(categoria());
+      await repo.guardarTransacciones([
+        tx({ id: 't-1', category: 'p-suscripciones' as Transaction['category'] }),
+      ]);
+
+      await repo.borrarCategoria('p-suscripciones');
+
+      const { transacciones, categorias } = await repo.cargarTodo();
+      expect(categorias).toEqual([]);
+      expect(transacciones).toHaveLength(1);
+      expect(transacciones[0].category).toBe('p-suscripciones');
+    });
+
+    it('vaciar también se lleva las categorías', async () => {
+      await repo.guardarCategoria(categoria());
+      await repo.vaciar();
+
+      expect((await repo.cargarTodo()).categorias).toEqual([]);
+    });
+
+    it('no comparte objetos con quien lee', async () => {
+      await repo.guardarCategoria(categoria());
+
+      const primera = await repo.cargarTodo();
+      primera.categorias[0].nombre = 'Pisoteada';
+
+      expect((await repo.cargarTodo()).categorias[0].nombre).toBe('Suscripciones');
     });
   });
 };

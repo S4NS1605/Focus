@@ -25,6 +25,7 @@ import { crearIndiceSenales, senalesConIndice } from './lib/senales';
 import { CategoryBreakdown } from './components/CategoryBreakdown';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import type { ConfirmDraft } from './components/ConfirmSheet';
+import { CatalogoProvider } from './catalogoContexto';
 import { DictationInput } from './components/DictationInput';
 import { FinanzasShell } from './components/FinanzasShell';
 import { TemaToggle } from './components/TemaToggle';
@@ -122,7 +123,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   }, [userId]);
 
   const almacen = useAlmacen(repositorio);
-  const { transacciones, cajitas, cajitaMovimientos, metas } = almacen.datos;
+  const { transacciones, cajitas, cajitaMovimientos, metas, categorias } = almacen.datos;
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
   const [editando, setEditando] = useState<Transaction | null>(null);
@@ -222,6 +223,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   }
 
   return (
+    <CatalogoProvider categorias={categorias}>
     <FinanzasShell
       section={section}
       onSectionChange={setSection}
@@ -404,6 +406,11 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           movimientos={cajitaMovimientos}
           onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
           onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+          categorias={categorias}
+          onCrearCategoria={(datos) => void almacen.crearCategoria(datos)}
+          onActualizarCategoria={(c) => void almacen.actualizarCategoria(c)}
+          onArchivarCategoria={(id) => void almacen.archivarCategoria(id)}
+          onBorrarCategoria={(id) => void almacen.borrarCategoria(id)}
         />
       ) : null}
 
@@ -443,5 +450,6 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         />
       ) : null}
     </FinanzasShell>
+    </CatalogoProvider>
   );
 };

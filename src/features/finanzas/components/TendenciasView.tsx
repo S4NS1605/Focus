@@ -1,11 +1,11 @@
 import React from 'react';
 import { COPY } from '../copy';
 import { TrendingUp, BarChart2, Scale, Search } from 'lucide-react';
-import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS } from '../types';
 import type { Transaction } from '../types';
 import { compararCategorias, promedioMensual, serieMensual, ultimosMeses } from '../lib/tendencias';
 import { formatCop } from '../lib/formatCop';
 import { monthKeyLabel, shiftMonth } from '../lib/localDate';
+import { useCatalogo } from '../catalogoContexto';
 
 interface TendenciasViewProps {
   transacciones: readonly Transaction[];
@@ -16,6 +16,7 @@ interface TendenciasViewProps {
 const MESES_VENTANA = 6;
 
 export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, mes }) => {
+  const catalogo = useCatalogo();
   const meses = ultimosMeses(mes, MESES_VENTANA);
   const serie = serieMensual(transacciones, meses);
   const promedio = promedioMensual(serie);
@@ -143,7 +144,8 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
 
           <ul className="mt-3 flex flex-col gap-2">
             {cambios.map((cambio) => {
-              const color = CATEGORY_COLOR[cambio.category];
+              const entrada = catalogo.de(cambio.category);
+              const color = entrada.color;
               const subio = cambio.deltaCop > 0;
               const nuevo = cambio.deltaPct === null && cambio.anteriorCop === 0;
               const desaparecio = cambio.actualCop === 0 && cambio.anteriorCop > 0;
@@ -155,14 +157,14 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
                 >
                   <span className="shrink-0" aria-hidden="true">
                     {(() => {
-                      const Icon = CATEGORY_ICON[cambio.category];
+                      const Icon = entrada.Icono;
                       return <Icon className="h-4 w-4" style={{ color }} />;
                     })()}
                   </span>
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-bold" style={{ color }}>
-                      {CATEGORY_LABELS[cambio.category]}
+                      {entrada.nombre}
                     </p>
                     <p className="text-[10px] text-[var(--fin-ink-faint)] tabular-nums">
                       {formatCop(cambio.anteriorCop)} → {formatCop(cambio.actualCop)}

@@ -1,8 +1,8 @@
-import type { Category, Transaction, TxKind } from '../types';
+import type { CategoriaClave, Transaction, TxKind } from '../types';
 import { monthKey } from './localDate';
 
 export interface CategorySlice {
-  category: Category;
+  category: CategoriaClave;
   total: number;
   /** Share of the kind's total, 0..100, rounded to one decimal. */
   pct: number;
@@ -52,7 +52,7 @@ export const byCategory = (
   transactions: readonly Transaction[],
   kind: TxKind,
 ): CategorySlice[] => {
-  const totals = new Map<Category, number>();
+  const totals = new Map<CategoriaClave, number>();
 
   for (const tx of transactions) {
     if (tx.kind !== kind) continue;

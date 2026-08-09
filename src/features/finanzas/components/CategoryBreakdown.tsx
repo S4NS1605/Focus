@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
+import { tint } from '../types';
 import type { CategorySlice } from '../lib/aggregate';
 import { formatCop } from '../lib/formatCop';
+import { useCatalogo } from '../catalogoContexto';
 
 interface CategoryBreakdownProps {
   slices: readonly CategorySlice[];
@@ -15,6 +16,7 @@ interface CategoryBreakdownProps {
  * and its default theme would fight the rest of the app.
  */
 export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, title }) => {
+  const catalogo = useCatalogo();
   if (slices.length === 0) return null;
 
   const largest = slices[0].total;
@@ -28,12 +30,13 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
 
       <ul className="mt-4 flex flex-col gap-3.5">
         {slices.map((slice, idx) => {
-          const color = CATEGORY_COLOR[slice.category];
+          const entrada = catalogo.de(slice.category);
+          const color = entrada.color;
           // Bars scale against the largest slice, not against 100%, so the
           // smallest category is still legible instead of a hairline.
           const width = Math.max((slice.total / largest) * 100, 4);
 
-          const Icon = CATEGORY_ICON[slice.category];
+          const Icon = entrada.Icono;
           
           return (
             <li key={slice.category}>
@@ -49,7 +52,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="truncate text-[13px] font-bold text-[var(--fin-ink)]">
-                      {CATEGORY_LABELS[slice.category]}
+                      {entrada.nombre}
                     </span>
                     <span className="shrink-0 text-[13px] font-extrabold text-[var(--fin-ink)] tabular-nums">
                       {formatCop(slice.total)}

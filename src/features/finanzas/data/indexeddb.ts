@@ -1,16 +1,21 @@
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
+import type { CategoriaPersonal } from '../categorias';
 import type { Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 
 const DB_NOMBRE = 'finanzas';
-const DB_VERSION = 1;
+// Bumped when a store is added: `onupgradeneeded` only fires on a version
+// change, so a device that already opened the database at v1 would otherwise
+// never get the new store.
+const DB_VERSION = 2;
 
 const STORES = {
   transacciones: 'transacciones',
   cajitas: 'cajitas',
   cajitaMovimientos: 'cajitaMovimientos',
   metas: 'metas',
+  categorias: 'categorias',
 } as const;
 
 type StoreNombre = (typeof STORES)[keyof typeof STORES];
@@ -89,14 +94,15 @@ export class RepositorioIndexedDB implements Repositorio {
 
     // Issued together on one transaction so every list is read from the same
     // consistent point, then awaited.
-    const [transacciones, cajitas, cajitaMovimientos, metas] = await Promise.all([
+    const [transacciones, cajitas, cajitaMovimientos, metas, categorias] = await Promise.all([
       pedir<Transaction[]>(tx.objectStore(STORES.transacciones).getAll()),
       pedir<Cajita[]>(tx.objectStore(STORES.cajitas).getAll()),
       pedir<CajitaMovimiento[]>(tx.objectStore(STORES.cajitaMovimientos).getAll()),
       pedir<Meta[]>(tx.objectStore(STORES.metas).getAll()),
+      pedir<CategoriaPersonal[]>(tx.objectStore(STORES.categorias).getAll()),
     ]);
 
-    return { transacciones, cajitas, cajitaMovimientos, metas };
+    return { transacciones, cajitas, cajitaMovimientos, metas, categorias };
   }
 
   async guardarTransacciones(transacciones: readonly Transaction[]): Promise<void> {
@@ -169,6 +175,19 @@ export class RepositorioIndexedDB implements Repositorio {
   async borrarMeta(id: string): Promise<void> {
     await this.escribir([STORES.metas], (tx) => {
       tx.objectStore(STORES.metas).delete(id);
+    });
+  }
+
+  async guardarCategoria(categoria: CategoriaPersonal): Promise<void> {
+    await this.escribir([STORES.categorias], (tx) => {
+      tx.objectStore(STORES.categorias).put(categoria);
+    });
+  }
+
+  async borrarCategoria(id: string): Promise<void> {
+    // Movements keep their category key — see RepositorioMemoria.
+    await this.escribir([STORES.categorias], (tx) => {
+      tx.objectStore(STORES.categorias).delete(id);
     });
   }
 

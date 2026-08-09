@@ -1,4 +1,4 @@
-import type { Category, Transaction, TxKind } from '../types';
+import type { CategoriaClave, Transaction, TxKind } from '../types';
 import { forMonth, monthTotals } from './aggregate';
 import { shiftMonth } from './localDate';
 
@@ -35,7 +35,7 @@ export const serieMensual = (
   });
 
 export interface CambioCategoria {
-  category: Category;
+  category: CategoriaClave;
   actualCop: number;
   anteriorCop: number;
   deltaCop: number;
@@ -50,8 +50,8 @@ export interface CambioCategoria {
 const totalPorCategoria = (
   transacciones: readonly Transaction[],
   kind: TxKind,
-): Map<Category, number> => {
-  const totales = new Map<Category, number>();
+): Map<CategoriaClave, number> => {
+  const totales = new Map<CategoriaClave, number>();
   for (const tx of transacciones) {
     if (tx.kind !== kind) continue;
     totales.set(tx.category, (totales.get(tx.category) ?? 0) + tx.amountCop);
@@ -74,7 +74,7 @@ export const compararCategorias = (
   const actual = totalPorCategoria(forMonth(transacciones, mesActual), kind);
   const anterior = totalPorCategoria(forMonth(transacciones, mesAnterior), kind);
 
-  const categorias = new Set<Category>([...actual.keys(), ...anterior.keys()]);
+  const categorias = new Set<CategoriaClave>([...actual.keys(), ...anterior.keys()]);
 
   return [...categorias]
     .map((category) => {

@@ -1,10 +1,11 @@
 import React from 'react';
 import { ArrowDownRight, ArrowUpRight, CalendarDays, Users } from 'lucide-react';
 import type { Transaction, TxKind } from '../types';
-import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS } from '../types';
 import { mayoresMovimientos, porDiaDelMes, resumenDelMes, topContrapartes } from '../lib/detalle';
 import { formatCop } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
+import { useCatalogo } from '../catalogoContexto';
+import type { Catalogo } from '../categorias';
 
 interface DetalleMesProps {
   /** Already filtered to the month on display. */
@@ -15,13 +16,17 @@ interface DetalleMesProps {
 }
 
 /** "3 movimientos · Mercado, Comida" for the day readout. */
-const contarDelDia = (transacciones: readonly Transaction[], fecha: string): string => {
+const contarDelDia = (
+  transacciones: readonly Transaction[],
+  fecha: string,
+  catalogo: Catalogo,
+): string => {
   const delDia = transacciones.filter((t) => t.occurredOn === fecha);
   if (delDia.length === 0) return 'sin movimientos';
 
   const categorias = [...new Set(delDia.filter((t) => t.kind === 'gasto').map((t) => t.category))]
     .slice(0, 3)
-    .map((c) => CATEGORY_LABELS[c]);
+    .map((c) => catalogo.de(c).nombre);
 
   const cuantos = `${delDia.length} movimiento${delDia.length === 1 ? '' : 's'}`;
   return categorias.length > 0 ? `${cuantos} · ${categorias.join(', ')}` : cuantos;
@@ -78,6 +83,7 @@ const Contrapartes: React.FC<{ delMes: readonly Transaction[]; kind: TxKind }> =
 };
 
 const Mayores: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
+  const catalogo = useCatalogo();
   const gastos = mayoresMovimientos(delMes, 'gasto');
   if (gastos.length === 0) return null;
 
@@ -90,8 +96,9 @@ const Mayores: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
 
       <ul className="mt-3 flex flex-col gap-2">
         {gastos.map((tx) => {
-          const color = CATEGORY_COLOR[tx.category];
-          const Icono = CATEGORY_ICON[tx.category];
+          const entrada = catalogo.de(tx.category);
+          const color = entrada.color;
+          const Icono = entrada.Icono;
           return (
             <li
               key={tx.id}
@@ -101,7 +108,7 @@ const Mayores: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-[var(--fin-ink)]">{tx.description}</p>
                 <p className="text-[10px] text-[var(--fin-ink-faint)]">
-                  {dayLabel(tx.occurredOn)} · {CATEGORY_LABELS[tx.category]}
+                  {dayLabel(tx.occurredOn)} · {entrada.nombre}
                 </p>
               </div>
               <span className="shrink-0 text-xs font-extrabold tabular-nums text-[var(--fin-out)]">
@@ -119,6 +126,7 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> =
   transacciones,
   mes,
 }) => {
+  const catalogo = useCatalogo();
   const dias = porDiaDelMes(transacciones, mes);
   const resumen = resumenDelMes(transacciones, mes);
   // Index rather than the day object: a click has to be able to clear it by
@@ -149,7 +157,7 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> =
                 {dayLabel(dia.fecha)}
               </p>
               <p className="text-[10px] text-[var(--fin-ink-faint)]">
-                {contarDelDia(transacciones, dia.fecha)}
+                {contarDelDia(transacciones, dia.fecha, catalogo)}
               </p>
             </div>
             <div className="shrink-0 text-right">
