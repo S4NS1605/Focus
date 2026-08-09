@@ -18,6 +18,7 @@ import { CajitasView } from './components/CajitasView';
 import { DeudasView } from './components/DeudasView';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { PatrimonioCard } from './components/PatrimonioCard';
+import { EstadoDelMes } from './components/EstadoDelMes';
 import { DetalleMes } from './components/DetalleMes';
 import { AnalisisMovimiento } from './components/AnalisisMovimiento';
 import { senalesDeMovimiento } from './lib/senales';
@@ -268,6 +269,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             movimientos={cajitaMovimientos}
             onAgregar={() => setSection('cuentas')}
           />
+
+          <EstadoDelMes totals={totals} delMes={delMes} />
 
           <KpiRow totals={totals} />
 
