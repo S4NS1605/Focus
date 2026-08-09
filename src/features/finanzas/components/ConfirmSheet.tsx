@@ -6,6 +6,7 @@ import type { Category, TxKind } from '../types';
 import { COPY } from '../copy';
 import { formatAmountInput, parseAmountInput } from '../lib/formatCop';
 import type { ParsedTransaction } from '../lib/parseTransaction';
+import { useBloqueoScroll } from '../data/useBloqueoScroll';
 
 export interface ConfirmDraft {
   kind: TxKind;
@@ -63,6 +64,8 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   const kindWeak = !editando && parsed.signals.kindSource === 'default';
   const amountCop = parseAmountInput(amountText);
 
+  useBloqueoScroll(true);
+
   useEffect(() => {
     if (amountWeak) amountRef.current?.focus();
   }, [amountWeak]);
@@ -98,7 +101,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[2rem] bg-[var(--fin-bg)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        className="max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[2rem] bg-[var(--fin-bg)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">

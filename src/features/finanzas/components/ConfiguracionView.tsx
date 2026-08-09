@@ -84,14 +84,14 @@ const FilaCajita: React.FC<{
 
         {/* Inline balance, the thing most often needing a change. */}
         <div className="flex shrink-0 items-center gap-1.5">
-          <div className="flex w-32 items-center gap-1 rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-2.5 py-1.5">
+          <div className="flex w-[7.5rem] shrink-0 items-center gap-1 rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-2.5 py-1.5">
             <span className="text-xs font-bold text-[var(--fin-ink-faint)]">$</span>
             <input
               value={saldoTexto}
               onChange={(e) => setSaldoTexto(formatAmountInput(parseSaldoInput(e.target.value)))}
               inputMode="numeric"
               aria-label={`Saldo de ${cajita.nombre}`}
-              className="w-full bg-transparent text-right text-xs font-extrabold tabular-nums text-[var(--fin-ink)] focus:outline-none"
+              className="w-full bg-transparent text-right text-base font-extrabold tabular-nums text-[var(--fin-ink)] focus:outline-none"
             />
           </div>
           <button
@@ -124,7 +124,7 @@ const FilaCajita: React.FC<{
             <input
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-sm font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+              className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             />
           </label>
 
@@ -137,7 +137,7 @@ const FilaCajita: React.FC<{
                   onChange={(e) => setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))}
                   inputMode="numeric"
                   placeholder="0"
-                  className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-sm font-extrabold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                  className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-base font-extrabold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 />
               </label>
               <label className="block text-[11px] font-bold text-[var(--fin-ink-soft)]">
@@ -147,7 +147,7 @@ const FilaCajita: React.FC<{
                   onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
                   inputMode="decimal"
                   placeholder="13,5"
-                  className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-sm font-extrabold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                  className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-base font-extrabold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 />
               </label>
             </div>

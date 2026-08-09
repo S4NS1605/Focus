@@ -10,6 +10,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import type { LucideIcon } from 'lucide-react';
 import type { Transaction } from '../types';
 import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS } from '../types';
@@ -75,6 +76,7 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
   historial,
   onCerrar,
 }) => {
+  useBloqueoScroll(true);
   const senales = senalesDeMovimiento(tx, historial);
   const color = CATEGORY_COLOR[tx.category];
   const Icono = CATEGORY_ICON[tx.category];
@@ -96,7 +98,7 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-[2rem] bg-[var(--fin-bg)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        className="max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[2rem] bg-[var(--fin-bg)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">

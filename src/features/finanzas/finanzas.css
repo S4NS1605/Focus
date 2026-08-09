@@ -148,6 +148,27 @@
   overflow-x: visible;
   /* Suppresses the standalone rubber-band bounce past the top/bottom. */
   overscroll-behavior-y: none;
+
+  /* iOS inflates text on rotation to portrait-landscape unless told not to,
+     which silently breaks every width the layout was measured against. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+
+  /* Safari paints a grey box over anything tapped. Harmless on a web page,
+     wrong in something installed to the home screen — the buttons already
+     animate on press. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* A long press on a control pops up the callout menu and starts selecting the
+   label, which in an installed app reads as the interface glitching. Text the
+   user might actually want to copy — amounts, descriptions — is untouched. */
+.fin-page button,
+.fin-page nav,
+.fin-page label {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* Selection and focus rings from index.css are tuned for white-on-black. */

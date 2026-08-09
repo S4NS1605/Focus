@@ -3,6 +3,7 @@ import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertT
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
+import { useBloqueoScroll } from '../features/finanzas/data/useBloqueoScroll';
 import { apiUrl } from '../lib/api';
 
 interface SuperadminPanelProps {
@@ -26,6 +27,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  useBloqueoScroll(isModalOpen);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   
@@ -163,7 +165,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                    placeholder="Buscar por correo o usuario..."
                    value={searchTerm}
                    onChange={e => setSearchTerm(e.target.value)}
-                   className="block w-full rounded-xl border-none bg-[var(--fin-soft)] py-2.5 pl-10 pr-4 text-sm text-[var(--fin-ink)] placeholder-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                   className="block w-full rounded-xl border-none bg-[var(--fin-soft)] py-2.5 pl-10 pr-4 text-base text-[var(--fin-ink)] placeholder-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                  />
                </div>
             </div>
@@ -268,7 +270,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                     required
                     value={nuevoEmail}
                     onChange={(e) => setNuevoEmail(e.target.value)}
-                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-base transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                     placeholder="ejemplo@correo.com"
                   />
                 </div>
@@ -279,7 +281,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                     required
                     value={nuevoUsuario}
                     onChange={(e) => setNuevoUsuario(e.target.value)}
-                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-base transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                     placeholder="MiUsuario"
                   />
                 </div>
@@ -291,7 +293,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                     minLength={6}
                     value={nuevaPassword}
                     onChange={(e) => setNuevaPassword(e.target.value)}
-                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-base transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
                     placeholder="Mínimo 6 caracteres"
                   />
                 </div>

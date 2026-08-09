@@ -46,8 +46,10 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
     sesion.limpiarError();
   };
 
+  // 16px is not a style choice: iOS zooms the page in on any field below it, and
+  // in an installed app that zoom does not cleanly undo.
   const campo =
-    'w-full rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3.5 text-[15px] font-medium text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] transition-colors focus:border-[var(--fin-ink-faint)] focus:bg-[var(--fin-card)] focus:outline-none';
+    'w-full rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3.5 text-base font-medium text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] transition-colors focus:border-[var(--fin-ink-faint)] focus:bg-[var(--fin-card)] focus:outline-none';
 
   return (
     <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[var(--fin-bg)] px-5 py-10">

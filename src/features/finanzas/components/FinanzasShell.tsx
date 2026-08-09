@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ICONO_MAS, SECCIONES_BARRA, SECCIONES_MAS, SECTIONS, sectionLabel } from '../sections';
 import type { SectionId } from '../sections';
 import { BrandMark } from './BrandMark';
+import { useBloqueoScroll } from '../data/useBloqueoScroll';
 
 interface FinanzasShellProps {
   section: SectionId;
@@ -39,6 +40,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
   children,
 }) => {
   const [masAbierto, setMasAbierto] = useState(false);
+  useBloqueoScroll(masAbierto);
   const enMas = SECCIONES_MAS.includes(section);
 
   return (
