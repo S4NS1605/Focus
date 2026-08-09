@@ -2,6 +2,20 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, Transaction, TxKind } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
+import { ES_PASIVO } from './modelos';
+
+/**
+ * Reads the stored kind back, checked against the real set.
+ *
+ * This was `fila.tipo === 'cuenta' ? 'cuenta' : 'cajita'` — written when only
+ * those two existed, and never revisited when debts and cards were added. The
+ * row saved correctly as 'tarjeta' and came back as 'cajita', so a credit card
+ * created under Deudas silently appeared under Ahorro instead. Widening a set
+ * without revisiting the code that narrows it is exactly how that happens, so
+ * this now derives from the set itself and cannot fall behind it again.
+ */
+const aTipo = (valor: string | null): CajitaTipo =>
+  valor !== null && valor in ES_PASIVO ? (valor as CajitaTipo) : 'cajita';
 
 /**
  * Postgres-backed storage, one account per user.
@@ -196,7 +210,7 @@ const aCajita = (fila: FilaCajita): Cajita => ({
   id: fila.id,
   nombre: fila.nombre,
   icon: fila.emoji,
-  tipo: fila.tipo === 'cuenta' ? 'cuenta' : ('cajita' as CajitaTipo),
+  tipo: aTipo(fila.tipo),
   metaCop: fila.meta_cop === null ? null : Number(fila.meta_cop),
   tasaEaPct: fila.tasa_ea_pct === null ? null : Number(fila.tasa_ea_pct),
   createdAt: fila.created_at,
