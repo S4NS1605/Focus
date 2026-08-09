@@ -93,6 +93,8 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   onToggle,
 }) => {
   const [importado, setImportado] = useState(0);
+  const [verPosibles, setVerPosibles] = useState(false);
+  const [aceptados, setAceptados] = useState<ReadonlySet<string>>(new Set());
   if (!trabajo.resultado) return null;
 
   // Recomputed on every render from the CURRENT ledger, not memoized against a
@@ -147,9 +149,10 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
               Importar a tu historial
             </h3>
 
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div className="mt-3 grid grid-cols-4 gap-2 text-center">
               {[
                 { label: 'Nuevos', n: plan.nuevos.length, ink: 'var(--fin-in)' },
+                { label: 'Quizá repetidos', n: plan.posibles.length, ink: 'var(--fin-warn-ink)' },
                 { label: 'Ya estaban', n: plan.duplicados.length, ink: 'var(--fin-ink-soft)' },
                 { label: 'No cuentan', n: plan.excluidos.length, ink: 'var(--fin-baja-ink)' },
               ].map((c) => (
@@ -162,6 +165,59 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
               ))}
             </div>
 
+            {plan.posibles.length > 0 && importado === 0 ? (
+              <div className="mt-3 rounded-2xl bg-[var(--fin-warn-bg)] p-3">
+                <p className="text-[11px] leading-relaxed text-[var(--fin-warn-ink)]">
+                  {plan.posibles.length} movimiento{plan.posibles.length === 1 ? '' : 's'} del
+                  extracto {plan.posibles.length === 1 ? 'cae' : 'caen'} el mismo día y por el mismo
+                  monto que algo que ya tienes, pero con otro texto. Puede ser lo mismo que anotaste
+                  a mano — o dos gastos iguales de verdad.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setVerPosibles((v) => !v)}
+                  aria-expanded={verPosibles}
+                  className="mt-2 text-[11px] font-bold text-[var(--fin-warn-ink)] underline underline-offset-2"
+                >
+                  {verPosibles ? 'Ocultar' : 'Revisarlos uno por uno'}
+                </button>
+
+                {verPosibles ? (
+                  <ul className="mt-2.5 flex flex-col gap-2">
+                    {plan.posibles.map((p) => {
+                      const marcado = aceptados.has(p.transaccion.id);
+                      return (
+                        <li key={p.transaccion.id} className="rounded-xl bg-[var(--fin-card)] p-2.5">
+                          <p className="text-[11px] text-[var(--fin-ink-soft)]">
+                            Ya tienes: <b className="text-[var(--fin-ink)]">{p.yaTengo.description}</b>
+                          </p>
+                          <p className="text-[11px] text-[var(--fin-ink-soft)]">
+                            El extracto dice:{' '}
+                            <b className="text-[var(--fin-ink)]">{p.movimiento.descripcion}</b>
+                          </p>
+                          <label className="mt-1.5 flex items-center gap-2 text-[11px] font-bold text-[var(--fin-ink)]">
+                            <input
+                              type="checkbox"
+                              checked={marcado}
+                              onChange={() =>
+                                setAceptados((prev) => {
+                                  const siguiente = new Set(prev);
+                                  if (marcado) siguiente.delete(p.transaccion.id);
+                                  else siguiente.add(p.transaccion.id);
+                                  return siguiente;
+                                })
+                              }
+                            />
+                            Son distintos, impórtalo también
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+
             {importado > 0 ? (
               <p className="mt-3 rounded-xl bg-[var(--fin-in-bg)] px-3 py-2.5 text-[12px] font-bold text-[var(--fin-in)]">
                 Importaste {importado} movimiento{importado === 1 ? '' : 's'}.
@@ -169,16 +225,22 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             ) : (
               <button
                 type="button"
-                disabled={plan.nuevos.length === 0}
+                disabled={plan.nuevos.length + aceptados.size === 0}
                 onClick={() => {
-                  onImportar(plan.nuevos);
-                  setImportado(plan.nuevos.length);
+                  const extra = plan.posibles
+                    .filter((p) => aceptados.has(p.transaccion.id))
+                    .map((p) => p.transaccion);
+                  const total = [...plan.nuevos, ...extra];
+                  onImportar(total);
+                  setImportado(total.length);
                 }}
                 className="mt-3 w-full rounded-full bg-[var(--fin-accent)] px-6 py-3 text-[13px] font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
               >
-                {plan.nuevos.length === 0
+                {plan.nuevos.length + aceptados.size === 0
                   ? 'Nada nuevo por importar'
-                  : `Importar ${plan.nuevos.length} movimiento${plan.nuevos.length === 1 ? '' : 's'}`}
+                  : `Importar ${plan.nuevos.length + aceptados.size} movimiento${
+                      plan.nuevos.length + aceptados.size === 1 ? '' : 's'
+                    }`}
               </button>
             )}
 

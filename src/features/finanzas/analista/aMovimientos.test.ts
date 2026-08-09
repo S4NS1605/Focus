@@ -164,6 +164,78 @@ describe('planearImportacion', () => {
 
   it('handles an empty statement', () => {
     const plan = planearImportacion([], [tx()], idFijo, ahoraFijo);
-    expect(plan).toEqual({ nuevos: [], duplicados: [], excluidos: [] });
+    expect(plan).toEqual({ nuevos: [], duplicados: [], posibles: [], excluidos: [] });
+  });
+});
+
+/**
+ * The case that matters when someone actually uses the app: you dictate a
+ * movement, then upload the statement that contains it. The wording never
+ * matches — you type "Mercado Éxito", the bank prints "COMPRA EN EXITO IBAGUE" —
+ * so an exact-key match cannot see they are the same.
+ */
+describe('lo que ya anotaste a mano', () => {
+  const manual = (over: Partial<Transaction> = {}): Transaction => ({
+    id: 'mio',
+    kind: 'gasto',
+    amountCop: 45_000,
+    category: 'mercado',
+    description: 'Mercado Éxito',
+    occurredOn: '2026-07-15',
+    cuentaId: null,
+    rawTranscript: 'gasté 45 mil en el éxito',
+    createdAt: '2026-07-15T00:00:00.000Z',
+    ...over,
+  });
+
+  const delBanco = (over: Partial<MovimientoExtraido> = {}): MovimientoExtraido =>
+    mov({ descripcion: 'COMPRA EN EXITO IBAGUE', montoCop: 45_000, fecha: '2026-07-15', ...over });
+
+  it('no lo importa a ciegas: lo marca como posible repetido', () => {
+    const plan = planearImportacion([delBanco()], [manual()], () => 'x');
+
+    expect(plan.nuevos).toHaveLength(0);
+    expect(plan.posibles).toHaveLength(1);
+    expect(plan.posibles[0].yaTengo.id).toBe('mio');
+  });
+
+  it('deja listo el movimiento por si de verdad eran distintos', () => {
+    const plan = planearImportacion([delBanco()], [manual()], () => 'x');
+
+    // Dos gastos de $45.000 el mismo día también existen. La app no decide por
+    // el usuario: prepara la fila y deja que él elija.
+    expect(plan.posibles[0].transaccion).toMatchObject({
+      amountCop: 45_000,
+      description: 'COMPRA EN EXITO IBAGUE',
+    });
+  });
+
+  it('un solo apunte a mano no absorbe tres líneas del extracto', () => {
+    const plan = planearImportacion(
+      [delBanco({ descripcion: 'A' }), delBanco({ descripcion: 'B' }), delBanco({ descripcion: 'C' })],
+      [manual()],
+      () => 'x',
+    );
+
+    expect(plan.posibles).toHaveLength(1);
+    expect(plan.nuevos).toHaveLength(2);
+  });
+
+  it('un monto distinto el mismo día no se confunde', () => {
+    const plan = planearImportacion([delBanco({ montoCop: 60_000 })], [manual()], () => 'x');
+
+    expect(plan.posibles).toHaveLength(0);
+    expect(plan.nuevos).toHaveLength(1);
+  });
+
+  it('un texto idéntico sigue siendo duplicado exacto, no un posible', () => {
+    const plan = planearImportacion(
+      [delBanco({ descripcion: 'Mercado Éxito' })],
+      [manual()],
+      () => 'x',
+    );
+
+    expect(plan.duplicados).toHaveLength(1);
+    expect(plan.posibles).toHaveLength(0);
   });
 });
