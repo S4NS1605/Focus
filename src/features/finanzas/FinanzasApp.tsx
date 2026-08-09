@@ -21,7 +21,7 @@ import { PatrimonioCard } from './components/PatrimonioCard';
 import { EstadoDelMes } from './components/EstadoDelMes';
 import { DetalleMes } from './components/DetalleMes';
 import { AnalisisMovimiento } from './components/AnalisisMovimiento';
-import { senalesDeMovimiento } from './lib/senales';
+import { crearIndiceSenales, senalesConIndice } from './lib/senales';
 import { CategoryBreakdown } from './components/CategoryBreakdown';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import type { ConfirmDraft } from './components/ConfirmSheet';
@@ -156,13 +156,12 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   // Computed once for the visible month rather than per row: each check scans
   // the whole ledger, so doing it inside the list would repeat that scan for
   // every movement on screen.
-  const conSenal = useMemo(
-    () =>
-      new Set(
-        delMes.filter((t) => senalesDeMovimiento(t, transacciones).length > 0).map((t) => t.id),
-      ),
-    [delMes, transacciones],
-  );
+  const conSenal = useMemo(() => {
+    const indice = crearIndiceSenales(transacciones);
+    return new Set(
+      delMes.filter((t) => senalesConIndice(t, indice).length > 0).map((t) => t.id),
+    );
+  }, [delMes, transacciones]);
 
   const handleSubmit = (text: string) => setPending(parseTransaction(text));
 

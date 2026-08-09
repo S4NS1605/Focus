@@ -36,31 +36,120 @@ const mediana = (valores: readonly number[]): number => {
 const claveDeParte = (tx: Transaction): string =>
   (extraerContraparte(tx.description) ?? tx.description).trim().toLowerCase();
 
+
 /**
- * Baseline for a category, from everything BEFORE this movement.
+ * Everything the checks need, gathered in one pass.
+ *
+ * Without this each check re-scanned the whole ledger for every movement on
+ * screen: 2.000 movements took 752ms, which is a visible freeze on the summary
+ * and grows with every statement imported. Grouping once turns each verdict into
+ * a lookup.
+ */
+export interface IndiceSenales {
+  /** Typical amount per `${kind}|${category}`. */
+  medianaPorCategoria: Map<string, number>;
+  cuantosPorCategoria: Map<string, number>;
+  /** Distinct months a counterparty appears in — a property of it, not of a row. */
+  mesesPorParte: Map<string, number>;
+  /** Typical amount with a counterparty. */
+  medianaPorParte: Map<string, number>;
+  /** Totals per `${mes}|${parte}`. */
+  totalPorMesYParte: Map<string, number>;
+  /** How many with a given counterparty, per `${mes}|${parte}`. */
+  cuantosPorMesYParte: Map<string, number>;
+  /** Movements sharing `${dia}|${monto}|${parte}`, for the twin check. */
+  porDiaMontoParte: Map<string, number>;
+  /** Earliest date seen for a counterparty. */
+  primeraFechaPorParte: Map<string, string>;
+}
+
+const sumar = <K>(mapa: Map<K, number>, clave: K, valor: number): void => {
+  mapa.set(clave, (mapa.get(clave) ?? 0) + valor);
+};
+
+export const crearIndiceSenales = (historial: readonly Transaction[]): IndiceSenales => {
+  const montosPorCategoria = new Map<string, number[]>();
+  const montosPorParte = new Map<string, number[]>();
+  const mesesVistosPorParte = new Map<string, Set<string>>();
+  const totalPorMesYParte = new Map<string, number>();
+  const cuantosPorMesYParte = new Map<string, number>();
+  const porDiaMontoParte = new Map<string, number>();
+  const primeraFechaPorParte = new Map<string, string>();
+
+  for (const tx of historial) {
+    const cat = `${tx.kind}|${tx.category}`;
+    const montos = montosPorCategoria.get(cat);
+    if (montos) montos.push(tx.amountCop);
+    else montosPorCategoria.set(cat, [tx.amountCop]);
+
+    const parte = claveDeParte(tx);
+    if (!parte) continue;
+
+    const conParte = `${tx.kind}|${parte}`;
+    const montosParte = montosPorParte.get(conParte);
+    if (montosParte) montosParte.push(tx.amountCop);
+    else montosPorParte.set(conParte, [tx.amountCop]);
+
+    const mes = monthKey(tx.occurredOn);
+    const meses = mesesVistosPorParte.get(conParte);
+    if (meses) meses.add(mes);
+    else mesesVistosPorParte.set(conParte, new Set([mes]));
+
+    const mesParte = `${mes}|${conParte}`;
+    sumar(totalPorMesYParte, mesParte, tx.amountCop);
+    sumar(cuantosPorMesYParte, mesParte, 1);
+    sumar(porDiaMontoParte, `${tx.occurredOn}|${tx.amountCop}|${conParte}`, 1);
+
+    const primera = primeraFechaPorParte.get(conParte);
+    if (!primera || tx.occurredOn < primera) primeraFechaPorParte.set(conParte, tx.occurredOn);
+  }
+
+  const medianaPorCategoria = new Map<string, number>();
+  const cuantosPorCategoria = new Map<string, number>();
+  for (const [cat, montos] of montosPorCategoria) {
+    medianaPorCategoria.set(cat, mediana(montos));
+    cuantosPorCategoria.set(cat, montos.length);
+  }
+
+  const medianaPorParte = new Map<string, number>();
+  for (const [parte, montos] of montosPorParte) medianaPorParte.set(parte, mediana(montos));
+
+  const mesesPorParte = new Map<string, number>();
+  for (const [parte, meses] of mesesVistosPorParte) mesesPorParte.set(parte, meses.size);
+
+  return {
+    medianaPorCategoria,
+    cuantosPorCategoria,
+    mesesPorParte,
+    medianaPorParte,
+    totalPorMesYParte,
+    cuantosPorMesYParte,
+    porDiaMontoParte,
+    primeraFechaPorParte,
+  };
+};
+
+/**
+ * Baseline for a category, across the whole record.
  *
  * Median rather than mean on purpose: one rent payment would drag a mean upward
  * far enough that nothing after it ever looks unusual again. And it needs a few
  * samples — calling the second coffee of your life "unusual" is noise, not
  * insight.
+ *
+ * Taken over the entire history rather than only what came before, which is both
+ * cheaper (one median per category instead of one per movement) and arguably
+ * truer: "what you typically spend on food" is a property of the record, not of
+ * a point in it.
  */
-const MUESTRAS_MINIMAS = 4;
+const MUESTRAS_MINIMAS = 5;
 const VECES_INUSUAL = 3;
 
-const senalInusual = (tx: Transaction, historial: readonly Transaction[]): Senal | null => {
-  const previos = historial
-    .filter(
-      (t) =>
-        t.id !== tx.id &&
-        t.kind === tx.kind &&
-        t.category === tx.category &&
-        t.occurredOn <= tx.occurredOn,
-    )
-    .map((t) => t.amountCop);
+const senalInusual = (tx: Transaction, indice: IndiceSenales): Senal | null => {
+  const cat = `${tx.kind}|${tx.category}`;
+  if ((indice.cuantosPorCategoria.get(cat) ?? 0) < MUESTRAS_MINIMAS) return null;
 
-  if (previos.length < MUESTRAS_MINIMAS) return null;
-
-  const base = mediana(previos);
+  const base = indice.medianaPorCategoria.get(cat) ?? 0;
   if (base <= 0) return null;
 
   const veces = tx.amountCop / base;
@@ -82,22 +171,22 @@ const TOLERANCIA_MONTO = 0.15;
  * amount. That is what a subscription looks like from the outside — and the
  * charges people most often forget are exactly the ones that never vary.
  */
-const senalRecurrente = (tx: Transaction, historial: readonly Transaction[]): Senal | null => {
+const senalRecurrente = (tx: Transaction, indice: IndiceSenales): Senal | null => {
   const clave = claveDeParte(tx);
   if (!clave) return null;
 
-  const iguales = historial.filter((t) => t.kind === tx.kind && claveDeParte(t) === clave);
-  const meses = new Set(iguales.map((t) => monthKey(t.occurredOn)));
-  if (meses.size < MESES_RECURRENTE) return null;
+  const conParte = `${tx.kind}|${clave}`;
+  const meses = indice.mesesPorParte.get(conParte) ?? 0;
+  if (meses < MESES_RECURRENTE) return null;
 
-  const base = mediana(iguales.map((t) => t.amountCop));
+  const base = indice.medianaPorParte.get(conParte) ?? 0;
   if (base <= 0) return null;
   if (Math.abs(tx.amountCop - base) / base > TOLERANCIA_MONTO) return null;
 
   return {
     tipo: 'recurrente',
     titulo: 'Se repite cada mes',
-    detalle: `Lleva ${meses.size} meses por unos ${formatCop(base)}. Si es una suscripción, revisa si aún la usas.`,
+    detalle: `Lleva ${meses} meses por unos ${formatCop(base)}. Si es una suscripción, revisa si aún la usas.`,
     tono: 'aviso',
   };
 };
@@ -108,18 +197,19 @@ const VECES_HORMIGA = 5;
  * Small, frequent, and large in aggregate — the spending that hides because no
  * single charge is worth noticing.
  */
-const senalHormiga = (tx: Transaction, delMes: readonly Transaction[]): Senal | null => {
+const senalHormiga = (tx: Transaction, indice: IndiceSenales): Senal | null => {
   const clave = claveDeParte(tx);
   if (!clave) return null;
 
-  const iguales = delMes.filter((t) => t.kind === tx.kind && claveDeParte(t) === clave);
-  if (iguales.length < VECES_HORMIGA) return null;
+  const mesParte = `${monthKey(tx.occurredOn)}|${tx.kind}|${clave}`;
+  const cuantos = indice.cuantosPorMesYParte.get(mesParte) ?? 0;
+  if (cuantos < VECES_HORMIGA) return null;
 
-  const total = iguales.reduce((t, m) => t + m.amountCop, 0);
+  const total = indice.totalPorMesYParte.get(mesParte) ?? 0;
 
   return {
     tipo: 'hormiga',
-    titulo: `${iguales.length} veces este mes`,
+    titulo: `${cuantos} veces este mes`,
     detalle: `Cada una parece poca cosa, pero suman ${formatCop(total)}.`,
     tono: 'aviso',
   };
@@ -132,20 +222,18 @@ const senalHormiga = (tx: Transaction, delMes: readonly Transaction[]): Senal | 
  * real, and the import path already relies on that being allowed. This only asks
  * the user to look.
  */
-const senalDuplicado = (tx: Transaction, delMes: readonly Transaction[]): Senal | null => {
-  const gemelos = delMes.filter(
-    (t) =>
-      t.id !== tx.id &&
-      t.occurredOn === tx.occurredOn &&
-      t.amountCop === tx.amountCop &&
-      claveDeParte(t) === claveDeParte(tx),
-  );
-  if (gemelos.length === 0) return null;
+const senalDuplicado = (tx: Transaction, indice: IndiceSenales): Senal | null => {
+  const clave = claveDeParte(tx);
+  if (!clave) return null;
+
+  const cuantos =
+    indice.porDiaMontoParte.get(`${tx.occurredOn}|${tx.amountCop}|${tx.kind}|${clave}`) ?? 0;
+  if (cuantos < 2) return null;
 
   return {
     tipo: 'duplicado',
     titulo: 'Hay otro idéntico ese día',
-    detalle: `${gemelos.length + 1} cobros iguales de ${formatCop(tx.amountCop)} el mismo día. Puede ser real, o un cobro doble.`,
+    detalle: `${cuantos} cobros iguales de ${formatCop(tx.amountCop)} el mismo día. Puede ser real, o un cobro doble.`,
     tono: 'aviso',
   };
 };
@@ -153,19 +241,15 @@ const senalDuplicado = (tx: Transaction, delMes: readonly Transaction[]): Senal 
 const CRECIMIENTO_MINIMO = 0.5;
 
 /** This counterparty is taking noticeably more than it did in recent months. */
-const senalCreciendo = (tx: Transaction, historial: readonly Transaction[]): Senal | null => {
+const senalCreciendo = (tx: Transaction, indice: IndiceSenales): Senal | null => {
   const clave = claveDeParte(tx);
   if (!clave) return null;
 
+  const conParte = `${tx.kind}|${clave}`;
   const mes = monthKey(tx.occurredOn);
-  const previos = [1, 2, 3].map((n) => shiftMonth(mes, -n));
+  const totalDe = (m: string) => indice.totalPorMesYParte.get(`${m}|${conParte}`) ?? 0;
 
-  const totalDe = (m: string) =>
-    historial
-      .filter((t) => t.kind === tx.kind && claveDeParte(t) === clave && monthKey(t.occurredOn) === m)
-      .reduce((t, x) => t + x.amountCop, 0);
-
-  const anteriores = previos.map(totalDe).filter((v) => v > 0);
+  const anteriores = [1, 2, 3].map((n) => totalDe(shiftMonth(mes, -n))).filter((v) => v > 0);
   if (anteriores.length === 0) return null;
 
   const esteMes = totalDe(mes);
@@ -184,14 +268,12 @@ const senalCreciendo = (tx: Transaction, historial: readonly Transaction[]): Sen
 };
 
 /** First time this counterparty appears at all. */
-const senalNuevo = (tx: Transaction, historial: readonly Transaction[]): Senal | null => {
+const senalNuevo = (tx: Transaction, indice: IndiceSenales): Senal | null => {
   const clave = claveDeParte(tx);
   if (!clave) return null;
 
-  const antes = historial.some(
-    (t) => t.id !== tx.id && claveDeParte(t) === clave && t.occurredOn < tx.occurredOn,
-  );
-  if (antes) return null;
+  const primera = indice.primeraFechaPorParte.get(`${tx.kind}|${clave}`);
+  if (!primera || primera < tx.occurredOn) return null;
 
   return {
     tipo: 'nuevo',
@@ -210,20 +292,23 @@ const ORDEN: Record<Tono, number> = { alerta: 0, aviso: 1, neutro: 2 };
  * a verdict worth reading — is this normal for you, does it repeat, is it
  * growing — only exist across months.
  */
-export const senalesDeMovimiento = (
-  tx: Transaction,
-  historial: readonly Transaction[],
-): Senal[] => {
-  const delMes = historial.filter((t) => monthKey(t.occurredOn) === monthKey(tx.occurredOn));
-
-  return [
-    senalDuplicado(tx, delMes),
-    senalInusual(tx, historial),
-    senalCreciendo(tx, historial),
-    senalHormiga(tx, delMes),
-    senalRecurrente(tx, historial),
-    senalNuevo(tx, historial),
+export const senalesConIndice = (tx: Transaction, indice: IndiceSenales): Senal[] =>
+  [
+    senalDuplicado(tx, indice),
+    senalInusual(tx, indice),
+    senalCreciendo(tx, indice),
+    senalHormiga(tx, indice),
+    senalRecurrente(tx, indice),
+    senalNuevo(tx, indice),
   ]
     .filter((s): s is Senal => s !== null)
     .sort((a, b) => ORDEN[a.tono] - ORDEN[b.tono]);
-};
+
+/**
+ * Convenience for a single movement, where building the index costs one pass
+ * anyway. Use `crearIndiceSenales` + `senalesConIndice` for a whole list.
+ */
+export const senalesDeMovimiento = (
+  tx: Transaction,
+  historial: readonly Transaction[],
+): Senal[] => senalesConIndice(tx, crearIndiceSenales(historial));

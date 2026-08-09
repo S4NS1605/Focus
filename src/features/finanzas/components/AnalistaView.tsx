@@ -185,9 +185,9 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                 {verPosibles ? (
                   <ul className="mt-2.5 flex flex-col gap-2">
                     {plan.posibles.map((p) => {
-                      const marcado = aceptados.has(p.transaccion.id);
+                      const marcado = aceptados.has(p.clave);
                       return (
-                        <li key={p.transaccion.id} className="rounded-xl bg-[var(--fin-card)] p-2.5">
+                        <li key={p.clave} className="rounded-xl bg-[var(--fin-card)] p-2.5">
                           <p className="text-[11px] text-[var(--fin-ink-soft)]">
                             Ya tienes: <b className="text-[var(--fin-ink)]">{p.yaTengo.description}</b>
                           </p>
@@ -202,8 +202,8 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                               onChange={() =>
                                 setAceptados((prev) => {
                                   const siguiente = new Set(prev);
-                                  if (marcado) siguiente.delete(p.transaccion.id);
-                                  else siguiente.add(p.transaccion.id);
+                                  if (marcado) siguiente.delete(p.clave);
+                                  else siguiente.add(p.clave);
                                   return siguiente;
                                 })
                               }
@@ -228,7 +228,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                 disabled={plan.nuevos.length + aceptados.size === 0}
                 onClick={() => {
                   const extra = plan.posibles
-                    .filter((p) => aceptados.has(p.transaccion.id))
+                    .filter((p) => aceptados.has(p.clave))
                     .map((p) => p.transaccion);
                   const total = [...plan.nuevos, ...extra];
                   onImportar(total);

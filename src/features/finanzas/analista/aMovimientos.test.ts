@@ -239,3 +239,22 @@ describe('lo que ya anotaste a mano', () => {
     expect(plan.posibles).toHaveLength(0);
   });
 });
+
+describe('estabilidad entre renders', () => {
+  it('la clave de un posible repetido no cambia al recalcular el plan', () => {
+    const manual: Transaction = {
+      id: 'mio', kind: 'gasto', amountCop: 45_000, category: 'mercado',
+      description: 'Mercado Éxito', occurredOn: '2026-07-15',
+      cuentaId: null, rawTranscript: '', createdAt: '2026-07-15T00:00:00.000Z',
+    };
+    const delBanco = mov({ descripcion: 'COMPRA EN EXITO', montoCop: 45_000, fecha: '2026-07-15' });
+
+    // El plan se reconstruye en cada render y acuña ids nuevos cada vez. Si la
+    // interfaz recordara una casilla marcada por ese id, se desmarcaría sola.
+    const a = planearImportacion([delBanco], [manual], () => crypto.randomUUID());
+    const b = planearImportacion([delBanco], [manual], () => crypto.randomUUID());
+
+    expect(a.posibles[0].transaccion.id).not.toBe(b.posibles[0].transaccion.id);
+    expect(a.posibles[0].clave).toBe(b.posibles[0].clave);
+  });
+});

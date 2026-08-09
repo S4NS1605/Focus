@@ -3,6 +3,15 @@ import { normalizeWord } from '../lib/numerals';
 import type { MovimientoExtraido } from './tipos';
 
 export interface PosibleDuplicado {
+  /**
+   * Stable across recomputations, unlike the draft transaction's id.
+   *
+   * The plan is rebuilt on every render from the current ledger, and each
+   * rebuild mints fresh ids — so anything the UI remembers about a row (a
+   * ticked checkbox) has to hang off the movement's identity, not off an id
+   * that changes underneath it.
+   */
+  clave: string;
   movimiento: MovimientoExtraido;
   /** The entry already in the ledger it might be the same as. */
   yaTengo: Transaction;
@@ -148,7 +157,7 @@ export const planearImportacion = (
     const yaTeniaUno = candidatos?.find((t) => !reclamados.has(t.id));
     if (yaTeniaUno) {
       reclamados.add(yaTeniaUno.id);
-      posibles.push({ movimiento: mov, yaTengo: yaTeniaUno, transaccion: construir() });
+      posibles.push({ clave, movimiento: mov, yaTengo: yaTeniaUno, transaccion: construir() });
       continue;
     }
 
