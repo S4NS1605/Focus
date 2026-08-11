@@ -11,9 +11,12 @@ export const WavesBackground: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animationFrameId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    let animationFrameId = 0;
+    let width = 0;
+    let height = 0;
+    let maxRadius = 0;
+
+    const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     // Track mouse
     const handleMouseMove = (e: MouseEvent) => {
@@ -25,18 +28,34 @@ export const WavesBackground: React.FC = () => {
     window.addEventListener('mousemove', handleMouseMove);
 
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      width = window.innerWidth;
+      height = window.innerHeight;
+
+      // The canvas has as many real pixels as the screen does. Sized in CSS
+      // pixels it is stretched by the device ratio on every phone and retina
+      // display, which is what turned these hairlines into grey smudges.
+      // Capped at 2: a third pass over the same area costs real frame time and
+      // buys nothing visible at a 0.65px stroke.
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      // Everything below keeps working in CSS pixels.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Recomputed here, not once at setup: it was left at whatever the window
+      // measured on load, so rotating a phone left the field sized for the
+      // other orientation.
+      maxRadius = Math.max(width, height) * 0.75;
     };
 
-    window.addEventListener('resize', handleResize);
+    handleResize();
 
     // Simulation parameters
     const rings = 30;
     const sectors = 60;
-    const maxRadius = Math.max(width, height) * 0.75;
-    
+
     // Tilt settings
     let tiltX = 1.1; // Default tilt
     let tiltY = 0.3; // Default tilt
@@ -45,8 +64,6 @@ export const WavesBackground: React.FC = () => {
     const draw = () => {
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, width, height);
-
-      time += 0.015;
 
       // Smooth mouse tracking
       mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.05;
@@ -149,15 +166,55 @@ export const WavesBackground: React.FC = () => {
         ctx.stroke();
       }
 
-      animationFrameId = requestAnimationFrame(draw);
     };
 
-    draw();
+    const bucle = () => {
+      time += 0.015;
+      draw();
+      animationFrameId = requestAnimationFrame(bucle);
+    };
+
+    /**
+     * Runs only when there is someone to see it and someone who wants to.
+     *
+     * Roughly 1,800 points are projected per frame. Left running, that carried
+     * on at 60fps behind a background tab or a locked phone, which is a real
+     * amount of battery spent drawing to nobody.
+     *
+     * Reduced motion gets one still frame rather than a blank rectangle: the
+     * request is to stop things moving, not to remove them.
+     */
+    const reevaluar = () => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = 0;
+
+      if (document.hidden) return;
+      if (sinMovimiento.matches) {
+        draw();
+        return;
+      }
+      animationFrameId = requestAnimationFrame(bucle);
+    };
+
+    // A resize while paused still has to repaint, or the still frame keeps the
+    // old dimensions until motion is switched back on.
+    const alRedimensionar = () => {
+      handleResize();
+      if (animationFrameId === 0) reevaluar();
+    };
+    window.addEventListener('resize', alRedimensionar);
+    document.addEventListener('visibilitychange', reevaluar);
+    // Toggling the OS setting takes effect immediately, without a reload.
+    sinMovimiento.addEventListener('change', reevaluar);
+
+    reevaluar();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', alRedimensionar);
+      document.removeEventListener('visibilitychange', reevaluar);
+      sinMovimiento.removeEventListener('change', reevaluar);
     };
   }, []);
 
