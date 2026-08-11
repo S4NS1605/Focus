@@ -6,6 +6,7 @@ import { nuevaClaveCategoria } from '../categorias';
 import type { CategoriaPersonal } from '../categorias';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
+import { ID_EFECTIVO, cuentaEfectivo } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
@@ -42,6 +43,21 @@ export interface Almacen {
     occurredOn?: string;
     nota?: string;
     categoria?: Category | null;
+  }) => Promise<void>;
+  /**
+   * Pays down a debt with money from a real account.
+   *
+   * One call, two movements, one write: the debt goes down and the account it
+   * came out of goes down with it. Recorded as a pair rather than a ledger
+   * expense because paying a debt is not new consumption — it moves money that
+   * was already counted, and booking it as a gasto would inflate the month
+   * every time a card gets paid.
+   */
+  abonarDeuda: (datos: {
+    deudaId: string;
+    cuentaId: string;
+    montoCop: number;
+    occurredOn?: string;
   }) => Promise<void>;
   /** "I have X in this pocket" — records the delta needed to reach X. */
   fijarSaldo: (cajitaId: string, saldoObjetivo: number, nota?: string) => Promise<void>;
@@ -97,7 +113,21 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     (async () => {
       try {
         const cargado = await repo.cargarTodo();
-        if (!cancelado) setDatos(cargado);
+        if (cancelado) return;
+
+        // Cash is seeded rather than shipped as a synthetic entry, so it behaves
+        // like every other account: it holds a balance, appears in Configuración,
+        // and can be renamed or archived. Keyed by a fixed id, so this runs at
+        // most once — and an archived one is never resurrected.
+        if (!cargado.cajitas.some((c) => c.id === ID_EFECTIVO)) {
+          const efectivo = cuentaEfectivo(new Date().toISOString());
+          cargado.cajitas = [...cargado.cajitas, efectivo];
+          // Written but not awaited into the render path: failing to persist the
+          // default is not a reason to leave the user staring at a spinner.
+          void repo.guardarCajita(efectivo).catch(() => {});
+        }
+
+        setDatos(cargado);
       } catch (e) {
         if (!cancelado) {
           setError(mensajeDeError(e));
@@ -302,6 +332,51 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     [aplicar, datos, repo],
   );
 
+  const abonarDeuda = useCallback(
+    async ({
+      deudaId,
+      cuentaId,
+      montoCop,
+      occurredOn,
+    }: {
+      deudaId: string;
+      cuentaId: string;
+      montoCop: number;
+      occurredOn?: string;
+    }) => {
+      const monto = Math.abs(montoCop);
+      if (monto === 0) return;
+
+      const nombreDe = (id: string) => datos.cajitas.find((c) => c.id === id)?.nombre ?? '';
+      const fecha = occurredOn ?? bogotaDate();
+      const creado = new Date().toISOString();
+
+      const base = { occurredOn: fecha, categoria: null, createdAt: creado };
+      const enLaDeuda: CajitaMovimiento = {
+        ...base,
+        id: nuevoId('mov'),
+        cajitaId: deudaId,
+        kind: 'abono',
+        deltaCop: -monto,
+        nota: `Pagado desde ${nombreDe(cuentaId)}`.trim(),
+      };
+      const enLaCuenta: CajitaMovimiento = {
+        ...base,
+        id: nuevoId('mov'),
+        cajitaId: cuentaId,
+        kind: 'retiro',
+        deltaCop: -monto,
+        nota: `Abono a ${nombreDe(deudaId)}`.trim(),
+      };
+
+      const par = [enLaDeuda, enLaCuenta];
+      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, ...par] }, () =>
+        repo.guardarCajitaMovimientos(par),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
   const fijarSaldo = useCallback(
     async (cajitaId: string, saldoObjetivo: number, nota?: string) => {
       // Measured against the EFFECTIVE balance — pocket movements plus anything
@@ -425,6 +500,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     actualizarCajita,
     borrarCajita,
     registrarMovimiento,
+    abonarDeuda,
     fijarSaldo,
     borrarMovimiento,
     crearMeta,

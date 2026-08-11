@@ -32,6 +32,7 @@ const montar = (props: Partial<React.ComponentProps<typeof DeudasView>> = {}) =>
   const onFijarSaldo = vi.fn();
   const onMovimiento = vi.fn();
   const onEliminar = vi.fn();
+  const onAbonar = vi.fn();
 
   render(
     <DeudasView
@@ -41,11 +42,13 @@ const montar = (props: Partial<React.ComponentProps<typeof DeudasView>> = {}) =>
       onFijarSaldo={onFijarSaldo}
       onMovimiento={onMovimiento}
       onEliminar={onEliminar}
+      cuentas={[{ id: 'nequi', nombre: 'Nequi' }]}
+      onAbonar={onAbonar}
       {...props}
     />,
   );
 
-  return { onCrear, onFijarSaldo, onMovimiento, onEliminar };
+  return { onCrear, onFijarSaldo, onMovimiento, onEliminar, onAbonar };
 };
 
 describe('DeudasView', () => {
@@ -82,14 +85,52 @@ describe('DeudasView', () => {
     expect(onMovimiento).toHaveBeenCalledWith('d1', 'compra', 50000, 'otros');
   });
 
-  it('a payment LOWERS what you owe', () => {
-    const { onMovimiento } = montar();
+  it('a payment LOWERS what you owe, and comes out of a real account', () => {
+    const { onAbonar } = montar();
 
     fireEvent.click(screen.getByRole('button', { name: 'Abonar' }));
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '30000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
-    expect(onMovimiento).toHaveBeenCalledWith('d1', 'abono', -30000, null);
+    expect(onAbonar).toHaveBeenCalledWith({
+      deudaId: 'd1',
+      cuentaId: 'nequi',
+      montoCop: 30000,
+    });
+  });
+
+  it('a purchase still goes through the plain movement path', () => {
+    // Only payments move money out of an account. A purchase raises what is
+    // owed without anything leaving a balance — that is what buying on credit is.
+    const { onMovimiento, onAbonar } = montar();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar compra' }));
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '30000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+    expect(onMovimiento).toHaveBeenCalledWith('d1', 'compra', 30000, 'otros');
+    expect(onAbonar).not.toHaveBeenCalled();
+  });
+
+  it('asks where the payment comes from', () => {
+    montar();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abonar' }));
+
+    expect(screen.getByLabelText('¿De dónde sale el pago?')).toBeInTheDocument();
+  });
+
+  it('will not let a payment be saved when there is no account to pay from', () => {
+    // Money has to leave somewhere. Without an account the balances silently
+    // stop adding up, which is the whole reason this is required.
+    const { onAbonar } = montar({ cuentas: [] });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abonar' }));
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '30000' } });
+
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(onAbonar).not.toHaveBeenCalled();
   });
 
   it('asks what a purchase was for, but not a payment', () => {

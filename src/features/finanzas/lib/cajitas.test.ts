@@ -3,6 +3,7 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import {
   ajusteHacia,
+  idsPasivos,
   patrimonio,
   historialDeCajita,
   resumenDeCajitas,
@@ -320,5 +321,83 @@ describe('saldos con movimientos atribuidos', () => {
   it('sin transacciones se comporta igual que antes', () => {
     // Compatibilidad: todo llamador que no sepa de atribución sigue igual.
     expect(saldoDeCajita([mov({ deltaCop: 500_000 })], 'c1')).toBe(500_000);
+  });
+});
+
+describe('el signo de un movimiento atribuido', () => {
+  const tx = (over: Partial<Transaction> = {}): Transaction => ({
+    id: 't1',
+    kind: 'gasto',
+    amountCop: 45_000,
+    category: 'comida',
+    description: 'Almuerzo',
+    occurredOn: '2026-08-10',
+    cuentaId: 'c1',
+    rawTranscript: '',
+    createdAt: '2026-08-10T00:00:00.000Z',
+    ...over,
+  });
+
+  const tarjeta = caj({ id: 'tar', nombre: 'Credito NU', tipo: 'tarjeta' });
+  const cuenta = caj({ id: 'cta', nombre: 'Nequi', tipo: 'cuenta' });
+
+  it('un gasto baja la cuenta de la que salió', () => {
+    const saldos = saldosPorCajita(
+      [mov({ cajitaId: 'cta', deltaCop: 500_000 })],
+      [tx({ cuentaId: 'cta' })],
+      idsPasivos([cuenta, tarjeta]),
+    );
+
+    expect(saldos.get('cta')).toBe(455_000);
+  });
+
+  it('un gasto en una tarjeta SUBE lo que debes, no lo baja', () => {
+    // El fallo original: se restaba en los dos casos, así que cada compra
+    // cargada a la tarjeta hacía que la deuda caminara hacia atrás.
+    const saldos = saldosPorCajita(
+      [mov({ cajitaId: 'tar', deltaCop: 200_000 })],
+      [tx({ cuentaId: 'tar' })],
+      idsPasivos([cuenta, tarjeta]),
+    );
+
+    expect(saldos.get('tar')).toBe(245_000);
+  });
+
+  it('un ingreso abonado a una tarjeta baja lo que debes', () => {
+    const saldos = saldosPorCajita(
+      [mov({ cajitaId: 'tar', deltaCop: 200_000 })],
+      [tx({ cuentaId: 'tar', kind: 'ingreso', amountCop: 50_000 })],
+      idsPasivos([cuenta, tarjeta]),
+    );
+
+    expect(saldos.get('tar')).toBe(150_000);
+  });
+
+  it('saldoDeCajita coincide con saldosPorCajita para un pasivo', () => {
+    const movs = [mov({ cajitaId: 'tar', deltaCop: 200_000 })];
+    const txs = [tx({ cuentaId: 'tar' })];
+    const pasivos = idsPasivos([cuenta, tarjeta]);
+
+    expect(saldoDeCajita(movs, 'tar', txs, pasivos)).toBe(
+      saldosPorCajita(movs, txs, pasivos).get('tar'),
+    );
+  });
+
+  it('sin decir cuáles son pasivos, todo se trata como activo', () => {
+    // El valor por defecto mantiene funcionando a quien no pasa el conjunto.
+    const saldos = saldosPorCajita([], [tx({ cuentaId: 'tar' })]);
+
+    expect(saldos.get('tar')).toBe(-45_000);
+  });
+
+  it('idsPasivos recoge deudas y tarjetas, y solo esas', () => {
+    const conjunto = idsPasivos([
+      cuenta,
+      tarjeta,
+      caj({ id: 'deu', tipo: 'deuda' }),
+      caj({ id: 'caj', tipo: 'cajita' }),
+    ]);
+
+    expect([...conjunto].sort()).toEqual(['deu', 'tar']);
   });
 });

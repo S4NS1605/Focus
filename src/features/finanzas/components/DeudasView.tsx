@@ -28,6 +28,9 @@ interface DeudasViewProps {
     categoria?: Category | null,
   ) => void;
   onEliminar: (cajitaId: string) => void;
+  /** Live asset balances a payment can come out of. Never debts or cards. */
+  cuentas: readonly { id: string; nombre: string }[];
+  onAbonar: (datos: { deudaId: string; cuentaId: string; montoCop: number }) => void;
 }
 
 type Accion = 'compra' | 'abono' | 'saldo';
@@ -47,10 +50,16 @@ const DeudaCard: React.FC<{
   onFijarSaldo: DeudasViewProps['onFijarSaldo'];
   onMovimiento: DeudasViewProps['onMovimiento'];
   onEliminar: DeudasViewProps['onEliminar'];
-}> = ({ cajita, saldoCop, movimientos, onFijarSaldo, onMovimiento, onEliminar }) => {
+  cuentas: DeudasViewProps['cuentas'];
+  onAbonar: DeudasViewProps['onAbonar'];
+}> = ({ cajita, saldoCop, movimientos, onFijarSaldo, onMovimiento, onEliminar, cuentas, onAbonar }) => {
   const [accion, setAccion] = useState<Accion | null>(null);
   const [texto, setTexto] = useState('');
   const [categoria, setCategoria] = useState<Category>('otros');
+  // Defaults to the first account so the common case is one tap, but the value
+  // still has to exist — a payment that comes from nowhere is the thing this
+  // whole flow is meant to stop.
+  const [cuentaId, setCuentaId] = useState<string>(cuentas[0]?.id ?? '');
   const [confirmando, setConfirmando] = useState(false);
 
   const historial = historialDeCajita(movimientos, cajita.id);
@@ -63,9 +72,13 @@ const DeudaCard: React.FC<{
     if (valor === null || accion === null) return;
 
     if (accion === 'saldo') onFijarSaldo(cajita.id, valor);
-    // A purchase adds to what you owe; a payment takes away from it.
+    // A purchase adds to what you owe; a payment takes away from it — and comes
+    // out of a real account, which is why it goes through its own action.
     else if (accion === 'compra') onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria);
-    else onMovimiento(cajita.id, 'abono', -Math.abs(valor), null);
+    else {
+      if (cuentaId === '') return;
+      onAbonar({ deudaId: cajita.id, cuentaId, montoCop: Math.abs(valor) });
+    }
 
     setAccion(null);
     setTexto('');
@@ -205,9 +218,40 @@ const DeudaCard: React.FC<{
             </fieldset>
           ) : null}
 
+          {accion === 'abono' ? (
+            <div className="mt-3">
+              <label
+                htmlFor={`abono-cuenta-${cajita.id}`}
+                className="block text-[11px] font-bold text-[var(--fin-ink-soft)]"
+              >
+                ¿De dónde sale el pago?
+              </label>
+              {cuentas.length === 0 ? (
+                <p className="mt-1.5 rounded-xl bg-[var(--fin-card)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+                  Primero crea una cuenta en Ahorro. El dinero de un abono tiene que
+                  salir de algún lado, o los saldos dejan de cuadrar.
+                </p>
+              ) : (
+                <select
+                  id={`abono-cuenta-${cajita.id}`}
+                  value={cuentaId}
+                  onChange={(e) => setCuentaId(e.target.value)}
+                  required
+                  className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                >
+                  {cuentas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          ) : null}
+
           <button
             type="submit"
-            disabled={valor === null}
+            disabled={valor === null || (accion === 'abono' && cuentaId === '')}
             className="mt-3 w-full rounded-full bg-[var(--fin-accent)] px-4 py-2.5 text-xs font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
           >
             Guardar
@@ -256,6 +300,8 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
   onFijarSaldo,
   onMovimiento,
   onEliminar,
+  cuentas,
+  onAbonar,
 }) => {
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
@@ -433,6 +479,8 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
           onFijarSaldo={onFijarSaldo}
           onMovimiento={onMovimiento}
           onEliminar={onEliminar}
+          cuentas={cuentas}
+          onAbonar={onAbonar}
         />
       ))}
     </div>

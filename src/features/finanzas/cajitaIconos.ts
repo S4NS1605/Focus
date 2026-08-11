@@ -10,6 +10,7 @@ import {
   Plane,
   Target,
   Tent,
+  Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -25,6 +26,7 @@ import type { LucideIcon } from 'lucide-react';
  * database keeps rendering the same mark.
  */
 const REGISTRO: Record<string, LucideIcon> = {
+  Wallet,
   PiggyBank,
   Tent,
   Car,

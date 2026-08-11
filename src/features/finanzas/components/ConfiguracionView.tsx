@@ -6,7 +6,7 @@ import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
 import { CategoriasEditor } from './CategoriasEditor';
 import type { CategoriasEditorProps } from './CategoriasEditor';
-import { saldosPorCajita } from '../lib/cajitas';
+import { idsPasivos, saldosPorCajita } from '../lib/cajitas';
 import { formatAmountInput, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 
 interface ConfiguracionViewProps {
@@ -215,7 +215,7 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
   onArchivarCategoria,
   onBorrarCategoria,
 }) => {
-  const saldos = saldosPorCajita(movimientos, transacciones);
+  const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   const vivas = cajitas.filter((c) => c.archivedAt === null);
 
   // Having no accounts is the empty state of the BALANCES block, not of the

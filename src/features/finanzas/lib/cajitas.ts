@@ -9,6 +9,25 @@ import { ES_PASIVO } from '../data/modelos';
  * records the delta needed to reach it, so the history and the balance can never
  * disagree, and every past figure stays reconstructable.
  */
+/**
+ * The ids whose balance is money OWED rather than money held.
+ *
+ * Passed around as a set because the sign of an attributed movement depends on
+ * it: spending from a bank account lowers it, spending on a card raises what
+ * you owe. Without this the two cancel in opposite directions and a card
+ * balance walks backwards every time something is filed against it.
+ */
+export const idsPasivos = (cajitas: readonly Cajita[]): Set<string> =>
+  new Set(cajitas.filter((c) => ES_PASIVO[c.tipo]).map((c) => c.id));
+
+/** Signed delta an attributed ledger entry applies to the balance it names. */
+const deltaAtribuido = (tx: Transaction, pasivos: ReadonlySet<string>): number => {
+  const haciaArriba = tx.kind === 'ingreso';
+  // Inverted for a debt: a purchase grows it, a payment shrinks it.
+  const sube = tx.cuentaId !== null && pasivos.has(tx.cuentaId) ? !haciaArriba : haciaArriba;
+  return sube ? tx.amountCop : -tx.amountCop;
+};
+
 export const saldosPorCajita = (
   movimientos: readonly CajitaMovimiento[],
   /**
@@ -16,6 +35,8 @@ export const saldosPorCajita = (
    * not care about attribution keeps working unchanged.
    */
   transacciones: readonly Transaction[] = [],
+  /** See `idsPasivos`. Empty means "treat everything as an asset". */
+  pasivos: ReadonlySet<string> = new Set(),
 ): Map<string, number> => {
   const saldos = new Map<string, number>();
   for (const mov of movimientos) {
@@ -25,8 +46,7 @@ export const saldosPorCajita = (
   // This is what stops a balance going stale the moment something is recorded.
   for (const tx of transacciones) {
     if (!tx.cuentaId) continue;
-    const delta = tx.kind === 'ingreso' ? tx.amountCop : -tx.amountCop;
-    saldos.set(tx.cuentaId, (saldos.get(tx.cuentaId) ?? 0) + delta);
+    saldos.set(tx.cuentaId, (saldos.get(tx.cuentaId) ?? 0) + deltaAtribuido(tx, pasivos));
   }
   return saldos;
 };
@@ -35,13 +55,11 @@ export const saldoDeCajita = (
   movimientos: readonly CajitaMovimiento[],
   cajitaId: string,
   transacciones: readonly Transaction[] = [],
+  pasivos: ReadonlySet<string> = new Set(),
 ): number =>
   movimientos.reduce((total, mov) => (mov.cajitaId === cajitaId ? total + mov.deltaCop : total), 0) +
   transacciones.reduce(
-    (total, tx) =>
-      tx.cuentaId === cajitaId
-        ? total + (tx.kind === 'ingreso' ? tx.amountCop : -tx.amountCop)
-        : total,
+    (total, tx) => (tx.cuentaId === cajitaId ? total + deltaAtribuido(tx, pasivos) : total),
     0,
   );
 
@@ -92,7 +110,10 @@ export const totalEnCajitas = (
   movimientos: readonly CajitaMovimiento[],
   transacciones: readonly Transaction[] = [],
 ): number => {
-  const saldos = saldosPorCajita(movimientos, transacciones);
+  // The set is derived from the same list whose balances are then read, so
+  // every id summed below is classified — including when a caller has already
+  // narrowed `cajitas` to a single kind.
+  const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   return cajitas
     .filter((c) => c.archivedAt === null)
     .reduce((total, c) => total + (saldos.get(c.id) ?? 0), 0);
@@ -110,7 +131,7 @@ export const resumenDeCajitas = (
   movimientos: readonly CajitaMovimiento[],
   transacciones: readonly Transaction[] = [],
 ): ResumenCajita[] => {
-  const saldos = saldosPorCajita(movimientos, transacciones);
+  const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
 
   return cajitas
     .filter((c) => c.archivedAt === null)

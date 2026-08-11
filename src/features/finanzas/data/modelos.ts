@@ -115,7 +115,29 @@ export const CAJITA_MOV_ICON: Record<CajitaMovKind, LucideIcon> = {
 };
 
 /** Pocket icon offered when creating one. Nu's own pockets are named freely. */
+/**
+ * The cash account.
+ *
+ * A fixed id rather than a generated one so seeding is idempotent: the app can
+ * check whether it exists — archived or not — and never end up with two. It is
+ * an ordinary `cuenta` in every other respect, so it has a balance, shows up in
+ * Configuración, and can be renamed or archived like the rest.
+ */
+export const ID_EFECTIVO = 'efectivo';
+
+export const cuentaEfectivo = (createdAt: string): Cajita => ({
+  id: ID_EFECTIVO,
+  nombre: 'Efectivo',
+  icon: 'Wallet',
+  tipo: 'cuenta',
+  metaCop: null,
+  tasaEaPct: null,
+  createdAt,
+  archivedAt: null,
+});
+
 export const CAJITA_ICONS = [
+  'Wallet',
   'PiggyBank',
   'Tent',
   'Car',

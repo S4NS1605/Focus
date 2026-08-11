@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { Transaction } from '../types';
 import { DetalleMes } from './DetalleMes';
@@ -18,6 +18,19 @@ const tx = (over: Partial<Transaction> = {}): Transaction => ({
 
 const montar = (transacciones: Transaction[], mes = '2026-08') =>
   render(<DetalleMes delMes={transacciones} transacciones={transacciones} mes={mes} />);
+
+// The bars are labelled with `dayLabel`, which says "Hoy" and "Ayer" for the two
+// most recent days instead of a date. With a real clock these assertions held
+// for 29 days a month and broke on the other two, which is worse than no test:
+// it fails without anything having changed. Pinned to a day far from the
+// fixtures so the labels are always "10 ago" and friends.
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-08-25T15:00:00.000Z'));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe('DetalleMes — gráfica por día', () => {
   it('invites interaction before anything is selected', () => {

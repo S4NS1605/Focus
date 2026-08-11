@@ -15,6 +15,7 @@ import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
+import { ES_PASIVO } from './data/modelos';
 import { DeudasView } from './components/DeudasView';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { PatrimonioCard } from './components/PatrimonioCard';
@@ -145,11 +146,17 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     };
   }, [transacciones, month]);
 
-  // Only live balances money can actually sit in — a goal is not a place.
+  // Only live balances money can actually sit in.
+  //
+  // Debts and cards are excluded on purpose. The field asks which account the
+  // money came OUT of, and a loan is not a place money sits — listing "Credito
+  // NU" beside Nequi invited filing a purchase against it, which then moved the
+  // balance the wrong way. Card purchases have their own flow in Deudas, where
+  // a purchase correctly raises what is owed.
   const cuentasParaElegir = useMemo(
     () =>
       cajitas
-        .filter((c) => c.archivedAt === null)
+        .filter((c) => c.archivedAt === null && !ES_PASIVO[c.tipo])
         .map((c) => ({ id: c.id, nombre: c.nombre })),
     [cajitas],
   );
@@ -396,6 +403,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             void almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria })
           }
           onEliminar={(id) => void almacen.borrarCajita(id)}
+          cuentas={cuentasParaElegir}
+          onAbonar={(datos) => void almacen.abonarDeuda(datos)}
         />
       ) : null}
 

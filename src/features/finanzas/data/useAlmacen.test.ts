@@ -77,7 +77,7 @@ describe('useAlmacen', () => {
     await act(async () => {
       await result.current.crearCajita({ nombre: 'Vacaciones', icon: '🏖️', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
-    const cajitaId = result.current.datos.cajitas[0].id;
+    const cajitaId = result.current.datos.cajitas.find((c) => c.nombre === 'Vacaciones')!.id;
 
     await act(async () => {
       await result.current.registrarMovimiento({ cajitaId, kind: 'deposito', deltaCop: 100000 });
@@ -100,7 +100,7 @@ describe('useAlmacen', () => {
     await act(async () => {
       await result.current.crearCajita({ nombre: 'Carro', icon: '🚗', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
-    const cajitaId = result.current.datos.cajitas[0].id;
+    const cajitaId = result.current.datos.cajitas.find((c) => c.nombre === 'Carro')!.id;
     await act(async () => {
       await result.current.registrarMovimiento({ cajitaId, kind: 'deposito', deltaCop: 50000 });
     });
@@ -120,7 +120,7 @@ describe('useAlmacen', () => {
     await act(async () => {
       await result.current.crearCajita({ nombre: 'Viaje', icon: '✈️', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
-    const cajitaId = result.current.datos.cajitas[0].id;
+    const cajitaId = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
     await act(async () => {
       await result.current.registrarMovimiento({ cajitaId, kind: 'deposito', deltaCop: 10000 });
       await result.current.crearMeta({
@@ -137,7 +137,7 @@ describe('useAlmacen', () => {
       await result.current.borrarCajita(cajitaId);
     });
 
-    expect(result.current.datos.cajitas).toEqual([]);
+    expect(result.current.datos.cajitas.map((c) => c.nombre)).not.toContain('Viaje');
     expect(result.current.datos.cajitaMovimientos).toEqual([]);
     expect(result.current.datos.metas).toHaveLength(1);
     expect(result.current.datos.metas[0].cajitaId).toBeNull();
@@ -189,7 +189,8 @@ describe('useAlmacen', () => {
     // calculation needs a dated movement to know since when it has been earning.
     expect(cajitaMovimientos).toHaveLength(1);
     expect(cajitaMovimientos[0]).toMatchObject({ kind: 'deposito', deltaCop: 1_031_199 });
-    expect(saldoDeCajita(cajitaMovimientos, cajitas[0].id)).toBe(1_031_199);
+    const macbook = cajitas.find((c) => c.nombre === 'MacBook')!;
+    expect(saldoDeCajita(cajitaMovimientos, macbook.id)).toBe(1_031_199);
   });
 
   it('creates no movement when the pocket starts empty', async () => {
@@ -208,5 +209,98 @@ describe('useAlmacen', () => {
     });
 
     expect((await repo.cargarTodo()).cajitaMovimientos).toEqual([]);
+  });
+
+  it('seeds a cash account, and only ever one', async () => {
+    const repo = new RepositorioMemoria();
+    const { result, unmount } = await montar(repo);
+
+    expect(result.current.datos.cajitas.map((c) => c.nombre)).toEqual(['Efectivo']);
+    unmount();
+
+    // A second session must not add a second one.
+    const otra = await montar(repo);
+    expect(otra.result.current.datos.cajitas.filter((c) => c.nombre === 'Efectivo')).toHaveLength(1);
+  });
+
+  it('does not resurrect the cash account once it has been archived', async () => {
+    // Seeding is a default, not a rule. Someone who never handles cash should be
+    // able to put it away and have it stay away.
+    const repo = new RepositorioMemoria({
+      cajitas: [
+        {
+          id: 'efectivo',
+          nombre: 'Efectivo',
+          icon: 'Wallet',
+          tipo: 'cuenta',
+          metaCop: null,
+          tasaEaPct: null,
+          createdAt: '2026-08-01T00:00:00.000Z',
+          archivedAt: '2026-08-02T00:00:00.000Z',
+        },
+      ],
+    });
+
+    const { result } = await montar(repo);
+
+    expect(result.current.datos.cajitas).toHaveLength(1);
+    expect(result.current.datos.cajitas[0].archivedAt).not.toBeNull();
+  });
+
+  it('paying a debt moves the debt AND the account it came from', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    // Un `act` por creación: cada acción parte del estado del render actual, así
+    // que dos seguidas dentro del mismo acto harían que la segunda pisara a la
+    // primera.
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Credito NU', icon: 'CreditCard', tipo: 'tarjeta',
+        metaCop: null, tasaEaPct: null, saldoInicialCop: 200_000,
+      });
+    });
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Nequi', icon: 'Wallet', tipo: 'cuenta',
+        metaCop: null, tasaEaPct: null, saldoInicialCop: 500_000,
+      });
+    });
+
+    const idDe = (nombre: string) =>
+      result.current.datos.cajitas.find((c) => c.nombre === nombre)!.id;
+    const deudaId = idDe('Credito NU');
+    const cuentaId = idDe('Nequi');
+
+    await act(async () => {
+      await result.current.abonarDeuda({ deudaId, cuentaId, montoCop: 30_000 });
+    });
+
+    const movs = result.current.datos.cajitaMovimientos;
+    expect(saldoDeCajita(movs, deudaId)).toBe(170_000);
+    expect(saldoDeCajita(movs, cuentaId)).toBe(470_000);
+  });
+
+  it('records a debt payment as a transfer, never as a month\'s expense', async () => {
+    // Paying a card is not new consumption: the money was already counted when
+    // it was spent. Booking it as a gasto would inflate every month a card gets
+    // paid off.
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Visa', icon: 'CreditCard', tipo: 'tarjeta',
+        metaCop: null, tasaEaPct: null, saldoInicialCop: 100_000,
+      });
+    });
+    const deudaId = result.current.datos.cajitas.find((c) => c.nombre === 'Visa')!.id;
+    const cuentaId = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!.id;
+
+    await act(async () => {
+      await result.current.abonarDeuda({ deudaId, cuentaId, montoCop: 40_000 });
+    });
+
+    expect(result.current.datos.transacciones).toEqual([]);
   });
 });
