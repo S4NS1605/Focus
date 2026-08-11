@@ -11,6 +11,15 @@ interface PatrimonioCardProps {
   movimientos: readonly CajitaMovimiento[];
   /** Jumps to where accounts are added, so the empty state is not a dead end. */
   onAgregar?: () => void;
+  /**
+   * Whether savings count here.
+   *
+   * When off they leave the headline as well as the tile. Hiding only the tile
+   * would leave a total that silently includes a figure the user cannot see —
+   * the parts would stop adding up to the whole, which is exactly the kind of
+   * quiet disagreement this app is built to avoid.
+   */
+  mostrarAhorro?: boolean;
 }
 
 /**
@@ -20,8 +29,15 @@ interface PatrimonioCardProps {
  * while the accounts are perfectly healthy, and showing one number for both is
  * how a summary ends up alarming for no reason.
  */
-export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimientos, transacciones, onAgregar }) => {
+export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({
+  cajitas,
+  movimientos,
+  transacciones,
+  onAgregar,
+  mostrarAhorro = true,
+}) => {
   const total = patrimonio(cajitas, movimientos, transacciones);
+  const encabezado = mostrarAhorro ? total.totalCop : total.cuentasCop;
 
   if (cajitas.length === 0) {
     return (
@@ -58,12 +74,24 @@ export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimie
     <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
       <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
         <Wallet className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-        Lo que tienes ahora
+        {/* The heading changes with the number rather than staying put above a
+            narrower figure. "Lo que tienes ahora" over an accounts-only total
+            is a promise the number does not keep — and for someone whose money
+            is all in cajitas it reads as "you have $0". */}
+        {mostrarAhorro ? 'Lo que tienes ahora' : 'Lo que tienes en cuentas'}
       </h2>
 
       <p className="mt-1 font-display text-4xl font-extrabold tabular-nums text-[var(--fin-ink)]">
-        {formatCop(total.totalCop)}
+        {formatCop(encabezado)}
       </p>
+
+      {/* Only when something is actually being left out. Announcing hidden
+          savings to someone who has none invents money that does not exist. */}
+      {!mostrarAhorro && total.cajitasCop !== 0 ? (
+        <p className="mt-1 text-[11px] font-bold text-[var(--fin-ink-faint)]">
+          Sin contar {formatCop(total.cajitasCop)} en ahorros
+        </p>
+      ) : null}
 
       {onAgregar ? (
         <button
@@ -76,6 +104,10 @@ export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimie
         </button>
       ) : null}
 
+      {/* The split is dropped rather than reduced to one tile when savings are
+          off: the headline already IS what is in accounts, and repeating the
+          same figure underneath reads as two facts when there is only one. */}
+      {mostrarAhorro ? (
       <div className="mt-4 grid grid-cols-2 gap-3">
         {[
           { label: 'En cuentas', valor: total.cuentasCop, Icono: Landmark },
@@ -92,6 +124,7 @@ export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({ cajitas, movimie
           </div>
         ))}
       </div>
+      ) : null}
     </section>
   );
 };

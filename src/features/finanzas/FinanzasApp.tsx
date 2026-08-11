@@ -16,6 +16,7 @@ import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
 import { ES_PASIVO } from './data/modelos';
+import { useMostrarAhorro } from './data/usePreferencias';
 import { DeudasView } from './components/DeudasView';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { PatrimonioCard } from './components/PatrimonioCard';
@@ -124,6 +125,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   }, [userId]);
 
   const almacen = useAlmacen(repositorio);
+  const { mostrarAhorro, setMostrarAhorro } = useMostrarAhorro();
   const { transacciones, cajitas, cajitaMovimientos, metas, categorias } = almacen.datos;
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
@@ -276,6 +278,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             transacciones={transacciones}
             movimientos={cajitaMovimientos}
             onAgregar={() => setSection('cuentas')}
+            mostrarAhorro={mostrarAhorro}
           />
 
           <EstadoDelMes totals={totals} delMes={delMes} />
@@ -364,6 +367,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
                 void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
               }
               onEliminar={(id) => void almacen.borrarCajita(id)}
+              mostrarEnResumen={mostrarAhorro}
+              onMostrarEnResumen={setMostrarAhorro}
             />
           ) : (
             <MetasView

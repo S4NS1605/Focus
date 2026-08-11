@@ -32,9 +32,43 @@ const tamanoDe = (clases: string): number | null => {
   return arbitrario ? Number(arbitrario[1]) : null;
 };
 
-/** Every `<input|select|textarea …>` tag body in a file. */
-const camposDe = (fuente: string): string[] =>
-  [...fuente.matchAll(/<(?:input|select|textarea)\b([\s\S]*?)\/?>/g)].map((m) => m[1]);
+/**
+ * Every `<input|select|textarea …>` tag body in a file.
+ *
+ * Scanned by tracking brace and quote depth rather than matching to the first
+ * `>`. JSX props routinely contain that character — `onChange={(e) => …}` alone
+ * accounts for most fields here — and a lazy regex stops dead inside the arrow,
+ * long before `className`. That silently emptied this check: 31 of the 34
+ * fields in the app were being judged on the first two attributes only, so the
+ * suite reported a clean sweep it had never actually performed.
+ */
+const camposDe = (fuente: string): string[] => {
+  const cuerpos: string[] = [];
+
+  for (const inicio of fuente.matchAll(/<(?:input|select|textarea)\b/g)) {
+    const desde = inicio.index + inicio[0].length;
+    let profundidad = 0;
+    let comilla: string | null = null;
+
+    for (let i = desde; i < fuente.length; i += 1) {
+      const c = fuente[i];
+      if (comilla !== null) {
+        if (c === comilla) comilla = null;
+      } else if (c === '"' || c === "'" || c === '`') {
+        comilla = c;
+      } else if (c === '{') {
+        profundidad += 1;
+      } else if (c === '}') {
+        profundidad -= 1;
+      } else if (c === '>' && profundidad === 0) {
+        cuerpos.push(fuente.slice(desde, i));
+        break;
+      }
+    }
+  }
+
+  return cuerpos;
+};
 
 const MINIMO_IOS = 16;
 

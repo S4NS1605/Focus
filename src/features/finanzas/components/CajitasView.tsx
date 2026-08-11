@@ -32,6 +32,13 @@ interface CajitasViewProps {
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
   onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => void;
   onEliminar: (cajitaId: string) => void;
+  /**
+   * Whether savings count toward the summary. Only meaningful on the savings
+   * screen — accounts are what the summary is *for*, so there is nothing to
+   * switch off there.
+   */
+  mostrarEnResumen?: boolean;
+  onMostrarEnResumen?: (valor: boolean) => void;
 }
 
 export const CajitasView: React.FC<CajitasViewProps> = ({
@@ -43,6 +50,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   onFijarSaldo,
   onMovimiento,
   onEliminar,
+  mostrarEnResumen = true,
+  onMostrarEnResumen,
 }) => {
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
@@ -95,6 +104,49 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             repartido en {resumenes.length} {esCuenta ? 'cuenta' : 'cajita'}
             {resumenes.length === 1 ? '' : 's'}
           </p>
+        ) : null}
+
+        {/* Sits under the savings total rather than in Configuración: the
+            question is about this number, and the answer is easier to trust
+            with the figure it changes in view.
+
+            Gated on `tipo === 'cajita'` and not on "is not an account": this
+            component also renders debts and cards, and the negated form would
+            hang a savings switch under what you owe. */}
+        {tipo === 'cajita' && onMostrarEnResumen ? (
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-[var(--fin-bg)] px-3.5 py-3">
+            <span className="min-w-0">
+              {/* The hint is `aria-describedby`, not part of the label. Inside
+                  it, the accessible name became the whole paragraph AND changed
+                  wording on every toggle — a control that renames itself when
+                  you use it is one a screen-reader user cannot keep track of. */}
+              <label
+                htmlFor="ahorro-en-resumen"
+                className="block cursor-pointer text-[11px] font-bold text-[var(--fin-ink)]"
+              >
+                Contar las cajitas en el resumen
+              </label>
+              <span
+                id="ahorro-en-resumen-nota"
+                className="mt-0.5 block text-[10px] leading-relaxed text-[var(--fin-ink-faint)]"
+              >
+                {mostrarEnResumen
+                  ? 'Se suman a lo que tienes ahora.'
+                  : 'El resumen muestra solo lo que hay en cuentas.'}
+              </span>
+            </span>
+            {/* A plain checkbox, announced as one. It was marked
+                role="switch" while still drawing as a square box, so the role
+                promised a control the screen did not show. */}
+            <input
+              id="ahorro-en-resumen"
+              type="checkbox"
+              checked={mostrarEnResumen}
+              onChange={(e) => onMostrarEnResumen(e.target.checked)}
+              aria-describedby="ahorro-en-resumen-nota"
+              className="h-5 w-5 shrink-0 cursor-pointer accent-[var(--fin-accent)]"
+            />
+          </div>
         ) : null}
       </section>
 
