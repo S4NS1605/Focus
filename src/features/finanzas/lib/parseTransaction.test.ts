@@ -251,3 +251,87 @@ describe('parseTransaction — robustness and purity', () => {
     }
   });
 });
+
+describe('parseTransaction — de qué cuenta habla el texto', () => {
+  const CUENTAS = [
+    { id: 'nequi', nombre: 'Nequi' },
+    { id: 'banco', nombre: 'Bancolombia' },
+    { id: 'davi', nombre: 'Davivienda' },
+    { id: 'efec', nombre: 'Efectivo' },
+    { id: 'bogota', nombre: 'Banco de Bogotá' },
+  ];
+
+  const leer = (texto: string) => parseTransaction(texto, CUENTAS);
+
+  it('reconoce el banco al que le entró la plata', () => {
+    const r = leer('me transfirieron 20.000 pesos a Bancolombia');
+
+    expect(r.kind).toBe('ingreso');
+    expect(r.amount).toBe(20000);
+    expect(r.cuentaId).toBe('banco');
+  });
+
+  it('reconoce de dónde salió un gasto', () => {
+    const r = leer('pagué 45 mil de Nequi');
+
+    expect(r.kind).toBe('gasto');
+    expect(r.cuentaId).toBe('nequi');
+  });
+
+  it('entiende el efectivo como cualquier otra cuenta', () => {
+    expect(leer('gasté 12 mil en efectivo').cuentaId).toBe('efec');
+  });
+
+  it('no le importan tildes ni mayúsculas', () => {
+    expect(leer('me llegaron 50 mil a BANCO DE BOGOTA').cuentaId).toBe('bogota');
+  });
+
+  it('prefiere el nombre largo cuando uno contiene al otro', () => {
+    // "Banco de Bogotá" no puede resolverse como un "Banco" suelto.
+    expect(leer('me consignaron 100 mil al Banco de Bogotá').cuentaId).toBe('bogota');
+  });
+
+  it('no repite el banco en la descripción', () => {
+    // Con el banco ya en su propio campo, decirlo otra vez en el texto de la
+    // fila es decir lo mismo dos veces.
+    const r = leer('me transfirieron 20 mil a Bancolombia');
+
+    expect(r.description.toLowerCase()).not.toContain('bancolombia');
+  });
+
+  it('deja la cuenta en nulo cuando el texto no nombra ninguna', () => {
+    expect(leer('gasté 20 mil en almuerzo').cuentaId).toBeNull();
+    expect(leer('gasté 20 mil en almuerzo').signals.cuentaSource).toBe('ninguna');
+  });
+
+  it('no inventa cuentas cuando no le pasan ninguna', () => {
+    // El parser es función de sus entradas: sin lista, no hay nada que reconocer.
+    expect(parseTransaction('me transfirieron 20 mil a Bancolombia').cuentaId).toBeNull();
+  });
+
+  it('no confunde un nombre metido dentro de otra palabra', () => {
+    // Igualdad por token, nunca subcadena.
+    const r = parseTransaction('gasté 20 mil en nequitos', [{ id: 'nequi', nombre: 'Nequi' }]);
+
+    expect(r.cuentaId).toBeNull();
+  });
+
+  it('marca cuándo la frase de verdad señaló la cuenta', () => {
+    expect(leer('me pagaron 80 mil a Nequi').signals.cuentaSource).toBe('preposicion');
+    expect(leer('Nequi 80 mil').signals.cuentaSource).toBe('nombre');
+  });
+
+  it('con dos cuentas nombradas, gana la que lleva preposición', () => {
+    const r = leer('Bancolombia me devolvió 30 mil a Nequi');
+
+    expect(r.cuentaId).toBe('nequi');
+  });
+
+  it('el monto sigue saliendo bien con el banco de por medio', () => {
+    // El banco se consume DESPUÉS del monto, así que no puede robarle dígitos.
+    const r = leer('me transfirieron 1.200.000 a Davivienda');
+
+    expect(r.amount).toBe(1_200_000);
+    expect(r.cuentaId).toBe('davi');
+  });
+});

@@ -14,6 +14,19 @@ import {
 
 export type AmountSource = 'digits' | 'digits+scale' | 'words' | 'slang' | 'none';
 export type KindSource = 'keyword' | 'morphology' | 'category-implied' | 'default';
+
+/**
+ * How the account was decided. `preposicion` is the strong case — "a
+ * Bancolombia", "desde Nequi" — where the sentence says the word is a
+ * destination or an origin rather than merely mentioning it.
+ */
+export type CuentaSource = 'preposicion' | 'nombre' | 'ninguna';
+
+/** An account the text may refer to by name. */
+export interface CuentaConocida {
+  id: string;
+  nombre: string;
+}
 export type CategorySource = 'merchant' | 'keyword' | 'default';
 
 export interface ParsedTransaction {
@@ -26,6 +39,8 @@ export interface ParsedTransaction {
    * the user created, and narrowing here would silently drop it on every edit.
    */
   category: CategoriaClave;
+  /** Which balance the text named, when it named one. */
+  cuentaId: string | null;
   description: string;
   /** The untouched input, always. A mis-parse must stay reconstructable. */
   raw: string;
@@ -35,6 +50,7 @@ export interface ParsedTransaction {
     amountSource: AmountSource;
     kindSource: KindSource;
     categorySource: CategorySource;
+    cuentaSource: CuentaSource;
     /** More than one viable amount was found. */
     ambiguousAmount: boolean;
   };
@@ -166,7 +182,87 @@ const lookupWithStem = <T,>(table: Record<string, T>, norm: string): T | undefin
 
 const MORPHOLOGICAL_INCOME = /(aron|eron|ieron)$/;
 
-export const parseTransaction = (raw: string): ParsedTransaction => {
+/**
+ * Words that turn a mention into a direction.
+ *
+ * "me transfirieron 20 mil A BANCOLOMBIA" says where the money landed; a bare
+ * "Bancolombia" might just be part of a description. Both are accepted, but a
+ * prepositional match wins when the sentence offers more than one.
+ */
+const PREPOSICIONES_DE_CUENTA = new Set([
+  'a', 'al', 'de', 'del', 'en', 'desde', 'con', 'hacia', 'para', 'hasta', 'por',
+]);
+
+interface CuentaHallada {
+  id: string;
+  start: number;
+  end: number;
+  source: CuentaSource;
+}
+
+/**
+ * Finds an account named in the text.
+ *
+ * Longest name first, so "Banco de Bogotá" is never resolved as a stray "Banco"
+ * when both exist. Matching is on normalized tokens — the same normalization the
+ * rest of the parser uses — so accents and casing are already handled, and it is
+ * whole-token equality rather than substring: "NU" must not match inside
+ * "nunca".
+ */
+const buscarCuenta = (
+  tokens: readonly Token[],
+  consumed: readonly boolean[],
+  cuentas: readonly CuentaConocida[],
+): CuentaHallada | null => {
+  const candidatas = cuentas
+    .map((c) => ({
+      id: c.id,
+      seq: c.nombre.split(/\s+/).map(normalizeWord).filter(Boolean),
+    }))
+    .filter((c) => c.seq.length > 0)
+    .sort((a, b) => b.seq.length - a.seq.length);
+
+  const hallazgos: CuentaHallada[] = [];
+
+  for (const candidata of candidatas) {
+    const span = candidata.seq.length;
+    for (let i = 0; i + span <= tokens.length; i += 1) {
+      let calza = true;
+      for (let k = 0; k < span; k += 1) {
+        if (consumed[i + k] || tokens[i + k].norm !== candidata.seq[k]) {
+          calza = false;
+          break;
+        }
+      }
+      if (!calza) continue;
+
+      // Overlapping a longer name already found means this is a fragment of it.
+      if (hallazgos.some((h) => i < h.end && i + span > h.start)) continue;
+
+      const anterior = i > 0 && !consumed[i - 1] ? tokens[i - 1].norm : null;
+      const conPreposicion = anterior !== null && PREPOSICIONES_DE_CUENTA.has(anterior);
+      hallazgos.push({
+        id: candidata.id,
+        start: conPreposicion ? i - 1 : i,
+        end: i + span,
+        source: conPreposicion ? 'preposicion' : 'nombre',
+      });
+    }
+  }
+
+  if (hallazgos.length === 0) return null;
+  return hallazgos.find((h) => h.source === 'preposicion') ?? hallazgos[0];
+};
+
+export const parseTransaction = (
+  raw: string,
+  /**
+   * Optional so every caller that does not care about attribution keeps working
+   * — and so the parser stays a pure function of its inputs rather than reaching
+   * for app state.
+   */
+  cuentas: readonly CuentaConocida[] = [],
+): ParsedTransaction => {
   const tokens = tokenize(raw);
   const consumed = new Array<boolean>(tokens.length).fill(false);
 
@@ -257,7 +353,17 @@ export const parseTransaction = (raw: string): ParsedTransaction => {
 
   if (categorySource === 'default' && kind === 'ingreso') category = 'ingreso';
 
-  // 4 — Description. Category keywords are deliberately KEPT: for a merchant
+  // 4 — Account. Its tokens ARE consumed, unlike category keywords: once the
+  // bank is a structured field on the movement, repeating it in the description
+  // says the same thing twice.
+  const hallada = buscarCuenta(tokens, consumed, cuentas);
+  if (hallada) {
+    for (let i = hallada.start; i < hallada.end; i += 1) consumed[i] = true;
+  }
+  const cuentaId = hallada ? hallada.id : null;
+  const cuentaSource: CuentaSource = hallada ? hallada.source : 'ninguna';
+
+  // 5 — Description. Category keywords are deliberately KEPT: for a merchant
   // that text is the most useful thing on the row.
   const words = available()
     .filter((t) => !STOPWORDS.has(t.norm))
@@ -267,7 +373,7 @@ export const parseTransaction = (raw: string): ParsedTransaction => {
   if (description === '') description = CATEGORY_LABELS[category];
   else description = description.charAt(0).toUpperCase() + description.slice(1);
 
-  // 5 — Confidence. Drives PRESENTATION only: the confirm sheet always opens,
+  // 6 — Confidence. Drives PRESENTATION only: the confirm sheet always opens,
   // and this decides which field gets highlighted and focused.
   let confidence = 0;
   if (amount !== null) confidence += WEIGHTS.amount;
@@ -284,6 +390,7 @@ export const parseTransaction = (raw: string): ParsedTransaction => {
     kind,
     amount,
     category,
+    cuentaId,
     description,
     raw,
     confidence,
@@ -292,6 +399,7 @@ export const parseTransaction = (raw: string): ParsedTransaction => {
       amountSource: best ? classifyAmountSource(best) : 'none',
       kindSource,
       categorySource,
+      cuentaSource,
       ambiguousAmount,
     },
   };

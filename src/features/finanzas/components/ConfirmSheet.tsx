@@ -55,7 +55,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   const [kind, setKind] = useState<TxKind>(parsed.kind);
   const [category, setCategory] = useState<CategoriaClave>(parsed.category);
   const [description, setDescription] = useState(parsed.description);
-  const [cuentaId, setCuentaId] = useState<string | null>(cuentaInicial ?? null);
+  // `cuentaInicial` gana porque es la del movimiento que se está editando; si no
+  // hay ninguna, se usa la que el texto nombró ("me transfirieron 20 mil a
+  // Bancolombia").
+  const [cuentaId, setCuentaId] = useState<string | null>(cuentaInicial ?? parsed.cuentaId);
 
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -235,7 +238,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         {cuentas.length > 0 ? (
           <div className="mt-5">
             <label htmlFor="fin-cuenta" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
-              {COPY.confirm.cuenta}
+              {kind === 'ingreso' ? COPY.confirm.cuentaIngreso : COPY.confirm.cuenta}
             </label>
             <select
               id="fin-cuenta"

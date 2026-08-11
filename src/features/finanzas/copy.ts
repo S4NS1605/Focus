@@ -37,7 +37,11 @@ export const COPY = {
     saveEditar: 'Guardar cambios',
     cancel: 'Cancelar',
     amountMissing: 'No entendí el monto',
+    // Two labels because the money goes opposite ways: asking an income "de qué
+    // cuenta salió" describes the wrong direction of the very movement being
+    // confirmed.
     cuenta: '¿De qué cuenta salió? (opcional)',
+    cuentaIngreso: '¿A qué cuenta entró? (opcional)',
     sinCuenta: 'No indicar cuenta',
     cuentaHint: 'Si la eliges, el saldo de esa cuenta se ajusta solo.',
   },

@@ -15,7 +15,6 @@ import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
-import { ES_PASIVO } from './data/modelos';
 import { useMostrarAhorro } from './data/usePreferencias';
 import { DeudasView } from './components/DeudasView';
 import { ConfiguracionView } from './components/ConfiguracionView';
@@ -50,6 +49,7 @@ const comoParseado = (tx: Transaction): ParsedTransaction => ({
   kind: tx.kind,
   amount: tx.amountCop,
   category: tx.category,
+  cuentaId: tx.cuentaId,
   description: tx.description,
   raw: tx.rawTranscript,
   confidence: 1,
@@ -58,6 +58,7 @@ const comoParseado = (tx: Transaction): ParsedTransaction => ({
     amountSource: 'digits',
     kindSource: 'keyword',
     categorySource: 'keyword',
+    cuentaSource: 'ninguna',
     ambiguousAmount: false,
   },
 });
@@ -148,17 +149,16 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     };
   }, [transacciones, month]);
 
-  // Only live balances money can actually sit in.
+  // Bank accounts only — the field asks which ACCOUNT the money moved through.
   //
-  // Debts and cards are excluded on purpose. The field asks which account the
-  // money came OUT of, and a loan is not a place money sits — listing "Credito
-  // NU" beside Nequi invited filing a purchase against it, which then moved the
-  // balance the wrong way. Card purchases have their own flow in Deudas, where
-  // a purchase correctly raises what is owed.
+  // Debts and cards are not places money sits, and a savings pocket is not one
+  // either: money reaches a cajita by being put there, which Ahorro already
+  // records. Listing every balance made the picker a list of everything the app
+  // knows rather than an answer to the question above it.
   const cuentasParaElegir = useMemo(
     () =>
       cajitas
-        .filter((c) => c.archivedAt === null && !ES_PASIVO[c.tipo])
+        .filter((c) => c.archivedAt === null && c.tipo === 'cuenta')
         .map((c) => ({ id: c.id, nombre: c.nombre })),
     [cajitas],
   );
@@ -173,7 +173,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     );
   }, [delMes, transacciones]);
 
-  const handleSubmit = (text: string) => setPending(parseTransaction(text));
+  const handleSubmit = (text: string) => setPending(parseTransaction(text, cuentasParaElegir));
 
   const handleSave = (draft: ConfirmDraft) => {
     void almacen.agregarTransaccion({
