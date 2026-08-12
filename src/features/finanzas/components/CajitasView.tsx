@@ -39,6 +39,8 @@ interface CajitasViewProps {
    */
   /** Other balances money can be moved to. Excludes debts and cards. */
   destinos?: readonly { id: string; nombre: string }[];
+  /** Bank accounts only — where a withdrawal lands. */
+  cuentasBancarias?: readonly { id: string; nombre: string }[];
   onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => void;
   mostrarEnResumen?: boolean;
   onMostrarEnResumen?: (valor: boolean) => void;
@@ -54,6 +56,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   onMovimiento,
   onEliminar,
   destinos,
+  cuentasBancarias,
   onTransferir,
   mostrarEnResumen = true,
   onMostrarEnResumen,
@@ -306,6 +309,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
           onMovimiento={onMovimiento}
           onEliminar={onEliminar}
           destinos={destinos}
+          cuentasBancarias={cuentasBancarias}
           onTransferir={onTransferir}
         />
       ))}

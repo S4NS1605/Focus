@@ -25,6 +25,8 @@ interface CajitaCardProps {
   onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => void;
   /** Other balances of the user's own that money can be moved to. */
   destinos?: readonly { id: string; nombre: string }[];
+  /** Bank accounts only — where a withdrawal actually lands. */
+  cuentasBancarias?: readonly { id: string; nombre: string }[];
   onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => void;
   onEliminar: (cajitaId: string) => void;
 }
@@ -61,12 +63,16 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   onFijarSaldo,
   onMovimiento,
   destinos = [],
+  cuentasBancarias = [],
   onTransferir,
   onEliminar,
 }) => {
   const { cajita, saldoCop, pct } = resumen;
   const [accion, setAccion] = useState<Accion | null>(null);
   const otras = destinos.filter((d) => d.id !== cajita.id);
+  // A withdrawal lands in a bank account; a transfer can go anywhere of yours.
+  const bancos = cuentasBancarias.filter((d) => d.id !== cajita.id);
+  const paraElegir = accion === 'retiro' ? bancos : otras;
   const [destinoId, setDestinoId] = useState<string>(otras[0]?.id ?? '');
   const [texto, setTexto] = useState('');
   const [abierto, setAbierto] = useState(false);
@@ -89,6 +95,15 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
     // "Update balance" starts from what the app currently believes, so the user
     // edits a number instead of retyping one they did not change.
     setTexto(misma ? '' : siguiente === 'saldo' ? formatAmountInput(saldoCop) : '');
+
+    // The two actions offer different lists — a withdrawal lands in a bank
+    // account, a transfer can go anywhere of yours — so the selection is
+    // realigned here. Left alone, opening "Retirar" could carry over a pocket
+    // that is not among the options the select is showing.
+    if (!misma) {
+      const lista = siguiente === 'retiro' ? bancos : otras;
+      setDestinoId(lista[0]?.id ?? '');
+    }
   };
 
   // Setting a balance accepts 0 (an emptied pocket); a $0 deposit or withdrawal
@@ -105,7 +120,12 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
     else if (accion === 'transferir') {
       if (destinoId === '' || !onTransferir) return;
       onTransferir({ origenId: cajita.id, destinoId, montoCop: Math.abs(valor) });
-    } else if (accion === 'retiro') onMovimiento(cajita.id, 'retiro', -Math.abs(valor));
+    } else if (accion === 'retiro') {
+      // Money leaving a pocket does not evaporate — it lands somewhere. Sending
+      // it without saying where left the pocket right and every account wrong.
+      if (destinoId === '' || !onTransferir) return;
+      onTransferir({ origenId: cajita.id, destinoId, montoCop: Math.abs(valor) });
+    }
     else onMovimiento(cajita.id, accion, Math.abs(valor));
 
     setAccion(null);
@@ -268,17 +288,19 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                 />
               </div>
 
-              {accion === 'transferir' ? (
+              {accion === 'transferir' || accion === 'retiro' ? (
                 <div className="mt-2.5">
                   <label
                     htmlFor={`destino-${cajita.id}`}
                     className="block text-[11px] font-bold text-[var(--fin-ink-soft)]"
                   >
-                    ¿A cuál la pasas?
+                    {accion === 'retiro' ? '¿A qué cuenta la envías?' : '¿A cuál la pasas?'}
                   </label>
-                  {otras.length === 0 ? (
+                  {paraElegir.length === 0 ? (
                     <p className="mt-1.5 rounded-xl bg-[var(--fin-card)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
-                      Necesitas otra cuenta o cajita para poder transferir.
+                      {accion === 'retiro'
+                        ? 'Primero crea una cuenta bancaria. La plata que sale de aquí tiene que llegar a algún lado.'
+                        : 'Necesitas otra cuenta o cajita para poder transferir.'}
                     </p>
                   ) : (
                     <select
@@ -287,7 +309,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                       onChange={(e) => setDestinoId(e.target.value)}
                       className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                     >
-                      {otras.map((d) => (
+                      {paraElegir.map((d) => (
                         <option key={d.id} value={d.id}>
                           {d.nombre}
                         </option>
@@ -300,7 +322,8 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
               <button
                 type="submit"
                 disabled={
-                  valorActual === null || (accion === 'transferir' && destinoId === '')
+                  valorActual === null ||
+                  ((accion === 'transferir' || accion === 'retiro') && destinoId === '')
                 }
                 className="mt-2.5 w-full rounded-full bg-[var(--fin-accent)] px-4 py-2.5 text-xs font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
               >

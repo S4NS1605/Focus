@@ -441,6 +441,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
               }
               onEliminar={(id) => void almacen.borrarCajita(id)}
               destinos={destinosDeTransferencia}
+              cuentasBancarias={cuentasParaElegir}
               onTransferir={(d) => void almacen.transferirEntreCuentas(d)}
               mostrarEnResumen={mostrarAhorro}
               onMostrarEnResumen={setMostrarAhorro}
@@ -471,6 +472,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           }
           onEliminar={(id) => void almacen.borrarCajita(id)}
           destinos={destinosDeTransferencia}
+          cuentasBancarias={cuentasParaElegir}
           onTransferir={(d) => void almacen.transferirEntreCuentas(d)}
         />
       ) : null}
