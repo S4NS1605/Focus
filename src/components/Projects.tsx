@@ -8,6 +8,8 @@ interface Project {
   logoSrc: string;
   isPlaceholder?: boolean;
   link?: string;
+  bgClass?: string;
+  pClass?: string;
 }
 
 export const Projects: React.FC = () => {
@@ -19,12 +21,32 @@ export const Projects: React.FC = () => {
       description: t.projects.autosuiteDesc,
       logoSrc: '/logoautosuite.webp',
       link: 'https://autosuite.online/',
+      bgClass: 'bg-white',
+      pClass: 'p-2',
+    },
+    {
+      title: 'World Business Services',
+      description: t.projects.wbsDesc,
+      logoSrc: '/logowbs.webp',
+      link: 'https://www.worldbusinessservicesfl.com/',
+      bgClass: 'bg-transparent',
+      pClass: 'p-0',
+    },
+    {
+      title: 'Monkey Man Project',
+      description: t.projects.monkeymanDesc,
+      logoSrc: '/logomonkeyman.jpg',
+      link: 'https://monkeymanproject.com',
+      bgClass: 'bg-transparent',
+      pClass: 'p-0',
     },
     {
       title: t.projects.proximamenteTitle,
       description: t.projects.proximamenteDesc,
       logoSrc: '/proximamente_placeholder.png',
       isPlaceholder: true,
+      bgClass: 'bg-white/10',
+      pClass: 'p-2',
     },
   ];
 
@@ -76,8 +98,8 @@ export const Projects: React.FC = () => {
               } ${project.link ? 'cursor-pointer hover:bg-neutral-900/40' : ''}`}
               {...linkProps}
             >
-              {/* Left Box (White logo container) */}
-              <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-2">
+              {/* Left Box (Dynamic logo container) */}
+              <div className={`flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg ${project.bgClass || 'bg-white'} ${project.pClass !== undefined ? project.pClass : 'p-2'}`}>
                 {!project.isPlaceholder ? (
                   <img 
                     src={project.logoSrc} 

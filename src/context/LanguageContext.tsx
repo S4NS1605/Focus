@@ -33,6 +33,8 @@ interface Translations {
     title: string;
     subtitle: string;
     autosuiteDesc: string;
+    wbsDesc: string;
+    monkeymanDesc: string;
     proximamenteTitle: string;
     proximamenteDesc: string;
   };
@@ -75,6 +77,8 @@ const translations: Record<Language, Translations> = {
       title: 'PROYECTOS',
       subtitle: 'E X P L O R E &nbsp; P R O Y E C T O S',
       autosuiteDesc: 'Plataforma integral diseñada para la gestión automatizada de talleres automotrices, optimizando el control de inventarios, órdenes de servicio y roles de usuario.',
+      wbsDesc: 'Proveedor líder de equipos médicos de alta calidad: bombas de infusión, monitores de pacientes, desfibriladores y sistemas de soporte vital en Colombia.',
+      monkeymanDesc: 'Experiencia digital interactiva y portafolio para un estudio creativo, con una interfaz web innovadora estilo sistema operativo de escritorio.',
       proximamenteTitle: 'Próximamente',
       proximamenteDesc: 'Nuevos proyectos y soluciones en desarrollo. Próximamente se añadirán más detalles.',
     },
@@ -115,6 +119,8 @@ const translations: Record<Language, Translations> = {
       title: 'PROJECTS',
       subtitle: 'E X P L O R E &nbsp; P R O J E C T S',
       autosuiteDesc: 'Comprehensive platform designed for the automated management of automotive workshops, optimizing inventory control, service orders, and user roles.',
+      wbsDesc: 'Leading provider of high-quality medical equipment: infusion pumps, patient monitors, defibrillators, and life support systems in Colombia.',
+      monkeymanDesc: 'Interactive digital experience and portfolio for a creative studio, featuring an innovative desktop OS style web interface.',
       proximamenteTitle: 'Coming Soon',
       proximamenteDesc: 'New projects and solutions in development. More details will be added soon.',
     },
