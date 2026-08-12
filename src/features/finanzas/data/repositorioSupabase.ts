@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, Transaction, TxKind } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
+import type { Contacto } from '../lib/contactos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { ES_PASIVO } from './modelos';
 
@@ -73,12 +74,13 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async cargarTodo(): Promise<Instantanea> {
-    const [transacciones, cajitas, movimientos, metas, categorias] = await Promise.all([
+    const [transacciones, cajitas, movimientos, metas, categorias, contactos] = await Promise.all([
       this.cliente.from('transacciones').select('*').eq('user_id', this.userId),
       this.cliente.from('cajitas').select('*').eq('user_id', this.userId),
       this.cliente.from('cajita_movimientos').select('*').eq('user_id', this.userId),
       this.cliente.from('metas').select('*').eq('user_id', this.userId),
       this.cliente.from('categorias').select('*').eq('user_id', this.userId),
+      this.cliente.from('contactos').select('*').eq('user_id', this.userId),
     ]);
 
     this.fallar('No se pudieron leer los movimientos', transacciones.error);
@@ -86,6 +88,7 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudo leer el historial de cajitas', movimientos.error);
     this.fallar('No se pudieron leer las metas', metas.error);
     this.fallar('No se pudieron leer las categorías', categorias.error);
+    this.fallar('No se pudieron leer los contactos', contactos.error);
 
     return {
       transacciones: (transacciones.data ?? []).map(aTransaccion),
@@ -93,6 +96,7 @@ export class RepositorioSupabase implements Repositorio {
       cajitaMovimientos: (movimientos.data ?? []).map(aMovimiento),
       metas: (metas.data ?? []).map(aMeta),
       categorias: (categorias.data ?? []).map(aCategoria),
+      contactos: (contactos.data ?? []).map(aContacto),
     };
   }
 
@@ -154,6 +158,18 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudo guardar la categoría', error);
   }
 
+  async guardarContacto(contacto: Contacto): Promise<void> {
+    const { error } = await this.cliente
+      .from('contactos')
+      .upsert(desdeContacto(contacto, this.userId));
+    this.fallar('No se pudo guardar el contacto', error);
+  }
+
+  async borrarContacto(id: string): Promise<void> {
+    const { error } = await this.cliente.from('contactos').delete().eq('id', id);
+    this.fallar('No se pudo eliminar el contacto', error);
+  }
+
   async borrarCategoria(id: string): Promise<void> {
     // Movements keep their category key — see RepositorioMemoria.
     const { error } = await this.cliente.from('categorias').delete().eq('id', id);
@@ -164,7 +180,7 @@ export class RepositorioSupabase implements Repositorio {
     // Pockets last: deleting them cascades into their movements, so removing
     // movements first is redundant but keeps the intent explicit if the schema
     // ever loses that cascade.
-    for (const tabla of ['transacciones', 'metas', 'cajita_movimientos', 'cajitas', 'categorias']) {
+    for (const tabla of ['transacciones', 'metas', 'cajita_movimientos', 'cajitas', 'categorias', 'contactos']) {
       const { error } = await this.cliente.from(tabla).delete().eq('user_id', this.userId);
       this.fallar(`No se pudo vaciar ${tabla}`, error);
     }
@@ -302,6 +318,34 @@ const aMeta = (fila: FilaMeta): Meta => ({
   ahorradoCop: Number(fila.ahorrado_cop),
   createdAt: fila.created_at,
   completedAt: fila.completed_at,
+});
+
+interface FilaContacto {
+  id: string;
+  nombre: string;
+  alias: string[] | null;
+  separado_de: string[] | null;
+  created_at: string;
+  archived_at: string | null;
+}
+
+const aContacto = (fila: FilaContacto): Contacto => ({
+  id: fila.id,
+  nombre: fila.nombre,
+  alias: fila.alias ?? [],
+  separadoDe: fila.separado_de ?? [],
+  createdAt: fila.created_at,
+  archivedAt: fila.archived_at,
+});
+
+const desdeContacto = (c: Contacto, userId: string) => ({
+  id: c.id,
+  user_id: userId,
+  nombre: c.nombre,
+  alias: c.alias,
+  separado_de: c.separadoDe,
+  created_at: c.createdAt,
+  archived_at: c.archivedAt,
 });
 
 interface FilaCategoria {

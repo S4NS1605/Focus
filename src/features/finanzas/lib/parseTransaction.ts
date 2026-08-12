@@ -404,3 +404,29 @@ export const parseTransaction = (
     },
   };
 };
+
+/**
+ * An empty movement, for filling in by hand.
+ *
+ * Same shape the parser returns, so the confirm sheet needs no notion of "was
+ * this dictated or typed" — it opens on a blank form, with the amount field
+ * focused because `amountSource: 'none'` is exactly what it means here: nothing
+ * was understood, because nothing was said.
+ */
+export const movimientoEnBlanco = (): ParsedTransaction => ({
+  kind: 'gasto',
+  amount: null,
+  category: 'otros',
+  cuentaId: null,
+  description: '',
+  raw: '',
+  confidence: 0,
+  needsReview: true,
+  signals: {
+    amountSource: 'none',
+    kindSource: 'default',
+    categorySource: 'default',
+    cuentaSource: 'ninguna',
+    ambiguousAmount: false,
+  },
+});

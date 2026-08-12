@@ -303,4 +303,77 @@ describe('useAlmacen', () => {
 
     expect(result.current.datos.transacciones).toEqual([]);
   });
+
+  it('unir dos grafías las deja bajo un solo contacto', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.unirContactos('JUAN PEREZ', 'Juan Carlos Perez', 'Juan Perez');
+    });
+
+    const { contactos } = result.current.datos;
+    expect(contactos).toHaveLength(1);
+    expect(contactos[0].alias.sort()).toEqual(['juan carlos perez', 'juan perez']);
+    expect(contactos[0].nombre).toBe('Juan Perez');
+  });
+
+  it('unir dos veces no crea un contacto de más', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.unirContactos('Juan Perez', 'Juan Carlos Perez', 'Juan Perez');
+    });
+    await act(async () => {
+      await result.current.unirContactos('Juan Perez', 'Juan P', 'Juan Perez');
+    });
+
+    const { contactos } = result.current.datos;
+    expect(contactos).toHaveLength(1);
+    expect(contactos[0].alias.sort()).toEqual(['juan carlos perez', 'juan p', 'juan perez']);
+  });
+
+  it('separar guarda el nombre que se muestra, no la clave normalizada', async () => {
+    // La clave es columna de unión. Mostrarla convierte "Juan Carlos Perez" en
+    // "juan carlos perez" en pantalla.
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.separarContactos('juan perez', 'juan gomez', 'Juan Perez');
+    });
+
+    expect(result.current.datos.contactos[0].nombre).toBe('Juan Perez');
+    expect(result.current.datos.contactos[0].separadoDe).toEqual(['juan gomez']);
+  });
+
+  it('unir después de haber separado quita el rechazo', async () => {
+    // Cambiar de opinión tiene que poder deshacerse, o el "no" de un descuido
+    // deja a esas dos grafías separadas para siempre.
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.separarContactos('juan perez', 'juan carlos perez', 'Juan Perez');
+    });
+    await act(async () => {
+      await result.current.unirContactos('juan perez', 'juan carlos perez', 'Juan Perez');
+    });
+
+    const contacto = result.current.datos.contactos[0];
+    expect(contacto.separadoDe).not.toContain('juan carlos perez');
+    expect(contacto.alias.sort()).toEqual(['juan carlos perez', 'juan perez']);
+  });
+
+  it('no une un nombre consigo mismo', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.unirContactos('Juan Pérez', 'JUAN PEREZ', 'Juan Perez');
+    });
+
+    expect(result.current.datos.contactos).toEqual([]);
+  });
 });

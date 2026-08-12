@@ -12,6 +12,7 @@ import {
   Settings2,
   Target,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 
 /**
@@ -25,6 +26,7 @@ export const SECTIONS = [
   { id: 'cuentas', icon: Landmark, label: 'Cuentas', color: 'text-sky-500 dark:text-sky-400' },
   { id: 'ahorro', icon: PiggyBank, label: 'Ahorro', color: 'text-emerald-500 dark:text-emerald-400' },
   { id: 'deudas', icon: CreditCard, label: 'Deudas', color: 'text-rose-500 dark:text-rose-400' },
+  { id: 'contactos', icon: Users, label: 'Contactos', color: 'text-teal-500 dark:text-teal-400' },
   { id: 'tendencias', icon: TrendingUp, label: 'Tendencias', color: 'text-violet-500 dark:text-violet-400' },
   { id: 'analista', icon: FileText, label: 'Analista', color: 'text-blue-500 dark:text-blue-400' },
   { id: 'configuracion', icon: Settings2, label: 'Configuración', color: 'text-stone-500 dark:text-stone-400' },
@@ -44,6 +46,7 @@ export const SECCIONES_BARRA: readonly SectionId[] = [
 
 export const SECCIONES_MAS: readonly SectionId[] = [
   'deudas',
+  'contactos',
   'tendencias',
   'analista',
   'configuracion',

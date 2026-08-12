@@ -4,6 +4,8 @@ import { bogotaDate } from '../lib/localDate';
 import { nuevoId } from '../lib/id';
 import { nuevaClaveCategoria } from '../categorias';
 import type { CategoriaPersonal } from '../categorias';
+import type { Contacto } from '../lib/contactos';
+import { normalizarNombre } from '../lib/contactos';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
 import { ID_EFECTIVO, cuentaEfectivo } from './modelos';
@@ -77,6 +79,17 @@ export interface Almacen {
    * would otherwise survive with nothing left to explain it.
    */
   borrarCategoria: (id: string) => Promise<void>;
+
+  /**
+   * Says two spellings are one person. Idempotent, and merges whatever contacts
+   * already held either name so answering twice cannot create a third row.
+   */
+  unirContactos: (a: string, b: string, nombre: string) => Promise<void>;
+  /** Says they are NOT the same, so the question is never asked again. */
+  separarContactos: (a: string, b: string, nombre: string) => Promise<void>;
+  actualizarContacto: (contacto: Contacto) => Promise<void>;
+  /** Undoes a merge: the spellings go back to standing on their own. */
+  borrarContacto: (id: string) => Promise<void>;
 }
 
 const mensajeDeError = (e: unknown): string =>
@@ -486,6 +499,94 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     [aplicar, datos, repo],
   );
 
+  const unirContactos = useCallback(
+    async (a: string, b: string, nombre: string) => {
+      const claveA = normalizarNombre(a);
+      const claveB = normalizarNombre(b);
+      if (claveA === '' || claveB === '' || claveA === claveB) return;
+
+      // Any existing contact holding either name is absorbed, not left beside
+      // the new one — otherwise the same person ends up split across two rows
+      // by the very action meant to join them.
+      const tocados = datos.contactos.filter(
+        (c) => c.alias.includes(claveA) || c.alias.includes(claveB),
+      );
+      const resto = datos.contactos.filter((c) => !tocados.includes(c));
+
+      const unido: Contacto = {
+        id: tocados[0]?.id ?? nuevoId('contacto'),
+        nombre,
+        alias: [...new Set([claveA, claveB, ...tocados.flatMap((c) => c.alias)])],
+        separadoDe: [...new Set(tocados.flatMap((c) => c.separadoDe))].filter(
+          (n) => n !== claveA && n !== claveB,
+        ),
+        createdAt: tocados[0]?.createdAt ?? new Date().toISOString(),
+        archivedAt: null,
+      };
+
+      await aplicar({ ...datos, contactos: [...resto, unido] }, async () => {
+        await repo.guardarContacto(unido);
+        for (const viejo of tocados.slice(1)) await repo.borrarContacto(viejo.id);
+      });
+    },
+    [aplicar, datos, repo],
+  );
+
+  const separarContactos = useCallback(
+    async (a: string, b: string, nombre: string) => {
+      const claveA = normalizarNombre(a);
+      const claveB = normalizarNombre(b);
+      if (claveA === '' || claveB === '' || claveA === claveB) return;
+
+      // Recorded on a contact for A. A rejection has to live somewhere durable,
+      // and the contact row is the only thing that outlives a reload.
+      const existente = datos.contactos.find((c) => c.alias.includes(claveA));
+      const contacto: Contacto = existente
+        ? { ...existente, separadoDe: [...new Set([...existente.separadoDe, claveB])] }
+        : {
+            id: nuevoId('contacto'),
+            // The display spelling, never the normalized key: the key is a
+            // join column, and showing it turns "Juan Carlos Perez" into
+            // "juan carlos perez" on screen.
+            nombre,
+            alias: [claveA],
+            separadoDe: [claveB],
+            createdAt: new Date().toISOString(),
+            archivedAt: null,
+          };
+
+      await aplicar(
+        {
+          ...datos,
+          contactos: existente
+            ? datos.contactos.map((c) => (c.id === contacto.id ? contacto : c))
+            : [...datos.contactos, contacto],
+        },
+        () => repo.guardarContacto(contacto),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const borrarContacto = useCallback(
+    async (id: string) => {
+      await aplicar({ ...datos, contactos: datos.contactos.filter((c) => c.id !== id) }, () =>
+        repo.borrarContacto(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const actualizarContacto = useCallback(
+    async (contacto: Contacto) => {
+      await aplicar(
+        { ...datos, contactos: datos.contactos.map((c) => (c.id === contacto.id ? contacto : c)) },
+        () => repo.guardarContacto(contacto),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
   return {
     datos,
     cargando,
@@ -510,5 +611,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     actualizarCategoria: guardarCategoria,
     archivarCategoria,
     borrarCategoria,
+    unirContactos,
+    separarContactos,
+    actualizarContacto,
+    borrarContacto,
   };
 };

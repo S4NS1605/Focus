@@ -1,6 +1,7 @@
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
+import type { Contacto } from '../lib/contactos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 
@@ -8,7 +9,7 @@ const DB_NOMBRE = 'finanzas';
 // Bumped when a store is added: `onupgradeneeded` only fires on a version
 // change, so a device that already opened the database at v1 would otherwise
 // never get the new store.
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const STORES = {
   transacciones: 'transacciones',
@@ -16,6 +17,7 @@ const STORES = {
   cajitaMovimientos: 'cajitaMovimientos',
   metas: 'metas',
   categorias: 'categorias',
+  contactos: 'contactos',
 } as const;
 
 type StoreNombre = (typeof STORES)[keyof typeof STORES];
@@ -94,15 +96,16 @@ export class RepositorioIndexedDB implements Repositorio {
 
     // Issued together on one transaction so every list is read from the same
     // consistent point, then awaited.
-    const [transacciones, cajitas, cajitaMovimientos, metas, categorias] = await Promise.all([
+    const [transacciones, cajitas, cajitaMovimientos, metas, categorias, contactos] = await Promise.all([
       pedir<Transaction[]>(tx.objectStore(STORES.transacciones).getAll()),
       pedir<Cajita[]>(tx.objectStore(STORES.cajitas).getAll()),
       pedir<CajitaMovimiento[]>(tx.objectStore(STORES.cajitaMovimientos).getAll()),
       pedir<Meta[]>(tx.objectStore(STORES.metas).getAll()),
       pedir<CategoriaPersonal[]>(tx.objectStore(STORES.categorias).getAll()),
+      pedir<Contacto[]>(tx.objectStore(STORES.contactos).getAll()),
     ]);
 
-    return { transacciones, cajitas, cajitaMovimientos, metas, categorias };
+    return { transacciones, cajitas, cajitaMovimientos, metas, categorias, contactos };
   }
 
   async guardarTransacciones(transacciones: readonly Transaction[]): Promise<void> {
@@ -181,6 +184,18 @@ export class RepositorioIndexedDB implements Repositorio {
   async guardarCategoria(categoria: CategoriaPersonal): Promise<void> {
     await this.escribir([STORES.categorias], (tx) => {
       tx.objectStore(STORES.categorias).put(categoria);
+    });
+  }
+
+  async guardarContacto(contacto: Contacto): Promise<void> {
+    await this.escribir([STORES.contactos], (tx) => {
+      tx.objectStore(STORES.contactos).put(contacto);
+    });
+  }
+
+  async borrarContacto(id: string): Promise<void> {
+    await this.escribir([STORES.contactos], (tx) => {
+      tx.objectStore(STORES.contactos).delete(id);
     });
   }
 

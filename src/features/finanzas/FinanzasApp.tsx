@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, X, Pencil, History } from 'lucide-react';
+import { AlertTriangle, X, Pencil, History, Plus } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forMonth, monthTotals } from './lib/aggregate';
 import { bogotaDate, monthKey, shiftMonth } from './lib/localDate';
 import { nuevoId } from './lib/id';
-import { parseTransaction } from './lib/parseTransaction';
+import { movimientoEnBlanco, parseTransaction } from './lib/parseTransaction';
 import type { ParsedTransaction } from './lib/parseTransaction';
 import { useAlmacen } from './data/useAlmacen';
 import { useSesion } from './data/useSesion';
@@ -15,6 +15,9 @@ import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
+import { ContactosView } from './components/ContactosView';
+import { DudaContacto } from './components/DudaContacto';
+import { dudasDeUnion, partesDelLibro } from './lib/contactos';
 import { useMostrarAhorro } from './data/usePreferencias';
 import { DeudasView } from './components/DeudasView';
 import { ConfiguracionView } from './components/ConfiguracionView';
@@ -210,6 +213,13 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     <MonthNav month={month} onChange={setMonth} maxMonth={thisMonth} shift={shiftMonth} />
   );
 
+  // Computed from the whole ledger, not the visible month: a spelling seen in
+  // June and another in August are exactly the pair worth asking about.
+  const dudaActual = useMemo(
+    () => dudasDeUnion(partesDelLibro(transacciones), almacen.datos.contactos)[0] ?? null,
+    [transacciones, almacen.datos.contactos],
+  );
+
   const registrar = (
     <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
       <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
@@ -218,6 +228,29 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       <div className="mt-3">
         <DictationInput onSubmit={handleSubmit} />
       </div>
+
+      {/* Deliberately small and below: dictating is the fast path this screen is
+          built around, and a form of equal weight beside it would turn every
+          entry into a choice. This is the way out for the movement the parser
+          would fight — an odd amount, a date that is not today, nothing worth
+          saying out loud. */}
+      <button
+        type="button"
+        onClick={() => setPending(movimientoEnBlanco())}
+        className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-2 py-1.5 text-[11px] font-bold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+      >
+        <Plus className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+        O añádelo a mano
+      </button>
+
+      {/* One question at a time, right where movements get entered, and only
+          when the app genuinely cannot tell. Answering either way settles it
+          for good — a "no" is what stops the pair coming back. */}
+      <DudaContacto
+        duda={dudaActual}
+        onUnir={(d) => void almacen.unirContactos(d.a.clave, d.b.clave, d.a.nombre)}
+        onSeparar={(d) => void almacen.separarContactos(d.a.clave, d.b.clave, d.a.nombre)}
+      />
     </section>
   );
 
@@ -410,6 +443,17 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           onEliminar={(id) => void almacen.borrarCajita(id)}
           cuentas={cuentasParaElegir}
           onAbonar={(datos) => void almacen.abonarDeuda(datos)}
+        />
+      ) : null}
+
+      {section === 'contactos' ? (
+        <ContactosView
+          transacciones={transacciones}
+          contactos={almacen.datos.contactos}
+          onUnir={(a, b, nombre) => void almacen.unirContactos(a, b, nombre)}
+          onSeparar={(a, b, nombre) => void almacen.separarContactos(a, b, nombre)}
+          onRenombrar={(c) => void almacen.actualizarContacto(c)}
+          onDeshacer={(id) => void almacen.borrarContacto(id)}
         />
       ) : null}
 

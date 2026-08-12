@@ -1,6 +1,7 @@
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
+import type { Contacto } from '../lib/contactos';
 
 /**
  * Everything the app is allowed to know about storage.
@@ -32,6 +33,9 @@ export interface Repositorio {
   guardarCategoria(categoria: CategoriaPersonal): Promise<void>;
   borrarCategoria(id: string): Promise<void>;
 
+  guardarContacto(contacto: Contacto): Promise<void>;
+  borrarContacto(id: string): Promise<void>;
+
   /** Wipes every store. Used by the restore flow before importing a backup. */
   vaciar(): Promise<void>;
 }
@@ -43,6 +47,7 @@ export interface Instantanea {
   cajitaMovimientos: CajitaMovimiento[];
   metas: Meta[];
   categorias: CategoriaPersonal[];
+  contactos: Contacto[];
 }
 
 export const instantaneaVacia = (): Instantanea => ({
@@ -51,6 +56,7 @@ export const instantaneaVacia = (): Instantanea => ({
   cajitaMovimientos: [],
   metas: [],
   categorias: [],
+  contactos: [],
 });
 
 /**
@@ -77,6 +83,13 @@ export class RepositorioMemoria implements Repositorio {
       cajitaMovimientos: this.datos.cajitaMovimientos.map((m) => ({ ...m })),
       metas: this.datos.metas.map((m) => ({ ...m })),
       categorias: this.datos.categorias.map((c) => ({ ...c })),
+      // Arrays inside are copied too: a shallow spread would share `alias`
+      // between the store and its reader.
+      contactos: this.datos.contactos.map((c) => ({
+        ...c,
+        alias: [...c.alias],
+        separadoDe: [...c.separadoDe],
+      })),
     };
   }
 
@@ -128,6 +141,14 @@ export class RepositorioMemoria implements Repositorio {
 
   async guardarCategoria(categoria: CategoriaPersonal): Promise<void> {
     this.datos.categorias = this.upsert(this.datos.categorias, [categoria]);
+  }
+
+  async guardarContacto(contacto: Contacto): Promise<void> {
+    this.datos.contactos = this.upsert(this.datos.contactos, [contacto]);
+  }
+
+  async borrarContacto(id: string): Promise<void> {
+    this.datos.contactos = this.datos.contactos.filter((c) => c.id !== id);
   }
 
   async borrarCategoria(id: string): Promise<void> {

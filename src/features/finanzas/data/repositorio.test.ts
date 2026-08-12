@@ -4,6 +4,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
+import type { Contacto } from '../lib/contactos';
 import type { Repositorio } from './repositorio';
 import { RepositorioMemoria } from './repositorio';
 import { RepositorioIndexedDB } from './indexeddb';
@@ -250,11 +251,58 @@ const contrato = (nombre: string, crear: () => Repositorio) => {
       expect(transacciones[0].category).toBe('p-suscripciones');
     });
 
+    // ------------------------------------------------------------- contactos
+    const contacto = (over: Partial<Contacto> = {}): Contacto => ({
+      id: 'k1',
+      nombre: 'Juan Perez',
+      alias: ['juan perez', 'juan carlos perez'],
+      separadoDe: ['juan gomez'],
+      createdAt: '2026-08-01T00:00:00.000Z',
+      archivedAt: null,
+      ...over,
+    });
+
+    it('guarda y relee un contacto con sus listas', async () => {
+      await repo.guardarContacto(contacto());
+
+      expect((await repo.cargarTodo()).contactos).toEqual([contacto()]);
+    });
+
+    it('no comparte los arreglos de dentro con quien lee', async () => {
+      // Un spread superficial dejaría `alias` compartido entre el almacén y su
+      // lector, y las dos implementaciones divergirían.
+      await repo.guardarContacto(contacto());
+
+      const primera = await repo.cargarTodo();
+      primera.contactos[0].alias.push('pisoteado');
+
+      expect((await repo.cargarTodo()).contactos[0].alias).toHaveLength(2);
+    });
+
+    it('borrar un contacto no toca los movimientos', async () => {
+      // Deshacer una unión separa grafías, no borra historial.
+      await repo.guardarContacto(contacto());
+      await repo.guardarTransacciones([tx({ id: 't-1' })]);
+
+      await repo.borrarContacto('k1');
+
+      const { contactos, transacciones } = await repo.cargarTodo();
+      expect(contactos).toEqual([]);
+      expect(transacciones).toHaveLength(1);
+    });
+
     it('vaciar también se lleva las categorías', async () => {
       await repo.guardarCategoria(categoria());
       await repo.vaciar();
 
       expect((await repo.cargarTodo()).categorias).toEqual([]);
+    });
+
+    it('vaciar también se lleva los contactos', async () => {
+      await repo.guardarContacto(contacto());
+      await repo.vaciar();
+
+      expect((await repo.cargarTodo()).contactos).toEqual([]);
     });
 
     it('no comparte objetos con quien lee', async () => {
