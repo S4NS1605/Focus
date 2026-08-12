@@ -15,6 +15,7 @@ import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
+import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { DudaContacto } from './components/DudaContacto';
 import { dudasDeUnion, partesDelLibro } from './lib/contactos';
@@ -151,6 +152,17 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       ingresos: byCategory(mes, 'ingreso'),
     };
   }, [transacciones, month]);
+
+  // Anywhere money of your own can sit: accounts and savings pockets alike.
+  // Debts and cards are left out because paying one is not a transfer — it has
+  // its own flow in Deudas, where the sign is inverted.
+  const destinosDeTransferencia = useMemo(
+    () =>
+      cajitas
+        .filter((c) => c.archivedAt === null && !ES_PASIVO[c.tipo])
+        .map((c) => ({ id: c.id, nombre: c.nombre })),
+    [cajitas],
+  );
 
   // Bank accounts only — the field asks which ACCOUNT the money moved through.
   //
@@ -400,6 +412,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
                 void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
               }
               onEliminar={(id) => void almacen.borrarCajita(id)}
+              destinos={destinosDeTransferencia}
+              onTransferir={(d) => void almacen.transferirEntreCuentas(d)}
               mostrarEnResumen={mostrarAhorro}
               onMostrarEnResumen={setMostrarAhorro}
             />
@@ -428,6 +442,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
           }
           onEliminar={(id) => void almacen.borrarCajita(id)}
+          destinos={destinosDeTransferencia}
+          onTransferir={(d) => void almacen.transferirEntreCuentas(d)}
         />
       ) : null}
 

@@ -61,6 +61,20 @@ export interface Almacen {
     montoCop: number;
     occurredOn?: string;
   }) => Promise<void>;
+  /**
+   * Moves money between two balances of your own.
+   *
+   * A pair of pocket movements, never a ledger entry: money leaving Nequi for a
+   * savings pocket is not spending and its arrival is not income. Booked as
+   * transactions it would inflate BOTH sides of the month and make the summary
+   * report activity that never happened.
+   */
+  transferirEntreCuentas: (datos: {
+    origenId: string;
+    destinoId: string;
+    montoCop: number;
+    occurredOn?: string;
+  }) => Promise<void>;
   /** "I have X in this pocket" — records the delta needed to reach X. */
   fijarSaldo: (cajitaId: string, saldoObjetivo: number, nota?: string) => Promise<void>;
   borrarMovimiento: (id: string) => Promise<void>;
@@ -390,6 +404,56 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     [aplicar, datos, repo],
   );
 
+  const transferirEntreCuentas = useCallback(
+    async ({
+      origenId,
+      destinoId,
+      montoCop,
+      occurredOn,
+    }: {
+      origenId: string;
+      destinoId: string;
+      montoCop: number;
+      occurredOn?: string;
+    }) => {
+      const monto = Math.abs(montoCop);
+      // Moving money to itself is not a transfer; recording it would leave two
+      // rows in the history that cancel out and explain nothing.
+      if (monto === 0 || origenId === destinoId) return;
+
+      const nombreDe = (id: string) => datos.cajitas.find((c) => c.id === id)?.nombre ?? '';
+      const base = {
+        occurredOn: occurredOn ?? bogotaDate(),
+        categoria: null,
+        createdAt: new Date().toISOString(),
+      };
+
+      const par: CajitaMovimiento[] = [
+        {
+          ...base,
+          id: nuevoId('mov'),
+          cajitaId: origenId,
+          kind: 'retiro',
+          deltaCop: -monto,
+          nota: `Enviado a ${nombreDe(destinoId)}`.trim(),
+        },
+        {
+          ...base,
+          id: nuevoId('mov'),
+          cajitaId: destinoId,
+          kind: 'deposito',
+          deltaCop: monto,
+          nota: `Recibido de ${nombreDe(origenId)}`.trim(),
+        },
+      ];
+
+      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, ...par] }, () =>
+        repo.guardarCajitaMovimientos(par),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
   const fijarSaldo = useCallback(
     async (cajitaId: string, saldoObjetivo: number, nota?: string) => {
       // Measured against the EFFECTIVE balance — pocket movements plus anything
@@ -602,6 +666,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     borrarCajita,
     registrarMovimiento,
     abonarDeuda,
+    transferirEntreCuentas,
     fijarSaldo,
     borrarMovimiento,
     crearMeta,

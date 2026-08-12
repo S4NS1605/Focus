@@ -376,4 +376,111 @@ describe('useAlmacen', () => {
 
     expect(result.current.datos.contactos).toEqual([]);
   });
+
+  it('transferir mueve las dos cuentas y nada más', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Nequi', icon: 'Wallet', tipo: 'cuenta',
+        metaCop: null, tasaEaPct: null, saldoInicialCop: 500_000,
+      });
+    });
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Viaje', icon: 'Plane', tipo: 'cajita',
+        metaCop: null, tasaEaPct: null, saldoInicialCop: 0,
+      });
+    });
+
+    const idDe = (n: string) => result.current.datos.cajitas.find((c) => c.nombre === n)!.id;
+    const origenId = idDe('Nequi');
+    const destinoId = idDe('Viaje');
+
+    await act(async () => {
+      await result.current.transferirEntreCuentas({ origenId, destinoId, montoCop: 120_000 });
+    });
+
+    const movs = result.current.datos.cajitaMovimientos;
+    expect(saldoDeCajita(movs, origenId)).toBe(380_000);
+    expect(saldoDeCajita(movs, destinoId)).toBe(120_000);
+  });
+
+  it('una transferencia no es ni gasto ni ingreso del mes', async () => {
+    // Como movimiento del libro inflaría LOS DOS lados del mes y el resumen
+    // reportaría actividad que nunca ocurrió.
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Viaje', icon: 'Plane', tipo: 'cajita',
+        metaCop: null, tasaEaPct: null, saldoInicialCop: 0,
+      });
+    });
+
+    const origenId = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!.id;
+    const destinoId = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
+
+    await act(async () => {
+      await result.current.transferirEntreCuentas({ origenId, destinoId, montoCop: 50_000 });
+    });
+
+    expect(result.current.datos.transacciones).toEqual([]);
+  });
+
+  it('no registra una transferencia de una cuenta a sí misma', async () => {
+    // Dejaría dos filas en el historial que se anulan y no explican nada.
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+    const id = result.current.datos.cajitas[0].id;
+
+    await act(async () => {
+      await result.current.transferirEntreCuentas({ origenId: id, destinoId: id, montoCop: 50_000 });
+    });
+
+    expect(result.current.datos.cajitaMovimientos).toEqual([]);
+  });
+
+  it('ignora una transferencia de cero', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Viaje', icon: 'Plane', tipo: 'cajita',
+        metaCop: null, tasaEaPct: null, saldoInicialCop: 0,
+      });
+    });
+    const a = result.current.datos.cajitas[0].id;
+    const b = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
+
+    await act(async () => {
+      await result.current.transferirEntreCuentas({ origenId: a, destinoId: b, montoCop: 0 });
+    });
+
+    expect(result.current.datos.cajitaMovimientos).toEqual([]);
+  });
+
+  it('deja dicho en el historial de dónde vino y a dónde fue', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Viaje', icon: 'Plane', tipo: 'cajita',
+        metaCop: null, tasaEaPct: null, saldoInicialCop: 0,
+      });
+    });
+    const origenId = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!.id;
+    const destinoId = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
+
+    await act(async () => {
+      await result.current.transferirEntreCuentas({ origenId, destinoId, montoCop: 30_000 });
+    });
+
+    const notas = result.current.datos.cajitaMovimientos.map((m) => m.nota).sort();
+    expect(notas).toEqual(['Enviado a Viaje', 'Recibido de Efectivo']);
+  });
 });

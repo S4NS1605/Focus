@@ -23,10 +23,13 @@ interface CajitaCardProps {
   movimientos: readonly CajitaMovimiento[];
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
   onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => void;
+  /** Other balances of the user's own that money can be moved to. */
+  destinos?: readonly { id: string; nombre: string }[];
+  onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => void;
   onEliminar: (cajitaId: string) => void;
 }
 
-type Accion = 'saldo' | 'deposito' | 'retiro' | 'rendimiento';
+type Accion = 'saldo' | 'deposito' | 'retiro' | 'rendimiento' | 'transferir';
 
 /**
  * A bank account gets one action, not four.
@@ -44,10 +47,12 @@ const ACCIONES_CAJITA: ReadonlyArray<{ id: Accion; label: string }> = [
   { id: 'deposito', label: COPY.cajitas.depositar },
   { id: 'retiro', label: COPY.cajitas.retirar },
   { id: 'rendimiento', label: COPY.cajitas.rendimiento },
+  { id: 'transferir', label: 'Transferir' },
 ];
 
 const ACCIONES_CUENTA: ReadonlyArray<{ id: Accion; label: string }> = [
   { id: 'saldo', label: COPY.cajitas.actualizarSaldo },
+  { id: 'transferir', label: 'Transferir' },
 ];
 
 export const CajitaCard: React.FC<CajitaCardProps> = ({
@@ -55,10 +60,14 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   movimientos,
   onFijarSaldo,
   onMovimiento,
+  destinos = [],
+  onTransferir,
   onEliminar,
 }) => {
   const { cajita, saldoCop, pct } = resumen;
   const [accion, setAccion] = useState<Accion | null>(null);
+  const otras = destinos.filter((d) => d.id !== cajita.id);
+  const [destinoId, setDestinoId] = useState<string>(otras[0]?.id ?? '');
   const [texto, setTexto] = useState('');
   const [abierto, setAbierto] = useState(false);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
@@ -93,7 +102,10 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
     if (valor === null || accion === null) return;
 
     if (accion === 'saldo') onFijarSaldo(cajita.id, valor);
-    else if (accion === 'retiro') onMovimiento(cajita.id, 'retiro', -Math.abs(valor));
+    else if (accion === 'transferir') {
+      if (destinoId === '' || !onTransferir) return;
+      onTransferir({ origenId: cajita.id, destinoId, montoCop: Math.abs(valor) });
+    } else if (accion === 'retiro') onMovimiento(cajita.id, 'retiro', -Math.abs(valor));
     else onMovimiento(cajita.id, accion, Math.abs(valor));
 
     setAccion(null);
@@ -256,9 +268,40 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                 />
               </div>
 
+              {accion === 'transferir' ? (
+                <div className="mt-2.5">
+                  <label
+                    htmlFor={`destino-${cajita.id}`}
+                    className="block text-[11px] font-bold text-[var(--fin-ink-soft)]"
+                  >
+                    ¿A cuál la pasas?
+                  </label>
+                  {otras.length === 0 ? (
+                    <p className="mt-1.5 rounded-xl bg-[var(--fin-card)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+                      Necesitas otra cuenta o cajita para poder transferir.
+                    </p>
+                  ) : (
+                    <select
+                      id={`destino-${cajita.id}`}
+                      value={destinoId}
+                      onChange={(e) => setDestinoId(e.target.value)}
+                      className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                    >
+                      {otras.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              ) : null}
+
               <button
                 type="submit"
-                disabled={valorActual === null}
+                disabled={
+                  valorActual === null || (accion === 'transferir' && destinoId === '')
+                }
                 className="mt-2.5 w-full rounded-full bg-[var(--fin-accent)] px-4 py-2.5 text-xs font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 {COPY.confirm.save}

@@ -37,6 +37,9 @@ interface CajitasViewProps {
    * screen — accounts are what the summary is *for*, so there is nothing to
    * switch off there.
    */
+  /** Other balances money can be moved to. Excludes debts and cards. */
+  destinos?: readonly { id: string; nombre: string }[];
+  onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => void;
   mostrarEnResumen?: boolean;
   onMostrarEnResumen?: (valor: boolean) => void;
 }
@@ -50,6 +53,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   onFijarSaldo,
   onMovimiento,
   onEliminar,
+  destinos,
+  onTransferir,
   mostrarEnResumen = true,
   onMostrarEnResumen,
 }) => {
@@ -300,6 +305,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
           onFijarSaldo={onFijarSaldo}
           onMovimiento={onMovimiento}
           onEliminar={onEliminar}
+          destinos={destinos}
+          onTransferir={onTransferir}
         />
       ))}
     </div>
