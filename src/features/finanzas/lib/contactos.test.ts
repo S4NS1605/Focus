@@ -73,6 +73,31 @@ describe('parecido', () => {
     expect(parecido('Juan Perez', 'Maria Gomez')).toBe(0);
   });
 
+  it('dos personas con el mismo nombre de pila y distinto apellido NO se parecen', () => {
+    // El defecto original: puntuaba solo por tokens compartidos, y en Colombia
+    // los nombres compuestos son la norma. Con una lista real de contactos casi
+    // todas las preguntas eran de esta forma — dos desconocidos que comparten
+    // el nombre de pila.
+    expect(parecido('Ana Maria Castro', 'Ana Maria Lopez')).toBeLessThan(UMBRAL_PREGUNTA);
+    expect(parecido('Juan Carlos Perez', 'Juan Carlos Gomez')).toBeLessThan(UMBRAL_PREGUNTA);
+    expect(parecido('Maria Fernanda Gomez', 'Maria Fernanda Rodriguez')).toBeLessThan(
+      UMBRAL_PREGUNTA,
+    );
+  });
+
+  it('un segundo nombre que se contradice también los separa', () => {
+    // Mismo apellido y mismo primer nombre, pero "Alberto" no es "Miguel".
+    expect(parecido('Luis Alberto Torres', 'Luis Miguel Torres')).toBeLessThan(UMBRAL_PREGUNTA);
+    expect(parecido('Juan Carlos Perez', 'Juan Sebastian Perez')).toBeLessThan(UMBRAL_PREGUNTA);
+  });
+
+  it('un nombre más corto NO es una contradicción', () => {
+    // "Juan Perez" puede ser perfectamente como el banco escribió a "Juan
+    // Carlos Perez": falta un nombre, no se contradice ninguno.
+    expect(parecido('Juan Perez', 'Juan Carlos Perez')).toBeGreaterThanOrEqual(UMBRAL_PREGUNTA);
+    expect(parecido('Juan P', 'Juan Carlos Perez')).toBeGreaterThanOrEqual(UMBRAL_PREGUNTA);
+  });
+
   it('no se deja llevar por un apellido común', () => {
     // Compartir solo el apellido no basta: media familia lo comparte.
     expect(parecido('Juan Gomez', 'Maria Gomez')).toBeLessThan(UMBRAL_PREGUNTA);

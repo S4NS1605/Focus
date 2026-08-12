@@ -90,6 +90,31 @@ export const parecido = (a: string, b: string): number => {
   const partesA = na.split(' ');
   const partesB = nb.split(' ');
 
+  // The surname decides. Spanish names put the identifying part last, and
+  // compound given names are the norm here — "Maria Fernanda", "Juan Carlos",
+  // "Luis Miguel". Scoring on shared tokens alone made "Ana Maria Castro" and
+  // "Ana Maria Lopez" look like one person at 0.67, and with a realistic list
+  // of contacts almost every question the app asked was of that shape: two
+  // strangers who happen to share a first name.
+  //
+  // An initial still counts, so "Juan Perez" and "Juan P" survive this.
+  if (partesA.length > 1 && partesB.length > 1) {
+    const ultimaA = partesA[partesA.length - 1];
+    const ultimaB = partesB[partesB.length - 1];
+    if (!mismaPalabra(ultimaA, ultimaB)) return 0;
+
+    // A given name that contradicts, position by position, is the other half of
+    // the same problem: "Luis Alberto Torres" and "Luis Miguel Torres" share a
+    // surname and a first name and are still two people. A name simply being
+    // SHORTER is not a contradiction — "Juan Perez" may well be how the bank
+    // wrote "Juan Carlos Perez" — so only positions present on both sides count.
+    const pilaA = partesA.slice(0, -1);
+    const pilaB = partesB.slice(0, -1);
+    for (let i = 0; i < Math.min(pilaA.length, pilaB.length); i += 1) {
+      if (!mismaPalabra(pilaA[i], pilaB[i])) return 0;
+    }
+  }
+
   const disponibles = [...partesB];
   let calzadas = 0;
   for (const parte of partesA) {
