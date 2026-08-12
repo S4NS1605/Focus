@@ -17,6 +17,9 @@ import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
 import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
+import { BuscadorMovimientos } from './components/BuscadorMovimientos';
+import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
+import type { Filtro } from './lib/filtros';
 import { DudaContacto } from './components/DudaContacto';
 import { dudasDeUnion, partesDelLibro } from './lib/contactos';
 import { useMostrarAhorro } from './data/usePreferencias';
@@ -31,6 +34,7 @@ import { CategoryBreakdown } from './components/CategoryBreakdown';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import type { ConfirmDraft } from './components/ConfirmSheet';
 import { CatalogoProvider } from './catalogoContexto';
+import { hacerCatalogo } from './categorias';
 import { DictationInput } from './components/DictationInput';
 import { FinanzasShell } from './components/FinanzasShell';
 import { TemaToggle } from './components/TemaToggle';
@@ -232,6 +236,22 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     [transacciones, almacen.datos.contactos],
   );
 
+  const [filtro, setFiltro] = useState<Filtro>(FILTRO_VACIO);
+  // Built here as well as in the provider: the filter runs outside the tree the
+  // provider wraps, and searching by category name needs the same resolution the
+  // rows are drawn with.
+  const catalogoActual = useMemo(() => hacerCatalogo(categorias), [categorias]);
+  const sinFiltro = !filtroActivo(filtro);
+
+  // The month is in charge until something is being searched for, and then the
+  // search takes over the whole ledger. Anything else would mean stepping back
+  // through the calendar to find one movement, which is the job a search box
+  // exists to remove.
+  const visibles = useMemo(
+    () => (sinFiltro ? delMes : filtrarMovimientos(transacciones, filtro, catalogoActual)),
+    [sinFiltro, delMes, transacciones, filtro, catalogoActual],
+  );
+
   const registrar = (
     <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
       <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
@@ -362,10 +382,18 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
       {section === 'movimientos' ? (
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
-          <div className="lg:hidden">{monthNav}</div>
+          {/* The month navigator disappears while a filter is on: it would be
+              lying about what the list below shows, which is the whole ledger. */}
+          {sinFiltro ? <div className="lg:hidden">{monthNav}</div> : null}
           {registrar}
+          <BuscadorMovimientos
+            filtro={filtro}
+            onCambiar={setFiltro}
+            resultados={visibles}
+            cuentas={cuentasParaElegir}
+          />
           <TransactionList
-            transactions={delMes}
+            transactions={visibles}
             conSenal={conSenal}
             onAnalizar={setAnalizando}
             onDelete={(id) => void almacen.borrarTransaccion(id)}
