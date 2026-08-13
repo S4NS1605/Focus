@@ -6,6 +6,8 @@ import { nuevaClaveCategoria } from '../categorias';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
+import type { Pendiente, Recurrente } from '../lib/recurrentes';
+import { comoTransaccion } from '../lib/recurrentes';
 import { normalizarNombre } from '../lib/contactos';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
@@ -109,6 +111,12 @@ export interface Almacen {
   /** Fija el tope de una categoría. Vuelve a fijarlo si ya tenía uno. */
   fijarPresupuesto: (categoria: string, montoCop: number) => Promise<void>;
   quitarPresupuesto: (categoria: string) => Promise<void>;
+
+  crearRecurrente: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => Promise<void>;
+  actualizarRecurrente: (recurrente: Recurrente) => Promise<void>;
+  borrarRecurrente: (id: string) => Promise<void>;
+  /** Convierte un pendiente en un movimiento real, con la fecha que le tocaba. */
+  confirmarRecurrente: (pendiente: Pendiente) => Promise<void>;
 }
 
 const mensajeDeError = (e: unknown): string =>
@@ -675,6 +683,50 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     [aplicar, datos, repo],
   );
 
+  const crearRecurrente = useCallback(
+    async (entrada: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => {
+      const recurrente: Recurrente = {
+        ...entrada,
+        id: nuevoId('rec'),
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      };
+      await aplicar({ ...datos, recurrentes: [...datos.recurrentes, recurrente] }, () =>
+        repo.guardarRecurrente(recurrente),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const actualizarRecurrente = useCallback(
+    async (recurrente: Recurrente) => {
+      await aplicar(
+        { ...datos, recurrentes: datos.recurrentes.map((r) => (r.id === recurrente.id ? recurrente : r)) },
+        () => repo.guardarRecurrente(recurrente),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const borrarRecurrente = useCallback(
+    async (id: string) => {
+      await aplicar({ ...datos, recurrentes: datos.recurrentes.filter((r) => r.id !== id) }, () =>
+        repo.borrarRecurrente(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const confirmarRecurrente = useCallback(
+    async (pendiente: Pendiente) => {
+      const tx = comoTransaccion(pendiente, nuevoId('tx'), new Date().toISOString());
+      await aplicar({ ...datos, transacciones: [...datos.transacciones, tx] }, () =>
+        repo.guardarTransacciones([tx]),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
   const quitarPresupuesto = useCallback(
     async (categoria: string) => {
       await aplicar(
@@ -726,5 +778,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     borrarContacto,
     fijarPresupuesto,
     quitarPresupuesto,
+    crearRecurrente,
+    actualizarRecurrente,
+    borrarRecurrente,
+    confirmarRecurrente,
   };
 };

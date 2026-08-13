@@ -20,6 +20,7 @@ import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
 import { PanelGmf } from './components/PanelGmf';
 import { PresupuestosView } from './components/PresupuestosView';
+import { RecurrentesView } from './components/RecurrentesView';
 import { useAjustesGmf } from './data/usePreferencias';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
@@ -502,6 +503,19 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           onEliminar={(id) => void almacen.borrarCajita(id)}
           cuentas={cuentasParaElegir}
           onAbonar={(datos) => void almacen.abonarDeuda(datos)}
+        />
+      ) : null}
+
+      {section === 'recurrentes' ? (
+        <RecurrentesView
+          recurrentes={almacen.datos.recurrentes}
+          transacciones={transacciones}
+          cuentas={cuentasParaElegir}
+          mes={month}
+          hoy={today}
+          onCrear={(d) => void almacen.crearRecurrente(d)}
+          onBorrar={(id) => void almacen.borrarRecurrente(id)}
+          onConfirmar={(p) => void almacen.confirmarRecurrente(p)}
         />
       ) : null}
 

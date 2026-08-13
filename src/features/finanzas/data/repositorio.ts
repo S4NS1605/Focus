@@ -3,6 +3,7 @@ import type { Cajita, CajitaMovimiento, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
+import type { Recurrente } from '../lib/recurrentes';
 
 /**
  * Everything the app is allowed to know about storage.
@@ -41,6 +42,9 @@ export interface Repositorio {
   guardarPresupuesto(presupuesto: Presupuesto): Promise<void>;
   borrarPresupuesto(categoria: string): Promise<void>;
 
+  guardarRecurrente(recurrente: Recurrente): Promise<void>;
+  borrarRecurrente(id: string): Promise<void>;
+
   /** Wipes every store. Used by the restore flow before importing a backup. */
   vaciar(): Promise<void>;
 }
@@ -54,6 +58,7 @@ export interface Instantanea {
   categorias: CategoriaPersonal[];
   contactos: Contacto[];
   presupuestos: Presupuesto[];
+  recurrentes: Recurrente[];
 }
 
 export const instantaneaVacia = (): Instantanea => ({
@@ -64,6 +69,7 @@ export const instantaneaVacia = (): Instantanea => ({
   categorias: [],
   contactos: [],
   presupuestos: [],
+  recurrentes: [],
 });
 
 /**
@@ -93,6 +99,7 @@ export class RepositorioMemoria implements Repositorio {
       // Arrays inside are copied too: a shallow spread would share `alias`
       // between the store and its reader.
       presupuestos: this.datos.presupuestos.map((p) => ({ ...p })),
+      recurrentes: this.datos.recurrentes.map((r) => ({ ...r })),
       contactos: this.datos.contactos.map((c) => ({
         ...c,
         alias: [...c.alias],
@@ -170,6 +177,14 @@ export class RepositorioMemoria implements Repositorio {
 
   async borrarPresupuesto(categoria: string): Promise<void> {
     this.datos.presupuestos = this.datos.presupuestos.filter((p) => p.categoria !== categoria);
+  }
+
+  async guardarRecurrente(recurrente: Recurrente): Promise<void> {
+    this.datos.recurrentes = this.upsert(this.datos.recurrentes, [recurrente]);
+  }
+
+  async borrarRecurrente(id: string): Promise<void> {
+    this.datos.recurrentes = this.datos.recurrentes.filter((r) => r.id !== id);
   }
 
   async borrarCategoria(id: string): Promise<void> {

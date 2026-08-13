@@ -4,6 +4,7 @@ import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from '
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
+import type { Recurrente } from '../lib/recurrentes';
 import type { Instantanea, Repositorio } from './repositorio';
 import { ES_PASIVO } from './modelos';
 
@@ -75,8 +76,10 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async cargarTodo(): Promise<Instantanea> {
-    const [transacciones, cajitas, movimientos, metas, categorias, contactos, presupuestos] =
-      await Promise.all([
+    const [
+      transacciones, cajitas, movimientos, metas,
+      categorias, contactos, presupuestos, recurrentes,
+    ] = await Promise.all([
       this.cliente.from('transacciones').select('*').eq('user_id', this.userId),
       this.cliente.from('cajitas').select('*').eq('user_id', this.userId),
       this.cliente.from('cajita_movimientos').select('*').eq('user_id', this.userId),
@@ -84,6 +87,7 @@ export class RepositorioSupabase implements Repositorio {
       this.cliente.from('categorias').select('*').eq('user_id', this.userId),
       this.cliente.from('contactos').select('*').eq('user_id', this.userId),
       this.cliente.from('presupuestos').select('*').eq('user_id', this.userId),
+      this.cliente.from('recurrentes').select('*').eq('user_id', this.userId),
     ]);
 
     this.fallar('No se pudieron leer los movimientos', transacciones.error);
@@ -93,6 +97,7 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudieron leer las categorías', categorias.error);
     this.fallar('No se pudieron leer los contactos', contactos.error);
     this.fallar('No se pudieron leer los presupuestos', presupuestos.error);
+    this.fallar('No se pudieron leer los recurrentes', recurrentes.error);
 
     return {
       transacciones: (transacciones.data ?? []).map(aTransaccion),
@@ -102,6 +107,7 @@ export class RepositorioSupabase implements Repositorio {
       categorias: (categorias.data ?? []).map(aCategoria),
       contactos: (contactos.data ?? []).map(aContacto),
       presupuestos: (presupuestos.data ?? []).map(aPresupuesto),
+      recurrentes: (recurrentes.data ?? []).map(aRecurrente),
     };
   }
 
@@ -170,6 +176,27 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudo guardar el contacto', error);
   }
 
+  async guardarRecurrente(recurrente: Recurrente): Promise<void> {
+    const { error } = await this.cliente.from('recurrentes').upsert({
+      id: recurrente.id,
+      user_id: this.userId,
+      nombre: recurrente.nombre,
+      kind: recurrente.kind,
+      amount_cop: recurrente.amountCop,
+      categoria: recurrente.categoria,
+      cuenta_id: recurrente.cuentaId,
+      dia_del_mes: recurrente.diaDelMes,
+      created_at: recurrente.createdAt,
+      archived_at: recurrente.archivedAt,
+    });
+    this.fallar('No se pudo guardar el recurrente', error);
+  }
+
+  async borrarRecurrente(id: string): Promise<void> {
+    const { error } = await this.cliente.from('recurrentes').delete().eq('id', id);
+    this.fallar('No se pudo eliminar el recurrente', error);
+  }
+
   async guardarPresupuesto(presupuesto: Presupuesto): Promise<void> {
     const { error } = await this.cliente.from('presupuestos').upsert({
       user_id: this.userId,
@@ -206,7 +233,7 @@ export class RepositorioSupabase implements Repositorio {
     // ever loses that cascade.
     for (const tabla of [
       'transacciones', 'metas', 'cajita_movimientos', 'cajitas',
-      'categorias', 'contactos', 'presupuestos',
+      'categorias', 'contactos', 'presupuestos', 'recurrentes',
     ]) {
       const { error } = await this.cliente.from(tabla).delete().eq('user_id', this.userId);
       this.fallar(`No se pudo vaciar ${tabla}`, error);
@@ -345,6 +372,28 @@ const aMeta = (fila: FilaMeta): Meta => ({
   ahorradoCop: Number(fila.ahorrado_cop),
   createdAt: fila.created_at,
   completedAt: fila.completed_at,
+});
+
+const aRecurrente = (fila: {
+  id: string;
+  nombre: string;
+  kind: string;
+  amount_cop: number | string;
+  categoria: string;
+  cuenta_id: string | null;
+  dia_del_mes: number;
+  created_at: string;
+  archived_at: string | null;
+}): Recurrente => ({
+  id: fila.id,
+  nombre: fila.nombre,
+  kind: fila.kind === 'ingreso' ? 'ingreso' : 'gasto',
+  amountCop: Number(fila.amount_cop),
+  categoria: fila.categoria,
+  cuentaId: fila.cuenta_id,
+  diaDelMes: fila.dia_del_mes,
+  createdAt: fila.created_at,
+  archivedAt: fila.archived_at,
 });
 
 const aPresupuesto = (fila: {
