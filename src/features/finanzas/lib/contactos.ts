@@ -27,6 +27,15 @@ export interface Contacto {
    * way to make a helpful prompt into an annoyance.
    */
   separadoDe: string[];
+  /**
+   * Cómo le dices tú a esta persona: "pa", "ana riaza", "el jefe".
+   *
+   * Distinto de `alias`, que son las grafías que usa el banco. Un apodo lo
+   * eliges tú y sirve para lo contrario: reconocer a quién te refieres cuando
+   * hablas, y poner en su lugar el nombre completo. Normalizados, igual que
+   * todo lo demás que se compara.
+   */
+  apodos: string[];
   createdAt: string;
   archivedAt: string | null;
 }
@@ -285,3 +294,47 @@ export const balanceConAlias = (
   // Positivo = te ha entrado más de lo que le has mandado.
   return { salioCop, entroCop, netoCop: entroCop - salioCop };
 };
+
+/**
+ * A quién se refiere un texto, si nombra a alguien conocido.
+ *
+ * Busca los apodos dentro de lo dicho, por palabras completas y de más largo a
+ * más corto: "mi pa" no puede resolverse por un "pa" suelto si existe también
+ * "papa grande". Devuelve el contacto para que la pantalla escriba el nombre
+ * completo — que es el punto: tú dices "pa" y en el libro queda quién es.
+ */
+export const contactoPorApodo = (
+  texto: string,
+  contactos: readonly Contacto[],
+): Contacto | null => {
+  const palabras = normalizarNombre(texto).split(' ').filter(Boolean);
+  if (palabras.length === 0) return null;
+
+  const candidatos = contactos
+    .filter((c) => c.archivedAt === null)
+    .flatMap((c) => c.apodos.map((apodo) => ({ contacto: c, seq: apodo.split(' ').filter(Boolean) })))
+    .filter((x) => x.seq.length > 0)
+    .sort((a, b) => b.seq.length - a.seq.length);
+
+  for (const { contacto, seq } of candidatos) {
+    for (let i = 0; i + seq.length <= palabras.length; i += 1) {
+      // Igualdad por palabra completa, nunca subcadena: "pa" no debe calzar
+      // dentro de "pagué".
+      if (seq.every((s, k) => palabras[i + k] === s)) return contacto;
+    }
+  }
+
+  return null;
+};
+
+/** Añade un apodo sin duplicar ni dejarlo en blanco. */
+export const conApodo = (contacto: Contacto, apodo: string): Contacto => {
+  const limpio = normalizarNombre(apodo);
+  if (limpio === '' || contacto.apodos.includes(limpio)) return contacto;
+  return { ...contacto, apodos: [...contacto.apodos, limpio] };
+};
+
+export const sinApodo = (contacto: Contacto, apodo: string): Contacto => ({
+  ...contacto,
+  apodos: contacto.apodos.filter((a) => a !== normalizarNombre(apodo)),
+});

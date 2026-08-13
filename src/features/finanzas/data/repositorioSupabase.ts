@@ -411,6 +411,7 @@ interface FilaContacto {
   nombre: string;
   alias: string[] | null;
   separado_de: string[] | null;
+  apodos: string[] | null;
   created_at: string;
   archived_at: string | null;
 }
@@ -420,6 +421,7 @@ const aContacto = (fila: FilaContacto): Contacto => ({
   nombre: fila.nombre,
   alias: fila.alias ?? [],
   separadoDe: fila.separado_de ?? [],
+  apodos: fila.apodos ?? [],
   createdAt: fila.created_at,
   archivedAt: fila.archived_at,
 });
@@ -430,6 +432,7 @@ const desdeContacto = (c: Contacto, userId: string) => ({
   nombre: c.nombre,
   alias: c.alias,
   separado_de: c.separadoDe,
+  apodos: c.apodos,
   created_at: c.createdAt,
   archived_at: c.archivedAt,
 });

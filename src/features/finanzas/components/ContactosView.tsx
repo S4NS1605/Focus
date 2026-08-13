@@ -15,6 +15,7 @@ interface ContactosViewProps {
   onRenombrar: (contacto: Contacto) => void;
   /** Undoes a merge: the spellings go back to being their own rows. */
   onDeshacer: (contactoId: string) => void;
+  onApodar: (clave: string, nombre: string, apodo: string, quitar?: boolean) => void;
 }
 
 /** One row of the list: a merged contact, or a name still standing alone. */
@@ -70,10 +71,13 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
   onSeparar,
   onRenombrar,
   onDeshacer,
+  onApodar,
 }) => {
   const [editando, setEditando] = useState<string | null>(null);
   const [borrador, setBorrador] = useState('');
-  const [abierta, setAbierta] = useState<Fila | null>(null);
+  // Se guarda la CLAVE, no la fila: la fila es un objeto derivado, y al añadir
+  // un apodo la hoja abierta seguiría mostrando la versión de antes del cambio.
+  const [claveAbierta, setClaveAbierta] = useState<string | null>(null);
 
   const partes = useMemo(() => partesDelLibro(transacciones), [transacciones]);
   const filas = useMemo(
@@ -81,6 +85,14 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
     [partes, contactos],
   );
   const dudas = useMemo(() => dudasDeUnion(partes, contactos), [partes, contactos]);
+
+  // También por alias: poner el primer apodo CREA el contacto, y con eso la
+  // fila pasa a llavearse por su id. Buscando solo por clave, la hoja abierta
+  // se cerraría sola justo al usarla.
+  const abierta =
+    claveAbierta === null
+      ? null
+      : (filas.find((f) => f.clave === claveAbierta || f.alias.includes(claveAbierta)) ?? null);
 
   const responder = (duda: Duda, unir: boolean) => {
     if (unir) onUnir(duda.a.clave, duda.b.clave, duda.a.nombre);
@@ -158,7 +170,7 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
                       cuáles fueron. */}
                   <button
                     type="button"
-                    onClick={() => setAbierta(fila)}
+                    onClick={() => setClaveAbierta(fila.clave)}
                     className="min-w-0 flex-1 text-left"
                   >
                     <span className="block truncate text-sm font-bold text-[var(--fin-ink)]">
@@ -204,12 +216,15 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
           ))}
         </ul>
       )}
-      {abierta ? (
+      {abierta !== null ? (
         <DetalleContacto
           nombre={abierta.nombre}
           alias={abierta.alias}
+          apodos={abierta.contacto?.apodos ?? []}
+          onAgregarApodo={(apodo) => onApodar(abierta.alias[0], abierta.nombre, apodo)}
+          onQuitarApodo={(apodo) => onApodar(abierta.alias[0], abierta.nombre, apodo, true)}
           transacciones={transacciones}
-          onCerrar={() => setAbierta(null)}
+          onCerrar={() => setClaveAbierta(null)}
         />
       ) : null}
     </div>

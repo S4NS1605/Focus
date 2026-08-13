@@ -3,6 +3,9 @@ import type { Transaction } from '../types';
 import {
   UMBRAL_PREGUNTA,
   balanceConAlias,
+  conApodo,
+  contactoPorApodo,
+  sinApodo,
   dudasDeUnion,
   movimientosDeAlias,
   movimientosDeContacto,
@@ -30,6 +33,7 @@ const contacto = (over: Partial<Contacto> = {}): Contacto => ({
   nombre: 'Juan Perez',
   alias: ['juan perez'],
   separadoDe: [],
+  apodos: [],
   createdAt: '2026-08-01T00:00:00.000Z',
   archivedAt: null,
   ...over,
@@ -303,5 +307,72 @@ describe('movimientosDeAlias y balance', () => {
       entroCop: 0,
       netoCop: 0,
     });
+  });
+});
+
+describe('apodos', () => {
+  const wilson = contacto({
+    id: 'k-pa',
+    nombre: 'Wilson Gonzalez',
+    alias: ['wilson fredy gonzalez'],
+    apodos: ['pa', 'papa'],
+  });
+  const patricia = contacto({
+    id: 'k-ana',
+    nombre: 'Patricia Riaza Cano',
+    alias: ['patricia riaza cano'],
+    apodos: ['ana riaza'],
+  });
+
+  it('reconoce a quién te refieres cuando hablas', () => {
+    // Tú dices "pa" y en el libro tiene que quedar quién es.
+    expect(contactoPorApodo('le mandé 20 mil a mi pa', [wilson])?.nombre).toBe('Wilson Gonzalez');
+  });
+
+  it('resuelve un apodo de varias palabras', () => {
+    expect(contactoPorApodo('le pasé plata a ana riaza', [patricia])?.nombre).toBe(
+      'Patricia Riaza Cano',
+    );
+  });
+
+  it('NO calza un apodo dentro de otra palabra', () => {
+    // "pa" no debe encontrarse dentro de "pagué".
+    expect(contactoPorApodo('pagué el arriendo', [wilson])).toBeNull();
+    expect(contactoPorApodo('compré papas', [wilson])).toBeNull();
+  });
+
+  it('prefiere el apodo más largo cuando dos calzan', () => {
+    const abuelo = contacto({ id: 'k-ab', nombre: 'Jorge Gonzalez', apodos: ['papa grande'] });
+
+    expect(contactoPorApodo('le di 50 mil al papa grande', [wilson, abuelo])?.nombre).toBe(
+      'Jorge Gonzalez',
+    );
+  });
+
+  it('ignora tildes y mayúsculas', () => {
+    expect(contactoPorApodo('MI PAPÁ', [wilson])?.id).toBe('k-pa');
+  });
+
+  it('no resuelve contra un contacto archivado', () => {
+    const viejo = { ...wilson, archivedAt: '2026-01-01T00:00:00.000Z' };
+
+    expect(contactoPorApodo('a mi pa', [viejo])).toBeNull();
+  });
+
+  it('devuelve nulo cuando el texto no nombra a nadie', () => {
+    expect(contactoPorApodo('gasté 20 mil en almuerzo', [wilson, patricia])).toBeNull();
+    expect(contactoPorApodo('', [wilson])).toBeNull();
+  });
+
+  it('conApodo no duplica ni acepta vacíos', () => {
+    const uno = conApodo(contacto({ apodos: [] }), 'Pa');
+    expect(uno.apodos).toEqual(['pa']);
+
+    expect(conApodo(uno, 'PA').apodos).toEqual(['pa']);
+    expect(conApodo(uno, '   ').apodos).toEqual(['pa']);
+  });
+
+  it('sinApodo lo quita sin importar cómo se escriba', () => {
+    expect(sinApodo(contacto({ apodos: ['pa'] }), 'PÁ').apodos).toEqual([]);
   });
 });

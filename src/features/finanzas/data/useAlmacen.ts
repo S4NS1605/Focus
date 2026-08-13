@@ -107,6 +107,12 @@ export interface Almacen {
   actualizarContacto: (contacto: Contacto) => Promise<void>;
   /** Undoes a merge: the spellings go back to standing on their own. */
   borrarContacto: (id: string) => Promise<void>;
+  /**
+   * Le pone (o le quita) un apodo a una contraparte, exista ya como contacto o
+   * no. La mayoría de las filas de la lista nunca se unieron con nada, así que
+   * exigir un contacto guardado dejaría los apodos para unas pocas.
+   */
+  apodarParte: (clave: string, nombre: string, apodo: string, quitar?: boolean) => Promise<void>;
 
   /** Fija el tope de una categoría. Vuelve a fijarlo si ya tenía uno. */
   fijarPresupuesto: (categoria: string, montoCop: number) => Promise<void>;
@@ -643,6 +649,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         separadoDe: [...new Set(tocados.flatMap((c) => c.separadoDe))].filter(
           (n) => n !== claveA && n !== claveB,
         ),
+        // Los apodos de ambos sobreviven la unión: eran formas de nombrar a la
+        // misma persona, que es justamente lo que se acaba de confirmar.
+        apodos: [...new Set(tocados.flatMap((c) => c.apodos))],
         createdAt: tocados[0]?.createdAt ?? new Date().toISOString(),
         archivedAt: null,
       };
@@ -674,9 +683,46 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
             nombre,
             alias: [claveA],
             separadoDe: [claveB],
+            apodos: [],
             createdAt: new Date().toISOString(),
             archivedAt: null,
           };
+
+      await aplicar(
+        {
+          ...datos,
+          contactos: existente
+            ? datos.contactos.map((c) => (c.id === contacto.id ? contacto : c))
+            : [...datos.contactos, contacto],
+        },
+        () => repo.guardarContacto(contacto),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const apodarParte = useCallback(
+    async (clave: string, nombre: string, apodo: string, quitar = false) => {
+      const limpio = normalizarNombre(apodo);
+      if (limpio === '') return;
+
+      const existente = datos.contactos.find((c) => c.alias.includes(clave));
+      const base: Contacto = existente ?? {
+        id: nuevoId('contacto'),
+        nombre,
+        alias: [clave],
+        separadoDe: [],
+        apodos: [],
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      };
+
+      const contacto: Contacto = {
+        ...base,
+        apodos: quitar
+          ? base.apodos.filter((a) => a !== limpio)
+          : [...new Set([...base.apodos, limpio])],
+      };
 
       await aplicar(
         {
@@ -839,6 +885,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     separarContactos,
     actualizarContacto,
     borrarContacto,
+    apodarParte,
     fijarPresupuesto,
     quitarPresupuesto,
     crearRecurrente,

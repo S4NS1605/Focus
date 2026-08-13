@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowDownCircle, ArrowUpCircle, X } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Plus, Tag, X } from 'lucide-react';
 import type { Transaction } from '../types';
 import { balanceConAlias, movimientosDeAlias } from '../lib/contactos';
 import { useCatalogo } from '../catalogoContexto';
@@ -10,6 +10,10 @@ import { dayLabel } from '../lib/localDate';
 
 interface DetalleContactoProps {
   nombre: string;
+  /** Cómo le dices tú. Ausente cuando la fila no es un contacto guardado. */
+  apodos?: readonly string[];
+  onAgregarApodo?: (apodo: string) => void;
+  onQuitarApodo?: (apodo: string) => void;
   /** Las grafías normalizadas que son esta persona. */
   alias: readonly string[];
   transacciones: readonly Transaction[];
@@ -25,11 +29,15 @@ interface DetalleContactoProps {
  */
 export const DetalleContacto: React.FC<DetalleContactoProps> = ({
   nombre,
+  apodos,
+  onAgregarApodo,
+  onQuitarApodo,
   alias,
   transacciones,
   onCerrar,
 }) => {
   useBloqueoScroll(true);
+  const [nuevoApodo, setNuevoApodo] = useState('');
   const catalogo = useCatalogo();
 
   const movimientos = movimientosDeAlias(transacciones, alias);
@@ -111,6 +119,60 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
               </>
             )}
           </p>
+        ) : null}
+
+        {/* Cómo le dices tú. Con esto, decir "le mandé 20 mil a mi pa" deja
+            escrito quién es en vez de "pa". */}
+        {onAgregarApodo ? (
+          <div className="mt-4 rounded-2xl bg-[var(--fin-card)] px-3.5 py-3">
+            <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
+              <Tag className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+              Cómo le dices
+            </p>
+
+            {apodos && apodos.length > 0 ? (
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {apodos.map((apodo) => (
+                  <li key={apodo}>
+                    <button
+                      type="button"
+                      onClick={() => onQuitarApodo?.(apodo)}
+                      aria-label={`Quitar el apodo ${apodo}`}
+                      className="flex items-center gap-1 rounded-full bg-[var(--fin-soft)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)] hover:text-[var(--fin-out)]"
+                    >
+                      {apodo}
+                      <X className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (nuevoApodo.trim() === '') return;
+                onAgregarApodo(nuevoApodo);
+                setNuevoApodo('');
+              }}
+              className="mt-2 flex items-center gap-2"
+            >
+              <input
+                value={nuevoApodo}
+                onChange={(e) => setNuevoApodo(e.target.value)}
+                placeholder="pa, ana riaza, el jefe…"
+                aria-label={`Nuevo apodo para ${nombre}`}
+                className="w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-base font-medium text-[var(--fin-ink)] focus:outline-none"
+              />
+              <button
+                type="submit"
+                aria-label="Agregar apodo"
+                className="shrink-0 rounded-xl bg-[var(--fin-soft)] p-2.5 text-[var(--fin-ink-soft)]"
+              >
+                <Plus className="h-4 w-4" strokeWidth={3} />
+              </button>
+            </form>
+          </div>
         ) : null}
 
         <ul className="mt-4 flex flex-col gap-1.5">

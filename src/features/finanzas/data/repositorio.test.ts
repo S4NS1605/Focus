@@ -257,6 +257,7 @@ const contrato = (nombre: string, crear: () => Repositorio) => {
       nombre: 'Juan Perez',
       alias: ['juan perez', 'juan carlos perez'],
       separadoDe: ['juan gomez'],
+      apodos: ['juanpe'],
       createdAt: '2026-08-01T00:00:00.000Z',
       archivedAt: null,
       ...over,

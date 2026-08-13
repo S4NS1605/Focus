@@ -104,6 +104,7 @@ export class RepositorioMemoria implements Repositorio {
         ...c,
         alias: [...c.alias],
         separadoDe: [...c.separadoDe],
+        apodos: [...c.apodos],
       })),
     };
   }

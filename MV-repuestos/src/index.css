@@ -1,0 +1,42 @@
+:root {
+  --primary: #E63946; /* Rojo Vivo */
+  --primary-hover: #D62828;
+  --secondary: #1D3557; /* Azul Rey */
+  --accent: #F4A261; /* Naranja Vibrante */
+  --bg-light: #F8F9FA;
+  --text-dark: #1A1A1A;
+  --text-light: #F8F9FA;
+  
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-accent: 'Pacifico', cursive;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text-dark);
+  background-color: var(--bg-light);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul {
+  list-style: none;
+}

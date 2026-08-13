@@ -26,7 +26,7 @@ import { useAjustesGmf } from './data/usePreferencias';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
 import { DudaContacto } from './components/DudaContacto';
-import { dudasDeUnion, partesDelLibro } from './lib/contactos';
+import { contactoPorApodo, dudasDeUnion, partesDelLibro } from './lib/contactos';
 import { useMostrarAhorro } from './data/usePreferencias';
 import { DeudasView } from './components/DeudasView';
 import { ConfiguracionView } from './components/ConfiguracionView';
@@ -198,7 +198,15 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     );
   }, [delMes, transacciones]);
 
-  const handleSubmit = (text: string) => setPending(parseTransaction(text, cuentasParaElegir));
+  const handleSubmit = (text: string) => {
+    const parseado = parseTransaction(text, cuentasParaElegir);
+
+    // Tú dices "le mandé 20 mil a mi pa" y en el libro queda "Wilson Gonzalez".
+    // El apodo sirve para reconocer de quién hablas; el nombre completo es lo
+    // que hay que dejar escrito, o dentro de un año la fila no dice nada.
+    const quien = contactoPorApodo(text, almacen.datos.contactos);
+    setPending(quien ? { ...parseado, description: quien.nombre } : parseado);
+  };
 
   const handleSave = (draft: ConfirmDraft) => {
     void almacen.agregarTransaccion({
@@ -528,6 +536,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           onSeparar={(a, b, nombre) => void almacen.separarContactos(a, b, nombre)}
           onRenombrar={(c) => void almacen.actualizarContacto(c)}
           onDeshacer={(id) => void almacen.borrarContacto(id)}
+          onApodar={(clave, nombre, apodo, quitar) =>
+            void almacen.apodarParte(clave, nombre, apodo, quitar)
+          }
         />
       ) : null}
 
