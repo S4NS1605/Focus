@@ -1,0 +1,235 @@
+import React, { useState } from 'react';
+import { AlertTriangle, Landmark, Scale } from 'lucide-react';
+import type { Transaction } from '../types';
+import type { ValorUvt } from '../lib/gmf';
+import {
+  ADVERTENCIA_GMF,
+  NOTAS_GMF,
+  TOPE_EXENTO_UVT,
+  consumoDelMes,
+  uvtDesactualizada,
+} from '../lib/gmf';
+import { formatCop, formatAmountInput, parseAmountInput } from '../lib/formatCop';
+
+interface PanelGmfProps {
+  transacciones: readonly Transaction[];
+  mes: string;
+  anioActual: number;
+  cuentas: readonly { id: string; nombre: string }[];
+  uvt: ValorUvt;
+  onCambiarUvt: (uvt: ValorUvt) => void;
+  cuentasGmf: readonly string[];
+  onCambiarCuentas: (ids: readonly string[]) => void;
+}
+
+/** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
+const CAMPO =
+  'w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+
+/**
+ * El 4x1000, explicado y estimado.
+ *
+ * Muestra el consumo del cupo exento del mes, pero lo importante de esta
+ * pantalla es lo que dice y cómo lo dice: cada afirmación lleva su norma y la
+ * fecha en que se verificó, y la advertencia de que quien liquida es el banco
+ * está arriba, no escondida al final.
+ */
+export const PanelGmf: React.FC<PanelGmfProps> = ({
+  transacciones,
+  mes,
+  anioActual,
+  cuentas,
+  uvt,
+  onCambiarUvt,
+  cuentasGmf,
+  onCambiarCuentas,
+}) => {
+  const [editandoUvt, setEditandoUvt] = useState(false);
+  const [borrador, setBorrador] = useState('');
+
+  const cubiertas = new Set(cuentasGmf);
+  const consumo = consumoDelMes(transacciones, mes, uvt, cubiertas);
+  const vieja = uvtDesactualizada(uvt, anioActual);
+
+  const alternar = (id: string) =>
+    onCambiarCuentas(
+      cubiertas.has(id) ? cuentasGmf.filter((x) => x !== id) : [...cuentasGmf, id],
+    );
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div>
+        <h2 className="flex items-center gap-1.5 px-1 text-xs font-bold text-[var(--fin-ink-soft)]">
+          <Scale className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+          El 4x1000
+        </h2>
+        {/* Arriba, no al final: si la cifra de abajo no es oficial, decirlo
+            después de que ya la leyó no sirve de nada. */}
+        <p className="mt-2 rounded-2xl bg-[var(--fin-soft)] px-3.5 py-3 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
+          {ADVERTENCIA_GMF}
+        </p>
+      </div>
+
+      {/* Cupo del mes */}
+      <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+        <p className="text-[11px] font-bold text-[var(--fin-ink-soft)]">Tu cupo exento este mes</p>
+        <p className="mt-1 font-display text-3xl font-extrabold tabular-nums text-[var(--fin-ink)]">
+          {formatCop(consumo.disponibleCop)}
+        </p>
+        <p className="mt-0.5 text-[11px] text-[var(--fin-ink-faint)]">
+          libres de {formatCop(consumo.topeCop)} ({TOPE_EXENTO_UVT} UVT)
+        </p>
+
+        <div
+          className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--fin-soft)]"
+          role="img"
+          aria-label={`Has usado el ${consumo.pctUsado}% del cupo`}
+        >
+          <div
+            className="h-full rounded-full transition-[width]"
+            style={{
+              width: `${consumo.pctUsado}%`,
+              backgroundColor:
+                consumo.pctUsado >= 100 ? 'var(--fin-out)' : 'var(--fin-in)',
+            }}
+          />
+        </div>
+
+        <p className="mt-2 text-[11px] text-[var(--fin-ink-soft)]">
+          Han salido <b className="text-[var(--fin-ink)]">{formatCop(consumo.baseCop)}</b> de las
+          cuentas que marcaste.
+          {consumo.gravadoCop > 0 ? (
+            <>
+              {' '}
+              Te pasaste por {formatCop(consumo.gravadoCop)}, que serían{' '}
+              <b className="text-[var(--fin-out)]">~{formatCop(consumo.gmfEstimadoCop)}</b> de
+              4x1000.
+            </>
+          ) : null}
+        </p>
+      </div>
+
+      {/* Cuentas que cuentan */}
+      <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]">
+          <Landmark className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+          ¿Cuáles están en una entidad financiera?
+        </p>
+        <p className="mt-1 text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
+          Solo lo que sale de un banco, billetera o cooperativa consume cupo. El efectivo no.
+        </p>
+
+        {cuentas.length === 0 ? (
+          <p className="mt-2.5 text-[11px] text-[var(--fin-ink-faint)]">
+            Todavía no tienes cuentas registradas.
+          </p>
+        ) : (
+          <ul className="mt-2.5 flex flex-col gap-1">
+            {cuentas.map((c) => (
+              <li key={c.id}>
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl bg-[var(--fin-bg)] px-3 py-2.5">
+                  <span className="min-w-0 truncate text-[12px] font-bold text-[var(--fin-ink)]">
+                    {c.nombre}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={cubiertas.has(c.id)}
+                    onChange={() => alternar(c.id)}
+                    aria-label={`${c.nombre} está en una entidad financiera`}
+                    className="h-5 w-5 shrink-0 cursor-pointer accent-[var(--fin-accent)]"
+                  />
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* La UVT */}
+      <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+        <p className="text-[11px] font-bold text-[var(--fin-ink-soft)]">
+          Valor de la UVT ({uvt.anio})
+        </p>
+
+        {editandoUvt ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const pesos = parseAmountInput(borrador);
+              if (pesos !== null && pesos > 0) {
+                onCambiarUvt({ anio: anioActual, pesos, fuente: 'Editado a mano' });
+              }
+              setEditandoUvt(false);
+            }}
+            className="mt-2 flex items-center gap-2"
+          >
+            <input
+              value={borrador}
+              onChange={(e) => setBorrador(formatAmountInput(parseAmountInput(e.target.value)))}
+              inputMode="numeric"
+              aria-label="Valor de la UVT en pesos"
+              autoFocus
+              className={CAMPO}
+            />
+            <button
+              type="submit"
+              className="shrink-0 rounded-xl bg-[var(--fin-accent)] px-4 py-2.5 text-xs font-bold text-[var(--fin-on-accent)]"
+            >
+              Guardar
+            </button>
+          </form>
+        ) : (
+          <div className="mt-1 flex items-baseline justify-between gap-3">
+            <p className="font-display text-2xl font-extrabold tabular-nums text-[var(--fin-ink)]">
+              {formatCop(uvt.pesos)}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setBorrador(formatAmountInput(uvt.pesos));
+                setEditandoUvt(true);
+              }}
+              className="shrink-0 rounded-full bg-[var(--fin-soft)] px-3 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]"
+            >
+              Cambiar
+            </button>
+          </div>
+        )}
+
+        {uvt.fuente ? (
+          <p className="mt-1 text-[10px] text-[var(--fin-ink-faint)]">{uvt.fuente}</p>
+        ) : null}
+
+        {/* La UVT cambia cada enero. Calcular en silencio con la del año pasado
+            daría un tope equivocado sin que nadie se entere. */}
+        {vieja ? (
+          <p className="mt-2 flex items-start gap-1.5 rounded-xl bg-[var(--fin-warn-bg)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--fin-warn-ink)]">
+            <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={3} aria-hidden="true" />
+            Este valor es de {uvt.anio} y estamos en {anioActual}. La DIAN publica uno nuevo cada
+            diciembre — actualízalo o el cupo de arriba estará mal.
+          </p>
+        ) : null}
+      </div>
+
+      {/* Lo que dice la norma */}
+      <div className="flex flex-col gap-2">
+        {NOTAS_GMF.map((nota) => (
+          <details
+            key={nota.id}
+            className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3"
+          >
+            <summary className="cursor-pointer text-[12px] font-bold text-[var(--fin-ink)]">
+              {nota.titulo}
+            </summary>
+            <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
+              {nota.cuerpo}
+            </p>
+            <p className="mt-2 text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
+              {nota.fundamento} · verificado el {nota.verificado}
+            </p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+};

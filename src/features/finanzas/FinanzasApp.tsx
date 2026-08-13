@@ -18,6 +18,8 @@ import { CajitasView } from './components/CajitasView';
 import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
+import { PanelGmf } from './components/PanelGmf';
+import { useAjustesGmf } from './data/usePreferencias';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
 import { DudaContacto } from './components/DudaContacto';
@@ -135,6 +137,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
   const almacen = useAlmacen(repositorio);
   const { mostrarAhorro, setMostrarAhorro } = useMostrarAhorro();
+  const gmf = useAjustesGmf();
   const { transacciones, cajitas, cajitaMovimientos, metas, categorias } = almacen.datos;
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
@@ -515,6 +518,18 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           onActualizarCategoria={(c) => void almacen.actualizarCategoria(c)}
           onArchivarCategoria={(id) => void almacen.archivarCategoria(id)}
           onBorrarCategoria={(id) => void almacen.borrarCategoria(id)}
+          panelGmf={
+            <PanelGmf
+              transacciones={transacciones}
+              mes={month}
+              anioActual={Number(bogotaDate().slice(0, 4))}
+              cuentas={cuentasParaElegir}
+              uvt={gmf.uvt}
+              onCambiarUvt={gmf.setUvt}
+              cuentasGmf={gmf.cuentasGmf}
+              onCambiarCuentas={gmf.setCuentasGmf}
+            />
+          }
         />
       ) : null}
 

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { UVT_POR_DEFECTO } from '../lib/gmf';
+import type { ValorUvt } from '../lib/gmf';
 
 /**
  * Display preferences, kept beside the theme rather than in the ledger.
@@ -9,6 +11,8 @@ import { useCallback, useEffect, useState } from 'react';
  * different answers, and nothing here needs to survive a reinstall.
  */
 const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
+const CLAVE_UVT = 'finanzas:gmf:uvt';
+const CLAVE_CUENTAS_GMF = 'finanzas:gmf:cuentas';
 
 const leerBooleano = (clave: string, porDefecto: boolean): boolean => {
   if (typeof window === 'undefined') return porDefecto;
@@ -58,4 +62,76 @@ export const useMostrarAhorro = () => {
   }, []);
 
   return { mostrarAhorro, setMostrarAhorro };
+};
+
+/**
+ * Ajustes del 4x1000.
+ *
+ * Viven aquí y no en el libro por dos razones distintas. La UVT es un dato
+ * público que cambia cada año por resolución de la DIAN — no es un hecho sobre
+ * la plata del usuario, es una constante del país que él puede corregir. Y qué
+ * cuentas están en una entidad financiera es una anotación sobre la realidad,
+ * no un movimiento: cambiarla no reescribe nada de lo ya registrado.
+ */
+export const useAjustesGmf = () => {
+  const [uvt, setEstadoUvt] = useState<ValorUvt>(() => leerUvt());
+  const [cuentasGmf, setEstadoCuentas] = useState<string[]>(() => leerLista(CLAVE_CUENTAS_GMF));
+
+  const setUvt = useCallback((valor: ValorUvt) => {
+    setEstadoUvt(valor);
+    try {
+      localStorage.setItem(CLAVE_UVT, JSON.stringify(valor));
+    } catch {
+      // El cambio funciona igual; solo no se recordará.
+    }
+  }, []);
+
+  const setCuentasGmf = useCallback((ids: readonly string[]) => {
+    const lista = [...new Set(ids)];
+    setEstadoCuentas(lista);
+    try {
+      localStorage.setItem(CLAVE_CUENTAS_GMF, JSON.stringify(lista));
+    } catch {
+      // Igual que arriba.
+    }
+  }, []);
+
+  return { uvt, setUvt, cuentasGmf, setCuentasGmf };
+};
+
+const leerUvt = (): ValorUvt => {
+  if (typeof window === 'undefined') return UVT_POR_DEFECTO;
+  try {
+    const crudo = localStorage.getItem(CLAVE_UVT);
+    if (crudo) {
+      const leido = JSON.parse(crudo) as Partial<ValorUvt>;
+      // Un valor guardado a mano puede venir roto. Se valida antes de usarlo
+      // porque con esto se calcula un tope en pesos.
+      if (
+        typeof leido.anio === 'number' &&
+        typeof leido.pesos === 'number' &&
+        leido.pesos > 0 &&
+        Number.isFinite(leido.pesos)
+      ) {
+        return { anio: leido.anio, pesos: leido.pesos, fuente: leido.fuente ?? '' };
+      }
+    }
+  } catch {
+    // Clave pisada o almacenamiento cerrado.
+  }
+  return UVT_POR_DEFECTO;
+};
+
+const leerLista = (clave: string): string[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const crudo = localStorage.getItem(clave);
+    if (crudo) {
+      const leido = JSON.parse(crudo) as unknown;
+      if (Array.isArray(leido)) return leido.filter((x): x is string => typeof x === 'string');
+    }
+  } catch {
+    // Igual.
+  }
+  return [];
 };
