@@ -9,18 +9,20 @@
     { "source": "/finanzas/:path*", "destination": "/ecosistema/index.html" },
     { "source": "/superadmin", "destination": "/ecosistema/index.html" },
     { "source": "/superadmin/:path*", "destination": "/ecosistema/index.html" },
+    { "source": "/estadisticas", "destination": "/ecosistema/index.html" },
+    { "source": "/estadisticas/:path*", "destination": "/ecosistema/index.html" },
     { "source": "/:path*", "destination": "/index.html" }
   ],
   "headers": [
     {
-      "source": "/(ecosistema|finanzas|superadmin)",
+      "source": "/(ecosistema|finanzas|superadmin|estadisticas)",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
         { "key": "Cache-Control", "value": "no-store" }
       ]
     },
     {
-      "source": "/(ecosistema|finanzas|superadmin)/:path*",
+      "source": "/(ecosistema|finanzas|superadmin|estadisticas)/:path*",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
         { "key": "Cache-Control", "value": "no-store" }

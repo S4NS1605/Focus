@@ -78,12 +78,45 @@ que aquí solo va lo que puede ser público:
 
 Del lado del servidor, **nunca con prefijo `VITE_`**:
 
-| Variable | Para qué |
-|---|---|
-| `SUPABASE_URL` | mismo proyecto |
-| `SUPABASE_SERVICE_ROLE_KEY` | crear usuarios desde el panel de superadmin |
-| `ANALISTA_TOKEN` | protege el endpoint que lee extractos |
-| `PORT` | puerto del servidor |
+| Variable | Dónde | Para qué |
+|---|---|---|
+| `SUPABASE_URL` | Render | mismo proyecto |
+| `SUPABASE_SERVICE_ROLE_KEY` | **solo Render** | crear usuarios desde el panel de superadmin |
+| `ANALISTA_TOKEN` | **solo Render** | protege el endpoint que lee extractos |
+| `PORT` | Render | puerto del servidor |
+| `VISITAS_SAL` | Vercel | sal secreta del hash de visitante (ver abajo) |
+
+`VISITAS_SAL` es la única variable secreta que vive en Vercel, y es de la
+función del borde — no lleva `VITE_`, así que no entra al bundle. No es la
+llave de servicio ni se le parece: lo único que habilita es calcular el hash
+diario de un visitante. La llave de servicio sigue existiendo únicamente en
+Render.
+
+## Analítica del portafolio
+
+Propia, sin cookies y sin guardar una sola IP. El beacon es una función del
+borde de Vercel (`api/visita.ts`), no el Express de Render, porque Vercel pone
+el país en `x-vercel-ip-country`: se lee de ahí y la IP no se consulta para
+nada más ni sale de esa función.
+
+De cada visita quedan cinco cosas: la ruta, el dominio del referente, el país,
+el tipo de dispositivo y un `visitante` que es `sha256(ip + user agent + fecha +
+sal)`. La fecha va dentro del hash a propósito — la misma persona produce otro
+valor mañana, así que se puede contar cuántos entraron hoy y no se puede seguir
+a nadie entre días.
+
+Nunca se guarda IP, user agent completo, cookie, id de navegador, URL completa
+del referente ni ciudad. Lo de la ciudad es deliberado: con este tráfico, "1
+visitante de Sopó" señala a una persona.
+
+El detalle crudo se borra a los 90 días (`purgar_visitas`) y antes se resume por
+día (`resumir_visitas`), que es lo que sobrevive indefinidamente. Las dos las
+agenda `pg_cron` en la migración 0012; si la extensión no está encendida, el
+resto de la migración igual aplica y solo falta agendarlas.
+
+Por eso el panel dice *"visitantes por día, sumados"* y no *"únicos"*: quien
+vuelve mañana cuenta otra vez, y no hay forma —ni debe haberla— de saber que era
+la misma persona.
 
 La clave publicable es pública por diseño; quien de verdad separa los datos de
 cada usuario es Row Level Security en Postgres, no el secreto de la clave.
@@ -104,6 +137,7 @@ supabase/migrations/0008_contactos.sql               con quién mueves la plata
 supabase/migrations/0009_presupuestos.sql            topes por categoría
 supabase/migrations/0010_recurrentes.sql             lo que se repite cada mes
 supabase/migrations/0011_apodos.sql                  cómo le dices tú a cada contacto
+supabase/migrations/0012_visitas.sql                 analítica del portafolio
 ```
 
 Cada tabla tiene RLS con una política que cubre los cuatro verbos, con `using` y

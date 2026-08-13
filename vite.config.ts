@@ -17,16 +17,26 @@ import tailwindcss from '@tailwindcss/vite'
 const ecosistemaTrailingSlash = (): PluginOption => {
   const rewrite: Connect.NextHandleFunction = (req, _res, next) => {
     // Exact paths mapping to the trailing slash
-    if (req.url === '/ecosistema' || req.url === '/finanzas' || req.url === '/superadmin') {
+    if (
+      req.url === '/ecosistema' ||
+      req.url === '/finanzas' ||
+      req.url === '/superadmin' ||
+      req.url === '/estadisticas'
+    ) {
       req.url = '/ecosistema/';
-    } 
+    }
     // Paths with query strings
     else if (req.url?.startsWith('/ecosistema?')) req.url = `/ecosistema/${req.url.slice('/ecosistema'.length)}`;
     else if (req.url?.startsWith('/finanzas?')) req.url = `/ecosistema/${req.url.slice('/finanzas'.length)}`;
     else if (req.url?.startsWith('/superadmin?')) req.url = `/ecosistema/${req.url.slice('/superadmin'.length)}`;
-    
+    else if (req.url?.startsWith('/estadisticas?')) req.url = `/ecosistema/${req.url.slice('/estadisticas'.length)}`;
+
     // Explicit sub-routes falling back to index
-    else if (req.url?.startsWith('/finanzas/') || req.url?.startsWith('/superadmin/')) {
+    else if (
+      req.url?.startsWith('/finanzas/') ||
+      req.url?.startsWith('/superadmin/') ||
+      req.url?.startsWith('/estadisticas/')
+    ) {
       req.url = '/ecosistema/';
     }
     next()

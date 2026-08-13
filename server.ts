@@ -173,6 +173,7 @@ const shellEcosistema = (_req: express.Request, res: express.Response) =>
 app.get('/ecosistema{/*splat}', shellEcosistema);
 app.get('/finanzas{/*splat}', shellEcosistema);
 app.get('/superadmin{/*splat}', shellEcosistema);
+app.get('/estadisticas{/*splat}', shellEcosistema);
 
 app.get('/{*splat}', (_req, res) => res.sendFile(path.join(__dirname, 'dist', 'index.html')));
 

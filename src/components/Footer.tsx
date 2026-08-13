@@ -158,6 +158,18 @@ export const Footer: React.FC = () => {
             {t.footer.copyright}
           </p>
         </div>
+
+        {/* Sin cookies ni identificadores no hace falta un banner, pero quien
+            quiera saber qué queda de su visita tiene que poder averiguarlo sin
+            escribirme. Un <details> lo dice y no le estorba a nadie. */}
+        <details className="mt-8 max-w-lg text-center">
+          <summary className="cursor-pointer text-[10px] tracking-wider text-neutral-600 transition-colors hover:text-neutral-400">
+            {t.footer.privacidadTitulo}
+          </summary>
+          <p className="mt-3 text-[11px] font-light leading-relaxed text-neutral-500">
+            {t.footer.privacidadCuerpo}
+          </p>
+        </details>
         
       </div>
     </footer>

@@ -6,9 +6,10 @@ import { LoginPanel } from '../features/finanzas/components/LoginPanel';
 import { FinanzasApp } from '../features/finanzas/FinanzasApp';
 import { AppLauncher } from './AppLauncher';
 import { SuperadminPanel } from './SuperadminPanel';
+import { EstadisticasPanel } from './EstadisticasPanel';
 import { Loader2 } from 'lucide-react';
 
-export type AppId = 'finanzas' | 'superadmin' | null;
+export type AppId = 'finanzas' | 'superadmin' | 'estadisticas' | null;
 
 export const AppsRoot: React.FC = () => {
   const sesion = useSesion();
@@ -17,6 +18,7 @@ export const AppsRoot: React.FC = () => {
     const path = window.location.pathname;
     if (path.startsWith('/finanzas')) return 'finanzas';
     if (path.startsWith('/superadmin')) return 'superadmin';
+    if (path.startsWith('/estadisticas')) return 'estadisticas';
     return null;
   });
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
@@ -24,19 +26,23 @@ export const AppsRoot: React.FC = () => {
 
   // Sync URL and Title with state changes
   useEffect(() => {
-    const path = activeApp === 'finanzas' ? '/finanzas' : activeApp === 'superadmin' ? '/superadmin' : '/ecosistema';
+    const RUTAS: Record<string, string> = {
+      finanzas: '/finanzas',
+      superadmin: '/superadmin',
+      estadisticas: '/estadisticas',
+    };
+    const TITULOS: Record<string, string> = {
+      finanzas: 'Finanzas | Ecosistema',
+      superadmin: 'Superadmin | Ecosistema',
+      estadisticas: 'Visitantes | Ecosistema',
+    };
+
+    const path = (activeApp && RUTAS[activeApp]) ?? '/ecosistema';
     if (window.location.pathname !== path) {
       window.history.pushState(null, '', path);
     }
-    
-    // Actualizar el título de la pestaña
-    if (activeApp === 'finanzas') {
-      document.title = 'Finanzas | Ecosistema';
-    } else if (activeApp === 'superadmin') {
-      document.title = 'Superadmin | Ecosistema';
-    } else {
-      document.title = 'Ecosistema de Apps';
-    }
+
+    document.title = (activeApp && TITULOS[activeApp]) ?? 'Ecosistema de Apps';
   }, [activeApp]);
 
   // Handle browser back/forward buttons
@@ -45,6 +51,7 @@ export const AppsRoot: React.FC = () => {
       const path = window.location.pathname;
       if (path.startsWith('/finanzas')) setActiveApp('finanzas');
       else if (path.startsWith('/superadmin')) setActiveApp('superadmin');
+      else if (path.startsWith('/estadisticas')) setActiveApp('estadisticas');
       else setActiveApp(null);
     };
     window.addEventListener('popstate', handlePopState);
@@ -104,6 +111,13 @@ export const AppsRoot: React.FC = () => {
 
   if (activeApp === 'superadmin' && rol === 'admin') {
     return <SuperadminPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
+  }
+
+  // Las visitas del portafolio son del dueño, no del ecosistema: un usuario
+  // normal no tiene por qué ver por dónde entra la gente. La política de RLS ya
+  // lo impide del lado de la base; esto solo evita mostrar una pantalla vacía.
+  if (activeApp === 'estadisticas' && rol === 'admin') {
+    return <EstadisticasPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
   }
 
   // The launcher is the landing screen for every signed-in user, admin or not.
