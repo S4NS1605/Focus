@@ -11,7 +11,7 @@ import { comoTransaccion } from '../lib/recurrentes';
 import { normalizarNombre } from '../lib/contactos';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
-import { ID_EFECTIVO, cuentaEfectivo } from './modelos';
+import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, cuentaEfectivo } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
@@ -163,6 +163,43 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         const cargado = await repo.cargarTodo();
         if (cancelado) return;
 
+        // La cuenta de Efectivo nació con el id 'efectivo', que es legible pero
+        // no es un UUID — y `cajitas.id` en Postgres sí lo es. La cuenta nunca
+        // llegó a guardarse y cualquier movimiento que la nombrara moría con
+        // "invalid input syntax for type uuid". Aquí se reescribe todo lo que
+        // haya quedado apuntando al id viejo, antes de tocar nada más.
+        const tocado =
+          cargado.cajitas.some((c) => c.id === ID_EFECTIVO_VIEJO) ||
+          cargado.transacciones.some((t) => t.cuentaId === ID_EFECTIVO_VIEJO) ||
+          cargado.cajitaMovimientos.some((m) => m.cajitaId === ID_EFECTIVO_VIEJO);
+
+        if (tocado) {
+          const arregladas = cargado.cajitas.map((c) =>
+            c.id === ID_EFECTIVO_VIEJO ? { ...c, id: ID_EFECTIVO } : c,
+          );
+          const arregladasTx = cargado.transacciones.map((t) =>
+            t.cuentaId === ID_EFECTIVO_VIEJO ? { ...t, cuentaId: ID_EFECTIVO } : t,
+          );
+          const arregladosMov = cargado.cajitaMovimientos.map((m) =>
+            m.cajitaId === ID_EFECTIVO_VIEJO ? { ...m, cajitaId: ID_EFECTIVO } : m,
+          );
+
+          cargado.cajitas = arregladas;
+          cargado.transacciones = arregladasTx;
+          cargado.cajitaMovimientos = arregladosMov;
+
+          // Se borra la fila vieja ANTES de escribir la nueva: en IndexedDB son
+          // dos claves distintas y quedarían las dos, con la misma cuenta
+          // duplicada y los saldos partidos entre ellas.
+          await repo.borrarCajita(ID_EFECTIVO_VIEJO);
+          const efectivo = arregladas.find((c) => c.id === ID_EFECTIVO);
+          if (efectivo) await repo.guardarCajita(efectivo);
+          await repo.guardarTransacciones(arregladasTx.filter((t) => t.cuentaId === ID_EFECTIVO));
+          await repo.guardarCajitaMovimientos(
+            arregladosMov.filter((m) => m.cajitaId === ID_EFECTIVO),
+          );
+        }
+
         // Cash is seeded rather than shipped as a synthetic entry, so it behaves
         // like every other account: it holds a balance, appears in Configuración,
         // and can be renamed or archived. Keyed by a fixed id, so this runs at
@@ -170,9 +207,10 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         if (!cargado.cajitas.some((c) => c.id === ID_EFECTIVO)) {
           const efectivo = cuentaEfectivo(new Date().toISOString());
           cargado.cajitas = [...cargado.cajitas, efectivo];
-          // Written but not awaited into the render path: failing to persist the
-          // default is not a reason to leave the user staring at a spinner.
-          void repo.guardarCajita(efectivo).catch(() => {});
+          // Se espera el guardado en vez de dispararlo y olvidarlo. Tragarse
+          // este error fue lo que dejó la cuenta existiendo solo en pantalla:
+          // se veía en el selector, y cada movimiento que la usaba fallaba.
+          await repo.guardarCajita(efectivo);
         }
 
         setDatos(cargado);

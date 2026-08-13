@@ -5,6 +5,7 @@ import type { Contacto, Duda, ParteVista } from '../lib/contactos';
 import { dudasDeUnion, partesDelLibro } from '../lib/contactos';
 import { dayLabel } from '../lib/localDate';
 import { DudaContacto } from './DudaContacto';
+import { DetalleContacto } from './DetalleContacto';
 
 interface ContactosViewProps {
   transacciones: readonly Transaction[];
@@ -72,6 +73,7 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
 }) => {
   const [editando, setEditando] = useState<string | null>(null);
   const [borrador, setBorrador] = useState('');
+  const [abierta, setAbierta] = useState<Fila | null>(null);
 
   const partes = useMemo(() => partesDelLibro(transacciones), [transacciones]);
   const filas = useMemo(
@@ -151,7 +153,14 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
                 </form>
               ) : (
                 <div className="flex items-center gap-3">
-                  <span className="min-w-0 flex-1">
+                  {/* Toda la fila abre: "3 movimientos" no sirve para reconocer
+                      a nadie, y el nombre solo tampoco. Hay que poder ver
+                      cuáles fueron. */}
+                  <button
+                    type="button"
+                    onClick={() => setAbierta(fila)}
+                    className="min-w-0 flex-1 text-left"
+                  >
                     <span className="block truncate text-sm font-bold text-[var(--fin-ink)]">
                       {fila.nombre}
                     </span>
@@ -160,7 +169,7 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
                       {dayLabel(fila.ultimaFecha)}
                       {fila.alias.length > 1 ? ` · ${fila.alias.length} grafías` : ''}
                     </span>
-                  </span>
+                  </button>
 
                   {fila.contacto ? (
                     <>
@@ -195,6 +204,14 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
           ))}
         </ul>
       )}
+      {abierta ? (
+        <DetalleContacto
+          nombre={abierta.nombre}
+          alias={abierta.alias}
+          transacciones={transacciones}
+          onCerrar={() => setAbierta(null)}
+        />
+      ) : null}
     </div>
   );
 };

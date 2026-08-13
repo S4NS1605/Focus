@@ -123,7 +123,17 @@ export const CAJITA_MOV_ICON: Record<CajitaMovKind, LucideIcon> = {
  * an ordinary `cuenta` in every other respect, so it has a balance, shows up in
  * Configuración, and can be renamed or archived like the rest.
  */
-export const ID_EFECTIVO = 'efectivo';
+export const ID_EFECTIVO = '00000000-0000-4000-8000-0000000000ef';
+
+/**
+ * El id que tuvo esta cuenta antes.
+ *
+ * Era la cadena 'efectivo', legible pero inválida: `cajitas.id` es `uuid` en
+ * Postgres, así que la cuenta nunca llegó a guardarse y cualquier movimiento
+ * que la nombrara moría con "invalid input syntax for type uuid". Se conserva
+ * para poder reescribir los datos que ya quedaron apuntando ahí.
+ */
+export const ID_EFECTIVO_VIEJO = 'efectivo';
 
 export const cuentaEfectivo = (createdAt: string): Cajita => ({
   id: ID_EFECTIVO,

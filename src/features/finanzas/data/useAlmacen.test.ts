@@ -483,4 +483,90 @@ describe('useAlmacen', () => {
     const notas = result.current.datos.cajitaMovimientos.map((m) => m.nota).sort();
     expect(notas).toEqual(['Enviado a Viaje', 'Recibido de Efectivo']);
   });
+
+  it('el id de Efectivo es un UUID válido', async () => {
+    // `cajitas.id` es uuid en Postgres. Con la cadena 'efectivo' la cuenta
+    // nunca se guardaba y cada movimiento que la nombraba moría con
+    // "invalid input syntax for type uuid".
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    const efectivo = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!;
+    expect(efectivo.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  });
+
+  it('reescribe los datos que quedaron con el id viejo', async () => {
+    const repo = new RepositorioMemoria({
+      cajitas: [
+        {
+          id: 'efectivo',
+          nombre: 'Efectivo',
+          icon: 'Wallet',
+          tipo: 'cuenta',
+          metaCop: null,
+          tasaEaPct: null,
+          createdAt: '2026-08-01T00:00:00.000Z',
+          archivedAt: null,
+        },
+      ],
+      transacciones: [tx({ id: 't-1', cuentaId: 'efectivo' })],
+    });
+
+    const { result } = await montar(repo);
+
+    const cajitas = result.current.datos.cajitas;
+    expect(cajitas.filter((c) => c.nombre === 'Efectivo')).toHaveLength(1);
+    expect(cajitas.some((c) => c.id === 'efectivo')).toBe(false);
+
+    const nuevoIdEfectivo = cajitas.find((c) => c.nombre === 'Efectivo')!.id;
+    expect(result.current.datos.transacciones[0].cuentaId).toBe(nuevoIdEfectivo);
+  });
+
+  it('la reescritura queda guardada, no solo en pantalla', async () => {
+    const repo = new RepositorioMemoria({
+      cajitas: [
+        {
+          id: 'efectivo',
+          nombre: 'Efectivo',
+          icon: 'Wallet',
+          tipo: 'cuenta',
+          metaCop: null,
+          tasaEaPct: null,
+          createdAt: '2026-08-01T00:00:00.000Z',
+          archivedAt: null,
+        },
+      ],
+      transacciones: [tx({ id: 't-1', cuentaId: 'efectivo' })],
+    });
+
+    const { unmount } = await montar(repo);
+    unmount();
+
+    const guardado = await repo.cargarTodo();
+    expect(guardado.cajitas.some((c) => c.id === 'efectivo')).toBe(false);
+    expect(guardado.transacciones[0].cuentaId).not.toBe('efectivo');
+  });
+
+  it('no duplica Efectivo al reescribir', async () => {
+    // En IndexedDB el id viejo y el nuevo son dos claves distintas: sin borrar
+    // la vieja quedarían las dos cuentas y el saldo partido entre ellas.
+    const repo = new RepositorioMemoria({
+      cajitas: [
+        {
+          id: 'efectivo',
+          nombre: 'Efectivo',
+          icon: 'Wallet',
+          tipo: 'cuenta',
+          metaCop: null,
+          tasaEaPct: null,
+          createdAt: '2026-08-01T00:00:00.000Z',
+          archivedAt: null,
+        },
+      ],
+    });
+
+    const { result } = await montar(repo);
+
+    expect(result.current.datos.cajitas.filter((c) => c.nombre === 'Efectivo')).toHaveLength(1);
+  });
 });

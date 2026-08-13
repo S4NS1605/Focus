@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
 import {
   UMBRAL_PREGUNTA,
+  balanceConAlias,
   dudasDeUnion,
+  movimientosDeAlias,
   movimientosDeContacto,
   normalizarNombre,
   parecido,
@@ -256,5 +258,50 @@ describe('movimientosDeContacto', () => {
     );
 
     expect(movimientos.map((m) => m.id)).toEqual(['nuevo', 'viejo']);
+  });
+});
+
+describe('movimientosDeAlias y balance', () => {
+  const LIBRO = [
+    tx({ id: 'a', description: 'Envio con BRE-B a: JUAN PEREZ', amountCop: 50_000 }),
+    tx({ id: 'b', description: 'Transferencia a Juan Carlos Perez', amountCop: 30_000 }),
+    tx({ id: 'c', kind: 'ingreso', description: 'Pago recibido de Juan Perez', amountCop: 200_000 }),
+    tx({ id: 'd', description: 'Transferencia a Maria Gomez', amountCop: 10_000 }),
+  ];
+
+  it('funciona sin que el contacto esté guardado', () => {
+    // La mayoría de las filas de la lista son contrapartes sueltas: exigir una
+    // unión previa dejaría el detalle solo para las pocas ya juntadas.
+    const movs = movimientosDeAlias(LIBRO, ['juan perez']);
+
+    expect(movs.map((m) => m.id).sort()).toEqual(['a', 'c']);
+  });
+
+  it('junta todas las grafías que se le pasen', () => {
+    const movs = movimientosDeAlias(LIBRO, ['juan perez', 'juan carlos perez']);
+
+    expect(movs.map((m) => m.id).sort()).toEqual(['a', 'b', 'c']);
+  });
+
+  it('separa lo que le mandaste de lo que te mandó', () => {
+    const b = balanceConAlias(LIBRO, ['juan perez', 'juan carlos perez']);
+
+    expect(b.salioCop).toBe(80_000);
+    expect(b.entroCop).toBe(200_000);
+    expect(b.netoCop).toBe(120_000);
+  });
+
+  it('el neto es negativo cuando le has mandado más', () => {
+    const b = balanceConAlias(LIBRO, ['maria gomez']);
+
+    expect(b.netoCop).toBe(-10_000);
+  });
+
+  it('con alguien sin movimientos da ceros, no NaN', () => {
+    expect(balanceConAlias(LIBRO, ['nadie'])).toEqual({
+      salioCop: 0,
+      entroCop: 0,
+      netoCop: 0,
+    });
   });
 });

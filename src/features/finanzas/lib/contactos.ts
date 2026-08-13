@@ -245,15 +245,43 @@ export const dudasDeUnion = (
 };
 
 /** Movements belonging to a contact, newest first. */
-export const movimientosDeContacto = (
+/**
+ * Movements belonging to a set of spellings, newest first.
+ *
+ * Keyed on alias rather than on a stored `Contacto` because most rows in the
+ * list are not stored at all — a counterparty the statements named once is a
+ * perfectly good thing to open, and requiring a merge first would mean the
+ * detail view only worked for the few names that had been joined.
+ */
+export const movimientosDeAlias = (
   transacciones: readonly Transaction[],
-  contacto: Contacto,
+  alias: readonly string[],
 ): Transaction[] => {
-  const suyos = new Set(contacto.alias);
+  const suyos = new Set(alias);
   return transacciones
     .filter((tx) => {
       const nombre = extraerContraparte(tx.description);
       return nombre !== null && suyos.has(normalizarNombre(nombre));
     })
     .sort((a, b) => b.occurredOn.localeCompare(a.occurredOn));
+};
+
+export const movimientosDeContacto = (
+  transacciones: readonly Transaction[],
+  contacto: Contacto,
+): Transaction[] => movimientosDeAlias(transacciones, contacto.alias);
+
+/** Cuánto ha ido y venido con alguien. */
+export const balanceConAlias = (
+  transacciones: readonly Transaction[],
+  alias: readonly string[],
+): { salioCop: number; entroCop: number; netoCop: number } => {
+  let salioCop = 0;
+  let entroCop = 0;
+  for (const tx of movimientosDeAlias(transacciones, alias)) {
+    if (tx.kind === 'ingreso') entroCop += tx.amountCop;
+    else salioCop += tx.amountCop;
+  }
+  // Positivo = te ha entrado más de lo que le has mandado.
+  return { salioCop, entroCop, netoCop: entroCop - salioCop };
 };
