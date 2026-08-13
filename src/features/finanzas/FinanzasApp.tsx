@@ -528,6 +528,10 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
               onCambiarUvt={gmf.setUvt}
               cuentasGmf={gmf.cuentasGmf}
               onCambiarCuentas={gmf.setCuentasGmf}
+              regimen={gmf.regimen}
+              onCambiarRegimen={gmf.setRegimen}
+              cuentaExentaId={gmf.cuentaExentaId}
+              onCambiarCuentaExenta={gmf.setCuentaExentaId}
             />
           }
         />

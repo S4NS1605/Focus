@@ -207,3 +207,91 @@ describe('lo que la app afirma', () => {
     expect(nota!.fundamento).toMatch(/881-1/);
   });
 });
+
+describe('los dos regímenes', () => {
+  const tope = 18_330_900;
+  const MOVS = [
+    tx({ id: 'a', cuentaId: 'nequi', amountCop: 2_000_000 }),
+    tx({ id: 'b', cuentaId: 'banco', amountCop: 3_000_000 }),
+  ];
+
+  it('distribuido: el cupo es de la persona y suma todas sus cuentas', () => {
+    const c = consumoDelMes(MOVS, '2026-08', UVT_POR_DEFECTO, CUBIERTAS, {
+      regimen: 'distribuido',
+    });
+
+    expect(c.baseCop).toBe(5_000_000);
+    expect(c.sinCupoCop).toBe(0);
+    expect(c.gmfEstimadoCop).toBe(0);
+  });
+
+  it('marcada: solo la cuenta elegida goza del cupo', () => {
+    const c = consumoDelMes(MOVS, '2026-08', UVT_POR_DEFECTO, CUBIERTAS, {
+      regimen: 'marcada',
+      cuentaExentaId: 'nequi',
+    });
+
+    expect(c.baseCop).toBe(2_000_000);
+    // Lo de la otra cuenta paga desde el primer peso.
+    expect(c.sinCupoCop).toBe(3_000_000);
+    expect(c.gmfEstimadoCop).toBe(gmfDe(3_000_000));
+  });
+
+  it('marcada: lo de las otras cuentas NO consume el cupo', () => {
+    // Meterlo en la base haría creer que el cupo se agotó cuando ni siquiera
+    // aplicaba a esa plata.
+    const c = consumoDelMes(MOVS, '2026-08', UVT_POR_DEFECTO, CUBIERTAS, {
+      regimen: 'marcada',
+      cuentaExentaId: 'nequi',
+    });
+
+    expect(c.disponibleCop).toBe(tope - 2_000_000);
+  });
+
+  it('marcada sin cuenta elegida: nada goza del cupo', () => {
+    const c = consumoDelMes(MOVS, '2026-08', UVT_POR_DEFECTO, CUBIERTAS, {
+      regimen: 'marcada',
+      cuentaExentaId: null,
+    });
+
+    expect(c.baseCop).toBe(0);
+    expect(c.sinCupoCop).toBe(5_000_000);
+  });
+
+  it('marcada: la cuenta elegida también paga si se pasa del cupo', () => {
+    const c = consumoDelMes(
+      [tx({ cuentaId: 'nequi', amountCop: tope + 500_000 })],
+      '2026-08',
+      UVT_POR_DEFECTO,
+      CUBIERTAS,
+      { regimen: 'marcada', cuentaExentaId: 'nequi' },
+    );
+
+    expect(c.gravadoCop).toBe(500_000);
+  });
+
+  it('el régimen por defecto es el que dice la norma hoy', () => {
+    // Sin decir nada se asume `distribuido`, que es lo vigente desde el
+    // 13 de diciembre de 2024.
+    const conDefecto = consumoDelMes(MOVS, '2026-08', UVT_POR_DEFECTO, CUBIERTAS);
+    const explicito = consumoDelMes(MOVS, '2026-08', UVT_POR_DEFECTO, CUBIERTAS, {
+      regimen: 'distribuido',
+    });
+
+    expect(conDefecto).toEqual(explicito);
+  });
+
+  it('el régimen viejo nunca sale más barato que el nuevo', () => {
+    // Si alguna vez lo hiciera, el cálculo estaría mal: el esquema distribuido
+    // existe justamente para no perder cupo por usar varias cuentas.
+    const nuevo = consumoDelMes(MOVS, '2026-08', UVT_POR_DEFECTO, CUBIERTAS, {
+      regimen: 'distribuido',
+    });
+    const viejo = consumoDelMes(MOVS, '2026-08', UVT_POR_DEFECTO, CUBIERTAS, {
+      regimen: 'marcada',
+      cuentaExentaId: 'nequi',
+    });
+
+    expect(viejo.gmfEstimadoCop).toBeGreaterThanOrEqual(nuevo.gmfEstimadoCop);
+  });
+});

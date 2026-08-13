@@ -54,6 +54,21 @@ export const topeExentoCop = (uvt: ValorUvt): number => TOPE_EXENTO_UVT * uvt.pe
 /** Lo que costaría de GMF un monto que NO esté cubierto por la exención. */
 export const gmfDe = (montoCop: number): number => Math.round(Math.abs(montoCop) * TARIFA_GMF);
 
+/**
+ * Bajo qué esquema se está aplicando la exención.
+ *
+ * Existen los dos porque en la práctica conviven: la norma dice `distribuido`
+ * desde el 13 de diciembre de 2024, pero el reparto automático depende de que
+ * cada entidad haya montado su sistema de información, y mientras alguna no lo
+ * tenga sigue cobrando como antes. Obligar al usuario a ver el esquema nuevo
+ * cuando su banco le aplica el viejo sería mostrarle un cupo que no tiene.
+ */
+export type RegimenGmf =
+  /** El cupo es de la persona y se reparte entre sus cuentas. */
+  | 'distribuido'
+  /** Solo una cuenta marcada goza del cupo; las demás pagan desde el primer peso. */
+  | 'marcada';
+
 export interface ConsumoDelMes {
   mes: string;
   /** Retiros del mes que cuentan contra el cupo exento. */
@@ -61,7 +76,14 @@ export interface ConsumoDelMes {
   topeCop: number;
   /** Cuánto del cupo queda. Nunca negativo. */
   disponibleCop: number;
-  /** Lo que excede el cupo y por tanto sí paga. */
+  /**
+   * Retiros de cuentas financieras que NO gozan del cupo.
+   *
+   * Siempre 0 bajo `distribuido`. Bajo `marcada` es todo lo que salió de las
+   * demás cuentas, que paga desde el primer peso.
+   */
+  sinCupoCop: number;
+  /** Lo que excede el cupo y por tanto sí paga, más lo que nunca lo tuvo. */
   gravadoCop: number;
   /** El 4x1000 estimado sobre ese exceso. */
   gmfEstimadoCop: number;
@@ -83,23 +105,43 @@ export const consumoDelMes = (
   uvt: ValorUvt,
   /** Cuentas cuyos retiros cuentan. Vacío = ninguna, y el consumo da cero. */
   cuentasCubiertas: ReadonlySet<string>,
+  opciones: {
+    regimen?: RegimenGmf;
+    /** Solo se usa bajo `marcada`. Sin ella, ninguna cuenta goza del cupo. */
+    cuentaExentaId?: string | null;
+  } = {},
 ): ConsumoDelMes => {
+  const regimen = opciones.regimen ?? 'distribuido';
+  const cuentaExentaId = opciones.cuentaExentaId ?? null;
+
   let baseCop = 0;
+  let sinCupoCop = 0;
+
   for (const tx of transacciones) {
     if (tx.kind !== 'gasto') continue;
     if (tx.cuentaId === null || !cuentasCubiertas.has(tx.cuentaId)) continue;
     if (monthKey(tx.occurredOn) !== mes) continue;
+
+    // Bajo `marcada`, lo que sale de cualquier otra cuenta nunca tuvo cupo: no
+    // consume nada, simplemente paga. Meterlo en `baseCop` haría creer que el
+    // cupo se agotó cuando en realidad ni siquiera aplicaba.
+    if (regimen === 'marcada' && tx.cuentaId !== cuentaExentaId) {
+      sinCupoCop += tx.amountCop;
+      continue;
+    }
     baseCop += tx.amountCop;
   }
 
   const topeCop = topeExentoCop(uvt);
-  const gravadoCop = Math.max(0, baseCop - topeCop);
+  const excedidoCop = Math.max(0, baseCop - topeCop);
+  const gravadoCop = excedidoCop + sinCupoCop;
 
   return {
     mes,
     baseCop,
     topeCop,
     disponibleCop: Math.max(0, topeCop - baseCop),
+    sinCupoCop,
     gravadoCop,
     gmfEstimadoCop: gmfDe(gravadoCop),
     pctUsado: topeCop === 0 ? 0 : Math.min(100, Math.round((baseCop / topeCop) * 1000) / 10),

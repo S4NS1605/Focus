@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Landmark, Scale } from 'lucide-react';
 import type { Transaction } from '../types';
-import type { ValorUvt } from '../lib/gmf';
+import type { RegimenGmf, ValorUvt } from '../lib/gmf';
 import {
   ADVERTENCIA_GMF,
   NOTAS_GMF,
@@ -20,6 +20,10 @@ interface PanelGmfProps {
   onCambiarUvt: (uvt: ValorUvt) => void;
   cuentasGmf: readonly string[];
   onCambiarCuentas: (ids: readonly string[]) => void;
+  regimen: RegimenGmf;
+  onCambiarRegimen: (r: RegimenGmf) => void;
+  cuentaExentaId: string | null;
+  onCambiarCuentaExenta: (id: string | null) => void;
 }
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
@@ -43,12 +47,16 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
   onCambiarUvt,
   cuentasGmf,
   onCambiarCuentas,
+  regimen,
+  onCambiarRegimen,
+  cuentaExentaId,
+  onCambiarCuentaExenta,
 }) => {
   const [editandoUvt, setEditandoUvt] = useState(false);
   const [borrador, setBorrador] = useState('');
 
   const cubiertas = new Set(cuentasGmf);
-  const consumo = consumoDelMes(transacciones, mes, uvt, cubiertas);
+  const consumo = consumoDelMes(transacciones, mes, uvt, cubiertas, { regimen, cuentaExentaId });
   const vieja = uvtDesactualizada(uvt, anioActual);
 
   const alternar = (id: string) =>
@@ -69,6 +77,80 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
           {ADVERTENCIA_GMF}
         </p>
       </div>
+
+      {/* Cómo te lo aplica TU banco. Los dos esquemas conviven en la práctica:
+          la norma dice el nuevo, pero el reparto automático depende de que la
+          entidad haya montado su sistema. */}
+      <fieldset className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+        <legend className="px-1 text-[11px] font-bold text-[var(--fin-ink-soft)]">
+          ¿Cómo te lo aplica tu banco?
+        </legend>
+        <div className="mt-1 flex flex-col gap-1.5">
+          {(
+            [
+              {
+                id: 'distribuido' as const,
+                titulo: 'Repartido entre mis cuentas',
+                nota: 'Lo que dice la norma desde diciembre de 2024. El cupo es tuyo, no de una cuenta.',
+              },
+              {
+                id: 'marcada' as const,
+                titulo: 'Solo una cuenta marcada',
+                nota: 'El esquema viejo. Úsalo si tu banco todavía te cobra en las demás cuentas.',
+              },
+            ]
+          ).map((op) => (
+            <label
+              key={op.id}
+              className={`flex cursor-pointer items-start gap-2.5 rounded-xl border-2 px-3 py-2.5 transition-colors ${
+                regimen === op.id
+                  ? 'border-[var(--fin-ink)] bg-[var(--fin-bg)]'
+                  : 'border-[var(--fin-line)]'
+              }`}
+            >
+              <input
+                type="radio"
+                name="regimen-gmf"
+                checked={regimen === op.id}
+                onChange={() => onCambiarRegimen(op.id)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
+              />
+              <span className="min-w-0">
+                <span className="block text-[12px] font-bold text-[var(--fin-ink)]">
+                  {op.titulo}
+                </span>
+                <span className="mt-0.5 block text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
+                  {op.nota}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+
+        {regimen === 'marcada' ? (
+          <div className="mt-3">
+            <label
+              htmlFor="cuenta-exenta"
+              className="block text-[11px] font-bold text-[var(--fin-ink-soft)]"
+            >
+              ¿Cuál marcaste en el banco?
+            </label>
+            <select
+              id="cuenta-exenta"
+              value={cuentaExentaId ?? ''}
+              onChange={(e) => onCambiarCuentaExenta(e.target.value || null)}
+              className={`mt-1.5 ${CAMPO}`}
+            >
+              <option value="">Ninguna</option>
+              {cuentas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+      </fieldset>
 
       {/* Cupo del mes */}
       <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
@@ -98,12 +180,19 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         <p className="mt-2 text-[11px] text-[var(--fin-ink-soft)]">
           Han salido <b className="text-[var(--fin-ink)]">{formatCop(consumo.baseCop)}</b> de las
           cuentas que marcaste.
+          {consumo.sinCupoCop > 0 ? (
+            <>
+              {' '}
+              Otros <b className="text-[var(--fin-ink)]">{formatCop(consumo.sinCupoCop)}</b>{' '}
+              salieron de cuentas sin cupo y pagan desde el primer peso.
+            </>
+          ) : null}
           {consumo.gravadoCop > 0 ? (
             <>
               {' '}
-              Te pasaste por {formatCop(consumo.gravadoCop)}, que serían{' '}
+              En total pagarían{' '}
               <b className="text-[var(--fin-out)]">~{formatCop(consumo.gmfEstimadoCop)}</b> de
-              4x1000.
+              4x1000 sobre {formatCop(consumo.gravadoCop)}.
             </>
           ) : null}
         </p>

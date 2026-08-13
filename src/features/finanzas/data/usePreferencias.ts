@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { UVT_POR_DEFECTO } from '../lib/gmf';
-import type { ValorUvt } from '../lib/gmf';
+import type { RegimenGmf, ValorUvt } from '../lib/gmf';
 
 /**
  * Display preferences, kept beside the theme rather than in the ledger.
@@ -13,6 +13,8 @@ import type { ValorUvt } from '../lib/gmf';
 const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
 const CLAVE_UVT = 'finanzas:gmf:uvt';
 const CLAVE_CUENTAS_GMF = 'finanzas:gmf:cuentas';
+const CLAVE_REGIMEN = 'finanzas:gmf:regimen';
+const CLAVE_CUENTA_EXENTA = 'finanzas:gmf:cuenta-exenta';
 
 const leerBooleano = (clave: string, porDefecto: boolean): boolean => {
   if (typeof window === 'undefined') return porDefecto;
@@ -76,6 +78,10 @@ export const useMostrarAhorro = () => {
 export const useAjustesGmf = () => {
   const [uvt, setEstadoUvt] = useState<ValorUvt>(() => leerUvt());
   const [cuentasGmf, setEstadoCuentas] = useState<string[]>(() => leerLista(CLAVE_CUENTAS_GMF));
+  const [regimen, setEstadoRegimen] = useState<RegimenGmf>(() => leerRegimen());
+  const [cuentaExentaId, setEstadoExenta] = useState<string | null>(() =>
+    leerTexto(CLAVE_CUENTA_EXENTA),
+  );
 
   const setUvt = useCallback((valor: ValorUvt) => {
     setEstadoUvt(valor);
@@ -96,7 +102,56 @@ export const useAjustesGmf = () => {
     }
   }, []);
 
-  return { uvt, setUvt, cuentasGmf, setCuentasGmf };
+  const setRegimen = useCallback((valor: RegimenGmf) => {
+    setEstadoRegimen(valor);
+    try {
+      localStorage.setItem(CLAVE_REGIMEN, valor);
+    } catch {
+      // Igual.
+    }
+  }, []);
+
+  const setCuentaExentaId = useCallback((id: string | null) => {
+    setEstadoExenta(id);
+    try {
+      if (id === null) localStorage.removeItem(CLAVE_CUENTA_EXENTA);
+      else localStorage.setItem(CLAVE_CUENTA_EXENTA, id);
+    } catch {
+      // Igual.
+    }
+  }, []);
+
+  return {
+    uvt,
+    setUvt,
+    cuentasGmf,
+    setCuentasGmf,
+    regimen,
+    setRegimen,
+    cuentaExentaId,
+    setCuentaExentaId,
+  };
+};
+
+const leerRegimen = (): RegimenGmf => {
+  if (typeof window === 'undefined') return 'distribuido';
+  try {
+    const v = localStorage.getItem(CLAVE_REGIMEN);
+    if (v === 'marcada' || v === 'distribuido') return v;
+  } catch {
+    // Igual.
+  }
+  // Por defecto el vigente desde el 13 de diciembre de 2024.
+  return 'distribuido';
+};
+
+const leerTexto = (clave: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(clave);
+  } catch {
+    return null;
+  }
 };
 
 const leerUvt = (): ValorUvt => {
