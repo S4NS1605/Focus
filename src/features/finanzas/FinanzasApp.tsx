@@ -19,6 +19,7 @@ import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
 import { PanelGmf } from './components/PanelGmf';
+import { PresupuestosView } from './components/PresupuestosView';
 import { useAjustesGmf } from './data/usePreferencias';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
@@ -350,6 +351,15 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           />
 
           <EstadoDelMes totals={totals} delMes={delMes} />
+
+          <PresupuestosView
+            presupuestos={almacen.datos.presupuestos}
+            transacciones={transacciones}
+            mes={month}
+            hoy={today}
+            onFijar={(cat, monto) => void almacen.fijarPresupuesto(cat, monto)}
+            onQuitar={(cat) => void almacen.quitarPresupuesto(cat)}
+          />
 
           <KpiRow totals={totals} />
 

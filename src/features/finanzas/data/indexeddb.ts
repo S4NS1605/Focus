@@ -2,6 +2,7 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
+import type { Presupuesto } from '../lib/presupuestos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 
@@ -9,7 +10,7 @@ const DB_NOMBRE = 'finanzas';
 // Bumped when a store is added: `onupgradeneeded` only fires on a version
 // change, so a device that already opened the database at v1 would otherwise
 // never get the new store.
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const STORES = {
   transacciones: 'transacciones',
@@ -18,6 +19,7 @@ const STORES = {
   metas: 'metas',
   categorias: 'categorias',
   contactos: 'contactos',
+  presupuestos: 'presupuestos',
 } as const;
 
 type StoreNombre = (typeof STORES)[keyof typeof STORES];
@@ -53,7 +55,10 @@ const abrir = (): Promise<IDBDatabase> =>
       const db = request.result;
       for (const nombre of Object.values(STORES)) {
         if (!db.objectStoreNames.contains(nombre)) {
-          db.createObjectStore(nombre, { keyPath: 'id' });
+          // Los presupuestos se identifican por su categoría: hay como máximo
+          // uno por cada una, y un id aparte permitiría dos topes en disputa.
+          const clave = nombre === STORES.presupuestos ? 'categoria' : 'id';
+          db.createObjectStore(nombre, { keyPath: clave });
         }
       }
       // Pocket history is always read one pocket at a time; without this index
@@ -96,16 +101,18 @@ export class RepositorioIndexedDB implements Repositorio {
 
     // Issued together on one transaction so every list is read from the same
     // consistent point, then awaited.
-    const [transacciones, cajitas, cajitaMovimientos, metas, categorias, contactos] = await Promise.all([
+    const [transacciones, cajitas, cajitaMovimientos, metas, categorias, contactos, presupuestos] =
+      await Promise.all([
       pedir<Transaction[]>(tx.objectStore(STORES.transacciones).getAll()),
       pedir<Cajita[]>(tx.objectStore(STORES.cajitas).getAll()),
       pedir<CajitaMovimiento[]>(tx.objectStore(STORES.cajitaMovimientos).getAll()),
       pedir<Meta[]>(tx.objectStore(STORES.metas).getAll()),
       pedir<CategoriaPersonal[]>(tx.objectStore(STORES.categorias).getAll()),
       pedir<Contacto[]>(tx.objectStore(STORES.contactos).getAll()),
+      pedir<Presupuesto[]>(tx.objectStore(STORES.presupuestos).getAll()),
     ]);
 
-    return { transacciones, cajitas, cajitaMovimientos, metas, categorias, contactos };
+    return { transacciones, cajitas, cajitaMovimientos, metas, categorias, contactos, presupuestos };
   }
 
   async guardarTransacciones(transacciones: readonly Transaction[]): Promise<void> {
@@ -190,6 +197,18 @@ export class RepositorioIndexedDB implements Repositorio {
   async guardarContacto(contacto: Contacto): Promise<void> {
     await this.escribir([STORES.contactos], (tx) => {
       tx.objectStore(STORES.contactos).put(contacto);
+    });
+  }
+
+  async guardarPresupuesto(presupuesto: Presupuesto): Promise<void> {
+    await this.escribir([STORES.presupuestos], (tx) => {
+      tx.objectStore(STORES.presupuestos).put(presupuesto);
+    });
+  }
+
+  async borrarPresupuesto(categoria: string): Promise<void> {
+    await this.escribir([STORES.presupuestos], (tx) => {
+      tx.objectStore(STORES.presupuestos).delete(categoria);
     });
   }
 

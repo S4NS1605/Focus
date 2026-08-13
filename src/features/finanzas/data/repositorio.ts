@@ -2,6 +2,7 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
+import type { Presupuesto } from '../lib/presupuestos';
 
 /**
  * Everything the app is allowed to know about storage.
@@ -36,6 +37,10 @@ export interface Repositorio {
   guardarContacto(contacto: Contacto): Promise<void>;
   borrarContacto(id: string): Promise<void>;
 
+  /** Uno por categoría: guardar el mismo dos veces reemplaza, no duplica. */
+  guardarPresupuesto(presupuesto: Presupuesto): Promise<void>;
+  borrarPresupuesto(categoria: string): Promise<void>;
+
   /** Wipes every store. Used by the restore flow before importing a backup. */
   vaciar(): Promise<void>;
 }
@@ -48,6 +53,7 @@ export interface Instantanea {
   metas: Meta[];
   categorias: CategoriaPersonal[];
   contactos: Contacto[];
+  presupuestos: Presupuesto[];
 }
 
 export const instantaneaVacia = (): Instantanea => ({
@@ -57,6 +63,7 @@ export const instantaneaVacia = (): Instantanea => ({
   metas: [],
   categorias: [],
   contactos: [],
+  presupuestos: [],
 });
 
 /**
@@ -85,6 +92,7 @@ export class RepositorioMemoria implements Repositorio {
       categorias: this.datos.categorias.map((c) => ({ ...c })),
       // Arrays inside are copied too: a shallow spread would share `alias`
       // between the store and its reader.
+      presupuestos: this.datos.presupuestos.map((p) => ({ ...p })),
       contactos: this.datos.contactos.map((c) => ({
         ...c,
         alias: [...c.alias],
@@ -149,6 +157,19 @@ export class RepositorioMemoria implements Repositorio {
 
   async borrarContacto(id: string): Promise<void> {
     this.datos.contactos = this.datos.contactos.filter((c) => c.id !== id);
+  }
+
+  async guardarPresupuesto(presupuesto: Presupuesto): Promise<void> {
+    // Se reemplaza por categoría, no se acumula: dos filas para la misma
+    // categoría serían dos topes distintos para el mismo gasto.
+    this.datos.presupuestos = [
+      ...this.datos.presupuestos.filter((p) => p.categoria !== presupuesto.categoria),
+      { ...presupuesto },
+    ];
+  }
+
+  async borrarPresupuesto(categoria: string): Promise<void> {
+    this.datos.presupuestos = this.datos.presupuestos.filter((p) => p.categoria !== categoria);
   }
 
   async borrarCategoria(id: string): Promise<void> {

@@ -5,6 +5,7 @@ import { nuevoId } from '../lib/id';
 import { nuevaClaveCategoria } from '../categorias';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
+import type { Presupuesto } from '../lib/presupuestos';
 import { normalizarNombre } from '../lib/contactos';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
@@ -104,6 +105,10 @@ export interface Almacen {
   actualizarContacto: (contacto: Contacto) => Promise<void>;
   /** Undoes a merge: the spellings go back to standing on their own. */
   borrarContacto: (id: string) => Promise<void>;
+
+  /** Fija el tope de una categoría. Vuelve a fijarlo si ya tenía uno. */
+  fijarPresupuesto: (categoria: string, montoCop: number) => Promise<void>;
+  quitarPresupuesto: (categoria: string) => Promise<void>;
 }
 
 const mensajeDeError = (e: unknown): string =>
@@ -641,6 +646,45 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     [aplicar, datos, repo],
   );
 
+  const fijarPresupuesto = useCallback(
+    async (categoria: string, montoCop: number) => {
+      // Un tope de cero no es un presupuesto, es quitarlo — y la base lo
+      // rechazaría de todos modos.
+      if (montoCop <= 0) return;
+
+      const previo = datos.presupuestos.find((p) => p.categoria === categoria);
+      const presupuesto: Presupuesto = {
+        categoria,
+        montoCop,
+        // Se conserva la fecha original al reajustar el tope: la categoría lleva
+        // presupuestada desde entonces, aunque el número haya cambiado.
+        createdAt: previo?.createdAt ?? new Date().toISOString(),
+      };
+
+      await aplicar(
+        {
+          ...datos,
+          presupuestos: [
+            ...datos.presupuestos.filter((p) => p.categoria !== categoria),
+            presupuesto,
+          ],
+        },
+        () => repo.guardarPresupuesto(presupuesto),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const quitarPresupuesto = useCallback(
+    async (categoria: string) => {
+      await aplicar(
+        { ...datos, presupuestos: datos.presupuestos.filter((p) => p.categoria !== categoria) },
+        () => repo.borrarPresupuesto(categoria),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
   const actualizarContacto = useCallback(
     async (contacto: Contacto) => {
       await aplicar(
@@ -680,5 +724,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     separarContactos,
     actualizarContacto,
     borrarContacto,
+    fijarPresupuesto,
+    quitarPresupuesto,
   };
 };

@@ -3,6 +3,7 @@ import type { Category, Transaction, TxKind } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
+import type { Presupuesto } from '../lib/presupuestos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { ES_PASIVO } from './modelos';
 
@@ -74,13 +75,15 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async cargarTodo(): Promise<Instantanea> {
-    const [transacciones, cajitas, movimientos, metas, categorias, contactos] = await Promise.all([
+    const [transacciones, cajitas, movimientos, metas, categorias, contactos, presupuestos] =
+      await Promise.all([
       this.cliente.from('transacciones').select('*').eq('user_id', this.userId),
       this.cliente.from('cajitas').select('*').eq('user_id', this.userId),
       this.cliente.from('cajita_movimientos').select('*').eq('user_id', this.userId),
       this.cliente.from('metas').select('*').eq('user_id', this.userId),
       this.cliente.from('categorias').select('*').eq('user_id', this.userId),
       this.cliente.from('contactos').select('*').eq('user_id', this.userId),
+      this.cliente.from('presupuestos').select('*').eq('user_id', this.userId),
     ]);
 
     this.fallar('No se pudieron leer los movimientos', transacciones.error);
@@ -89,6 +92,7 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudieron leer las metas', metas.error);
     this.fallar('No se pudieron leer las categorías', categorias.error);
     this.fallar('No se pudieron leer los contactos', contactos.error);
+    this.fallar('No se pudieron leer los presupuestos', presupuestos.error);
 
     return {
       transacciones: (transacciones.data ?? []).map(aTransaccion),
@@ -97,6 +101,7 @@ export class RepositorioSupabase implements Repositorio {
       metas: (metas.data ?? []).map(aMeta),
       categorias: (categorias.data ?? []).map(aCategoria),
       contactos: (contactos.data ?? []).map(aContacto),
+      presupuestos: (presupuestos.data ?? []).map(aPresupuesto),
     };
   }
 
@@ -165,6 +170,25 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudo guardar el contacto', error);
   }
 
+  async guardarPresupuesto(presupuesto: Presupuesto): Promise<void> {
+    const { error } = await this.cliente.from('presupuestos').upsert({
+      user_id: this.userId,
+      categoria: presupuesto.categoria,
+      monto_cop: presupuesto.montoCop,
+      created_at: presupuesto.createdAt,
+    });
+    this.fallar('No se pudo guardar el presupuesto', error);
+  }
+
+  async borrarPresupuesto(categoria: string): Promise<void> {
+    const { error } = await this.cliente
+      .from('presupuestos')
+      .delete()
+      .eq('user_id', this.userId)
+      .eq('categoria', categoria);
+    this.fallar('No se pudo eliminar el presupuesto', error);
+  }
+
   async borrarContacto(id: string): Promise<void> {
     const { error } = await this.cliente.from('contactos').delete().eq('id', id);
     this.fallar('No se pudo eliminar el contacto', error);
@@ -180,7 +204,10 @@ export class RepositorioSupabase implements Repositorio {
     // Pockets last: deleting them cascades into their movements, so removing
     // movements first is redundant but keeps the intent explicit if the schema
     // ever loses that cascade.
-    for (const tabla of ['transacciones', 'metas', 'cajita_movimientos', 'cajitas', 'categorias', 'contactos']) {
+    for (const tabla of [
+      'transacciones', 'metas', 'cajita_movimientos', 'cajitas',
+      'categorias', 'contactos', 'presupuestos',
+    ]) {
       const { error } = await this.cliente.from(tabla).delete().eq('user_id', this.userId);
       this.fallar(`No se pudo vaciar ${tabla}`, error);
     }
@@ -318,6 +345,16 @@ const aMeta = (fila: FilaMeta): Meta => ({
   ahorradoCop: Number(fila.ahorrado_cop),
   createdAt: fila.created_at,
   completedAt: fila.completed_at,
+});
+
+const aPresupuesto = (fila: {
+  categoria: string;
+  monto_cop: number | string;
+  created_at: string;
+}): Presupuesto => ({
+  categoria: fila.categoria,
+  montoCop: Number(fila.monto_cop),
+  createdAt: fila.created_at,
 });
 
 interface FilaContacto {
