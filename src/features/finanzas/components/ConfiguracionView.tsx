@@ -22,6 +22,7 @@ interface ConfiguracionViewProps {
   onBorrarCategoria: CategoriasEditorProps['onBorrar'];
   /** Ya montado: esta vista solo decide dónde va, no de qué habla. */
   panelGmf?: React.ReactNode;
+  panelRespaldo?: React.ReactNode;
 }
 
 /**
@@ -217,6 +218,7 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
   onArchivarCategoria,
   onBorrarCategoria,
   panelGmf,
+  panelRespaldo,
 }) => {
   const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   const vivas = cajitas.filter((c) => c.archivedAt === null);
@@ -269,6 +271,8 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
       })}
 
       {panelGmf}
+
+      {panelRespaldo}
 
       <CategoriasEditor
         categorias={categorias}

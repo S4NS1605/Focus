@@ -19,6 +19,7 @@ import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
 import { PanelGmf } from './components/PanelGmf';
+import { PanelRespaldo } from './components/PanelRespaldo';
 import { PresupuestosView } from './components/PresupuestosView';
 import { RecurrentesView } from './components/RecurrentesView';
 import { useAjustesGmf } from './data/usePreferencias';
@@ -556,6 +557,13 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
               onCambiarRegimen={gmf.setRegimen}
               cuentaExentaId={gmf.cuentaExentaId}
               onCambiarCuentaExenta={gmf.setCuentaExentaId}
+            />
+          }
+          panelRespaldo={
+            <PanelRespaldo
+              datos={almacen.datos}
+              hoy={today}
+              onRestaurar={(d) => void almacen.restaurar(d)}
             />
           }
         />

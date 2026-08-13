@@ -117,6 +117,14 @@ export interface Almacen {
   borrarRecurrente: (id: string) => Promise<void>;
   /** Convierte un pendiente en un movimiento real, con la fecha que le tocaba. */
   confirmarRecurrente: (pendiente: Pendiente) => Promise<void>;
+
+  /**
+   * Reemplaza TODO por lo que traiga un respaldo.
+   *
+   * Vacía primero y escribe después, en ese orden: mezclar lo viejo con lo
+   * nuevo dejaría duplicados imposibles de distinguir de movimientos reales.
+   */
+  restaurar: (datos: Instantanea) => Promise<void>;
 }
 
 const mensajeDeError = (e: unknown): string =>
@@ -727,6 +735,23 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     [aplicar, datos, repo],
   );
 
+  const restaurar = useCallback(
+    async (nuevos: Instantanea) => {
+      await aplicar(nuevos, async () => {
+        await repo.vaciar();
+        await repo.guardarTransacciones(nuevos.transacciones);
+        for (const c of nuevos.cajitas) await repo.guardarCajita(c);
+        await repo.guardarCajitaMovimientos(nuevos.cajitaMovimientos);
+        for (const m of nuevos.metas) await repo.guardarMeta(m);
+        for (const c of nuevos.categorias) await repo.guardarCategoria(c);
+        for (const c of nuevos.contactos) await repo.guardarContacto(c);
+        for (const p of nuevos.presupuestos) await repo.guardarPresupuesto(p);
+        for (const r of nuevos.recurrentes) await repo.guardarRecurrente(r);
+      });
+    },
+    [aplicar, repo],
+  );
+
   const quitarPresupuesto = useCallback(
     async (categoria: string) => {
       await aplicar(
@@ -782,5 +807,6 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     actualizarRecurrente,
     borrarRecurrente,
     confirmarRecurrente,
+    restaurar,
   };
 };
