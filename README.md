@@ -100,6 +100,10 @@ supabase/migrations/0004_tipo_cajitas.sql      cuenta vs cajita
 supabase/migrations/0005_deudas_y_tarjetas.sql deudas, tarjetas y categoría del cargo
 supabase/migrations/0006_movimientos_por_cuenta.sql  movimientos atados a una cuenta
 supabase/migrations/0007_categorias_propias.sql      categorías del usuario
+supabase/migrations/0008_contactos.sql               con quién mueves la plata
+supabase/migrations/0009_presupuestos.sql            topes por categoría
+supabase/migrations/0010_recurrentes.sql             lo que se repite cada mes
+supabase/migrations/0011_apodos.sql                  cómo le dices tú a cada contacto
 ```
 
 Cada tabla tiene RLS con una política que cubre los cuatro verbos, con `using` y
