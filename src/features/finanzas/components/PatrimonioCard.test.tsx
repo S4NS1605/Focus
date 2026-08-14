@@ -117,3 +117,82 @@ describe('PatrimonioCard — contar o no los ahorros', () => {
     expect(screen.getByText('$500.000')).toBeInTheDocument();
   });
 });
+
+import { ID_EFECTIVO } from '../data/modelos';
+
+describe('PatrimonioCard — efectivo aparte de las cuentas', () => {
+  // 100.000 en efectivo, 300.000 en un banco, 200.000 en ahorros.
+  const cajitas = [
+    caj({ id: ID_EFECTIVO, nombre: 'Efectivo' }),
+    caj({ id: 'banco', nombre: 'Nequi' }),
+    caj({ id: 'ahorro', nombre: 'Viaje', tipo: 'cajita' }),
+  ];
+  const movimientos = [
+    mov({ id: 'e', cajitaId: ID_EFECTIVO, deltaCop: 100_000 }),
+    mov({ id: 'b', cajitaId: 'banco', deltaCop: 300_000 }),
+    mov({ id: 'a', cajitaId: 'ahorro', deltaCop: 200_000 }),
+  ];
+
+  it('separa cuánto hay en efectivo y cuánto en cuentas', () => {
+    render(
+      <PatrimonioCard
+        cajitas={cajitas}
+        movimientos={movimientos}
+        transacciones={[]}
+        mostrarAhorro={false}
+      />,
+    );
+
+    expect(screen.getByText('Efectivo')).toBeInTheDocument();
+    expect(screen.getByText('$100.000')).toBeInTheDocument();
+    expect(screen.getByText('En cuentas')).toBeInTheDocument();
+    expect(screen.getByText('$300.000')).toBeInTheDocument();
+    // El titular sigue siendo el total en cuentas (efectivo + banco).
+    expect(screen.getByText('$400.000')).toBeInTheDocument();
+  });
+
+  it('muestra el desglose incluso con los ahorros apagados', () => {
+    // Antes, sin ahorros no había recuadros; ahora sí, porque efectivo y cuentas
+    // son dos datos distintos, no una repetición del titular.
+    render(
+      <PatrimonioCard
+        cajitas={cajitas}
+        movimientos={movimientos}
+        transacciones={[]}
+        mostrarAhorro={false}
+      />,
+    );
+
+    expect(screen.getByText('Efectivo')).toBeInTheDocument();
+    expect(screen.queryByText('En cajitas')).not.toBeInTheDocument();
+  });
+
+  it('con los ahorros encendidos, muestra los tres', () => {
+    render(
+      <PatrimonioCard
+        cajitas={cajitas}
+        movimientos={movimientos}
+        transacciones={[]}
+        mostrarAhorro
+      />,
+    );
+
+    expect(screen.getByText('Efectivo')).toBeInTheDocument();
+    expect(screen.getByText('En cuentas')).toBeInTheDocument();
+    expect(screen.getByText('En cajitas')).toBeInTheDocument();
+  });
+
+  it('sin efectivo, no inventa un recuadro de efectivo', () => {
+    render(
+      <PatrimonioCard
+        cajitas={[caj({ id: 'banco', nombre: 'Nequi' })]}
+        movimientos={[mov({ cajitaId: 'banco', deltaCop: 300_000 })]}
+        transacciones={[]}
+        mostrarAhorro
+      />,
+    );
+
+    expect(screen.queryByText('Efectivo')).not.toBeInTheDocument();
+    expect(screen.getByText('En cuentas')).toBeInTheDocument();
+  });
+});

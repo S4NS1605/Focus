@@ -1,8 +1,9 @@
 import React from 'react';
-import { Landmark, PiggyBank, Plus, Wallet } from 'lucide-react';
+import { Banknote, Landmark, PiggyBank, Plus, Wallet } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
-import { patrimonio } from '../lib/cajitas';
+import { ID_EFECTIVO, ID_EFECTIVO_VIEJO } from '../data/modelos';
+import { patrimonio, saldoDeCajita } from '../lib/cajitas';
 import { formatCop } from '../lib/formatCop';
 
 interface PatrimonioCardProps {
@@ -38,6 +39,32 @@ export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({
 }) => {
   const total = patrimonio(cajitas, movimientos, transacciones);
   const encabezado = mostrarAhorro ? total.totalCop : total.cuentasCop;
+
+  // Cuánto de lo que hay en cuentas es plata en la mano y cuánto está en el
+  // banco. Se suma también el id viejo de Efectivo por si algún dato quedó sin
+  // migrar; en un proyecto ya migrado ese sumando es cero.
+  const efectivoCop =
+    saldoDeCajita(movimientos, ID_EFECTIVO, transacciones) +
+    saldoDeCajita(movimientos, ID_EFECTIVO_VIEJO, transacciones);
+  const cuentasBancariasCop = total.cuentasCop - efectivoCop;
+  // El desglose solo aparece cuando hay efectivo que distinguir. Sin él, separar
+  // "Efectivo $0" y repetir el resto sería ruido, no información.
+  const hayEfectivo = efectivoCop !== 0;
+
+  const recuadros = [
+    ...(hayEfectivo
+      ? [
+          { label: 'Efectivo', valor: efectivoCop, Icono: Banknote },
+          { label: 'En cuentas', valor: cuentasBancariasCop, Icono: Landmark },
+        ]
+      : [{ label: 'En cuentas', valor: total.cuentasCop, Icono: Landmark }]),
+    ...(mostrarAhorro ? [{ label: 'En cajitas', valor: total.cajitasCop, Icono: PiggyBank }] : []),
+  ];
+
+  // Se muestra cuando cuenta los ahorros (como siempre) o cuando hay un desglose
+  // de efectivo que enseñar. Sin ahorros y sin efectivo, el titular YA es lo que
+  // hay en cuentas y repetirlo debajo se leería como dos datos cuando hay uno.
+  const mostrarRecuadros = mostrarAhorro || hayEfectivo;
 
   if (cajitas.length === 0) {
     return (
@@ -104,15 +131,15 @@ export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({
         </button>
       ) : null}
 
-      {/* The split is dropped rather than reduced to one tile when savings are
-          off: the headline already IS what is in accounts, and repeating the
-          same figure underneath reads as two facts when there is only one. */}
-      {mostrarAhorro ? (
+      {/* Efectivo aparte de las cuentas del banco, y las cajitas cuando cuentan.
+          El desglose reparte el titular en sus partes reales, así que no lo
+          repite: dice de qué está hecho. */}
+      {/* Siempre dos columnas: tres casillas caben como 2+1 (efectivo y cuentas
+          arriba, cajitas abajo). Tres en fila apretaban los montos de siete
+          cifras en un teléfono hasta cortarlos. */}
+      {mostrarRecuadros ? (
       <div className="mt-4 grid grid-cols-2 gap-3">
-        {[
-          { label: 'En cuentas', valor: total.cuentasCop, Icono: Landmark },
-          { label: 'En cajitas', valor: total.cajitasCop, Icono: PiggyBank },
-        ].map((fila) => (
+        {recuadros.map((fila) => (
           <div key={fila.label} className="rounded-2xl bg-[var(--fin-bg)] px-3.5 py-3">
             <p className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--fin-ink-faint)]">
               <fila.Icono className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
