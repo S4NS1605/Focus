@@ -5,6 +5,7 @@ import { frasesDeCategorias } from './vocabularioUsuario';
 import { LEXICO_VACIO } from './aprendizaje';
 import type { LexicoAprendido } from './aprendizaje';
 import { detectarRecurrencia } from './senalesAvanzadas';
+import { buscarSimilar, calcularConfianzaGranular, promedioConfianza, type ConfianzaGranular } from './inteligenciaAvanzada';
 import { normalizeNumericToken, normalizeWord, readNumberAt } from './numerals';
 import {
   AMOUNT_CUES,
@@ -54,6 +55,7 @@ export interface ParsedTransaction {
   /** The untouched input, always. A mis-parse must stay reconstructable. */
   raw: string;
   confidence: number;
+  confianzaGranular: ConfianzaGranular;
   needsReview: boolean;
   signals: {
     amountSource: AmountSource;
@@ -392,6 +394,15 @@ export const parseTransaction = (
         categorySource = 'merchant';
         break;
       }
+      // Fuzzy: solo si la palabra es lo bastante larga (evita "d10" → "d1")
+      if (token.norm.length > 4) {
+        const similar = buscarSimilar(token.norm, Object.keys(MERCHANTS), 2);
+        if (similar && similar.length > 3) {
+          category = MERCHANTS[similar];
+          categorySource = 'merchant';
+          break;
+        }
+      }
     }
   }
 
@@ -417,6 +428,18 @@ export const parseTransaction = (
         category = keyword;
         categorySource = 'keyword';
         break;
+      }
+      // Fuzzy: solo si palabra es larga (evita falsos positivos con palabras cortas)
+      if (token.norm.length > 4) {
+        const similar = buscarSimilar(token.norm, Object.keys(CATEGORY_KEYWORDS), 2);
+        if (similar && similar.length > 3) {
+          const keywordSimilar = lookupWithStem(CATEGORY_KEYWORDS, similar);
+          if (keywordSimilar) {
+            category = keywordSimilar;
+            categorySource = 'keyword';
+            break;
+          }
+        }
       }
     }
   }
@@ -463,6 +486,14 @@ export const parseTransaction = (
   if (ambiguousAmount) confidence -= WEIGHTS.ambiguityPenalty;
   confidence = Math.max(0, Math.min(1, Number(confidence.toFixed(2))));
 
+  const confianzaGranular = calcularConfianzaGranular(
+    amount,
+    kindSource !== 'default',
+    categorySource,
+    cuentaId !== null,
+    detectPaymentMethod(tokens) !== 'desconocido',
+  );
+
   return {
     kind,
     amount,
@@ -471,6 +502,7 @@ export const parseTransaction = (
     description,
     raw,
     confidence,
+    confianzaGranular,
     needsReview: amount === null || kindSource === 'default' || confidence < REVIEW_THRESHOLD,
     signals: {
       amountSource: best ? classifyAmountSource(best) : 'none',
@@ -500,6 +532,7 @@ export const movimientoEnBlanco = (): ParsedTransaction => ({
   description: '',
   raw: '',
   confidence: 0,
+  confianzaGranular: { monto: 0, tipo: 0, categoria: 0, cuenta: 0, metodo: 0 },
   needsReview: true,
   signals: {
     amountSource: 'none',
