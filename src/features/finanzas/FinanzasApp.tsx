@@ -228,6 +228,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
   const handleUpdate = (draft: ConfirmDraft) => {
     if (!editando) return;
+    // La fecha solo cambia si el selector devolvió una; si no, se respeta la
+    // que ya tenía. Nunca se borra por accidente.
+    const occurredOn = draft.occurredOn ?? editando.occurredOn;
     void almacen.actualizarTransaccion({
       ...editando,
       kind: draft.kind,
@@ -235,7 +238,12 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       category: draft.category,
       description: draft.description,
       cuentaId: draft.cuentaId,
+      occurredOn,
     });
+    // Si el día se movió a otro mes, la fila desaparecería del mes en pantalla.
+    // Saltar al mes donde quedó evita que la edición parezca haber borrado el
+    // movimiento — el mismo motivo por el que guardar salta al mes de hoy.
+    setMonth(monthKey(occurredOn));
     setEditando(null);
   };
 
@@ -611,6 +619,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           parsed={comoParseado(editando)}
           cuentas={cuentasParaElegir}
           cuentaInicial={editando.cuentaId}
+          fechaInicial={editando.occurredOn}
+          fechaMax={today}
           onSave={handleUpdate}
           onCancel={() => setEditando(null)}
         />

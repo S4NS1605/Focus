@@ -32,6 +32,7 @@ export const COPY = {
     ingreso: 'Ingreso',
     category: 'Categoría',
     description: 'Descripción',
+    fecha: 'Fecha',
     heard: 'Escuché',
     save: 'Guardar',
     saveEditar: 'Guardar cambios',

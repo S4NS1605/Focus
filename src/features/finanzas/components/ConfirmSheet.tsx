@@ -18,6 +18,11 @@ export interface ConfirmDraft {
   /** Null when the user does not say where the money moved. */
   cuentaId: string | null;
   rawTranscript: string;
+  /**
+   * El día del movimiento (YYYY-MM-DD). Solo lo llena la edición: al crear, la
+   * fecha es hoy y la pone quien guarda, no este formulario.
+   */
+  occurredOn?: string;
 }
 
 interface ConfirmSheetProps {
@@ -34,6 +39,10 @@ interface ConfirmSheetProps {
   /** Accounts and pockets the money could have moved through. */
   cuentas?: readonly { id: string; nombre: string }[];
   cuentaInicial?: string | null;
+  /** El día que ya tiene el movimiento; abre el selector de fecha al editar. */
+  fechaInicial?: string;
+  /** Tope del selector: no se puede fechar un movimiento en el futuro. */
+  fechaMax?: string;
 }
 
 /**
@@ -49,9 +58,12 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   modo = 'crear',
   cuentas = [],
   cuentaInicial = null,
+  fechaInicial,
+  fechaMax,
 }) => {
   const editando = modo === 'editar';
   const [amountText, setAmountText] = useState(() => formatAmountInput(parsed.amount));
+  const [fecha, setFecha] = useState(fechaInicial ?? '');
   const [kind, setKind] = useState<TxKind>(parsed.kind);
   const [category, setCategory] = useState<CategoriaClave>(parsed.category);
   const [description, setDescription] = useState(parsed.description);
@@ -95,6 +107,9 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
       description: description.trim() || catalogo.de(category).nombre,
       cuentaId,
       rawTranscript: parsed.raw,
+      // Solo viaja si el selector está en juego (edición) y con un valor; al
+      // crear se queda indefinido y la fecha la pone quien guarda.
+      occurredOn: fechaInicial !== undefined && fecha !== '' ? fecha : undefined,
     });
   };
 
@@ -271,6 +286,25 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
           />
         </div>
+
+        {/* Fecha — solo al editar. Un movimiento nuevo es de hoy por definición;
+            corregir el día de uno viejo (lo registré tarde, cayó en otra fecha)
+            es justo lo que aquí faltaba poder hacer. */}
+        {fechaInicial !== undefined ? (
+          <div className="mt-5">
+            <label htmlFor="fin-fecha" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
+              {COPY.confirm.fecha}
+            </label>
+            <input
+              id="fin-fecha"
+              type="date"
+              value={fecha}
+              max={fechaMax}
+              onChange={(e) => setFecha(e.target.value)}
+              className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+            />
+          </div>
+        ) : null}
 
         {/* What was actually heard, so a mis-parse is always traceable */}
         {parsed.raw.trim() ? (
