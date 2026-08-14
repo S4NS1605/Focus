@@ -109,21 +109,29 @@ revoke all on function public.purgar_visitas() from public;
 -- ---------------------------------------------------------------------------
 -- Automatizarlo, si pg_cron está disponible.
 --
--- Va dentro de un bloque que se traga el error a propósito: si la extensión no
+-- Va dentro de bloques que se tragan el error a propósito: si la extensión no
 -- está encendida en este proyecto, el resto de la migración ya quedó aplicado y
 -- lo único que falta es agendar. Se puede encender después desde
 -- Database → Extensions y volver a correr este archivo.
+--
+-- Encender la extensión va en SU PROPIO bloque, separado del de agendar. Al
+-- capturar una excepción, plpgsql revierte todo lo hecho dentro de ese bloque:
+-- si ambas cosas compartieran uno, cualquier fallo al agendar desharía también
+-- el `create extension`, y el arreglo del segundo intento nunca tendría efecto.
+--
+-- No hay `cron.unschedule`: desde pg_cron 1.4 `cron.schedule` con un nombre que
+-- ya existe reemplaza la agenda en vez de duplicarla. Llamar a unschedule antes
+-- era peor que inútil — lanza error cuando el trabajo aún no existe, que es
+-- justo lo que pasa la primera vez.
 --
 -- Las horas son UTC. Bogotá es UTC-5, así que 05:30 UTC = 00:30 de acá: ya pasó
 -- la medianoche local y el día que se va a resumir está cerrado.
 do $$
 begin
   create extension if not exists pg_cron;
-
-  perform cron.unschedule('resumir-visitas');
-  perform cron.unschedule('purgar-visitas');
 exception
-  when others then null;
+  when others then
+    raise notice 'pg_cron no se pudo encender: enciéndelo en Database → Extensions.';
 end $$;
 
 do $$
