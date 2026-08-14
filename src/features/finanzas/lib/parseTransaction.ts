@@ -4,6 +4,7 @@ import type { CategoriaPersonal } from '../categorias';
 import { frasesDeCategorias } from './vocabularioUsuario';
 import { LEXICO_VACIO } from './aprendizaje';
 import type { LexicoAprendido } from './aprendizaje';
+import { detectarRecurrencia } from './senalesAvanzadas';
 import { normalizeNumericToken, normalizeWord, readNumberAt } from './numerals';
 import {
   AMOUNT_CUES,
@@ -13,6 +14,7 @@ import {
   KIND_PHRASES,
   MERCHANTS,
   MERCHANT_DISPLAY,
+  PAYMENT_METHODS,
   STOPWORDS,
 } from './vocabulary';
 
@@ -32,6 +34,9 @@ export interface CuentaConocida {
   nombre: string;
 }
 export type CategorySource = 'usuario' | 'merchant' | 'aprendida' | 'keyword' | 'default';
+export type PaymentMethod =
+  | 'tarjeta_credito' | 'tarjeta_debito' | 'billetera_digital'
+  | 'transferencia_bancaria' | 'efectivo' | 'cheque' | 'cripto' | 'desconocido';
 
 export interface ParsedTransaction {
   kind: TxKind;
@@ -55,6 +60,8 @@ export interface ParsedTransaction {
     kindSource: KindSource;
     categorySource: CategorySource;
     cuentaSource: CuentaSource;
+    paymentMethod: PaymentMethod;
+    recurringPattern: 'diario' | 'semanal' | 'mensual' | 'anual' | 'ninguno';
     /** More than one viable amount was found. */
     ambiguousAmount: boolean;
   };
@@ -264,6 +271,14 @@ const buscarCuenta = (
   return hallazgos.find((h) => h.source === 'preposicion') ?? hallazgos[0];
 };
 
+const detectPaymentMethod = (tokens: readonly Token[]): PaymentMethod => {
+  for (const token of tokens) {
+    const method = PAYMENT_METHODS[token.norm];
+    if (method) return method as PaymentMethod;
+  }
+  return 'desconocido';
+};
+
 export const parseTransaction = (
   raw: string,
   /**
@@ -462,6 +477,8 @@ export const parseTransaction = (
       kindSource,
       categorySource,
       cuentaSource,
+      paymentMethod: detectPaymentMethod(tokens),
+      recurringPattern: detectarRecurrencia(raw).patrón,
       ambiguousAmount,
     },
   };
@@ -489,6 +506,8 @@ export const movimientoEnBlanco = (): ParsedTransaction => ({
     kindSource: 'default',
     categorySource: 'default',
     cuentaSource: 'ninguna',
+    paymentMethod: 'desconocido',
+    recurringPattern: 'ninguno',
     ambiguousAmount: false,
   },
 });

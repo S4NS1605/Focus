@@ -175,3 +175,20 @@ export const STOPWORDS: ReadonlySet<string> = new Set([
   'se', 'lo', 'mi', 'y', 'a', 'e', 'o', 'es', 'fue', 'este', 'esta', 'ya',
   'solo', 'como', 'mas',
 ]);
+
+/** Payment methods the parser recognizes. */
+export const PAYMENT_METHODS: Record<string, string> = {
+  tarjeta: 'tarjeta_credito',
+  tarjetacredito: 'tarjeta_credito',
+  credito: 'tarjeta_credito',
+  debito: 'tarjeta_debito',
+  nequi: 'billetera_digital',
+  daviplata: 'billetera_digital',
+  bancolombia: 'transferencia_bancaria',
+  transferencia: 'transferencia_bancaria',
+  transferi: 'transferencia_bancaria',
+  efectivo: 'efectivo',
+  cheque: 'cheque',
+  bitcoin: 'cripto',
+  crypto: 'cripto',
+};
