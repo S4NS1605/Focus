@@ -156,8 +156,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
   const { totals, gastos, ingresos, delMes } = useMemo(() => {
     const mes = forMonth(transacciones, month);
+    const sorted = [...mes].sort((a, b) => b.occurredOn.localeCompare(a.occurredOn));
     return {
-      delMes: mes,
+      delMes: sorted,
       totals: monthTotals(mes),
       gastos: byCategory(mes, 'gasto'),
       ingresos: byCategory(mes, 'ingreso'),
