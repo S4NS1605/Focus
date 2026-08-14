@@ -1,5 +1,7 @@
 import { CATEGORY_LABELS } from '../types';
 import type { CategoriaClave, Category, TxKind } from '../types';
+import type { CategoriaPersonal } from '../categorias';
+import { frasesDeCategorias } from './vocabularioUsuario';
 import { normalizeNumericToken, normalizeWord, readNumberAt } from './numerals';
 import {
   AMOUNT_CUES,
@@ -27,7 +29,7 @@ export interface CuentaConocida {
   id: string;
   nombre: string;
 }
-export type CategorySource = 'merchant' | 'keyword' | 'default';
+export type CategorySource = 'usuario' | 'merchant' | 'keyword' | 'default';
 
 export interface ParsedTransaction {
   kind: TxKind;
@@ -76,6 +78,9 @@ const WEIGHTS = {
   amount: 0.5,
   kindKeyword: 0.3,
   kindImplied: 0.15,
+  // Una categoría que el usuario nombró expresamente vale como una marca: es una
+  // señal explícita suya, no una adivinanza de una lista genérica.
+  userCategory: 0.2,
   merchant: 0.2,
   categoryKeyword: 0.12,
   ambiguityPenalty: 0.1,
@@ -262,6 +267,11 @@ export const parseTransaction = (
    * for app state.
    */
   cuentas: readonly CuentaConocida[] = [],
+  /**
+   * Las categorías que el usuario creó. Se reconocen por su nombre y ganan sobre
+   * las adivinanzas de fábrica: es su taxonomía, dicha explícitamente.
+   */
+  categorias: readonly CategoriaPersonal[] = [],
 ): ParsedTransaction => {
   const tokens = tokenize(raw);
   const consumed = new Array<boolean>(tokens.length).fill(false);
@@ -328,15 +338,34 @@ export const parseTransaction = (
 
   // 3 — Category. Token equality only, never substring: `ara` is inside "para",
   // `mil` inside "familia", `d1` inside "d10", `uno` inside "desayuno".
-  let category: Category = 'otros';
+  let category: CategoriaClave = 'otros';
   let categorySource: CategorySource = 'default';
 
-  for (const token of available()) {
-    const merchant = MERCHANTS[token.norm];
-    if (merchant) {
-      category = merchant;
-      categorySource = 'merchant';
-      break;
+  // 3a — Las categorías del usuario, por su nombre. Van PRIMERO: si nombró una
+  // categoría suya, esa gana sobre la marca o la palabra genérica que pudiera
+  // caer en otra cosa. Sus tokens no se consumen, igual que las keywords: para
+  // una categoría "Mascotas", "mascotas" es justo lo que la fila debe decir.
+  const frasesCat = frasesDeCategorias(categorias);
+  const dispon = available();
+  buscarCat: for (const frase of frasesCat) {
+    const span = frase.seq.length;
+    for (let i = 0; i + span <= dispon.length; i += 1) {
+      if (frase.seq.every((s, k) => dispon[i + k].norm === s)) {
+        category = frase.id;
+        categorySource = 'usuario';
+        break buscarCat;
+      }
+    }
+  }
+
+  if (categorySource === 'default') {
+    for (const token of available()) {
+      const merchant = MERCHANTS[token.norm];
+      if (merchant) {
+        category = merchant;
+        categorySource = 'merchant';
+        break;
+      }
     }
   }
 
@@ -370,8 +399,13 @@ export const parseTransaction = (
     .map((t) => MERCHANT_DISPLAY[t.norm] ?? t.raw);
 
   let description = words.join(' ').trim();
-  if (description === '') description = CATEGORY_LABELS[category];
-  else description = description.charAt(0).toUpperCase() + description.slice(1);
+  if (description === '') {
+    // El respaldo solo aplica a las de fábrica; una categoría del usuario deja
+    // su nombre en los tokens (no se consumen), así que aquí nunca cae vacía.
+    description = CATEGORY_LABELS[category as Category] ?? '';
+  } else {
+    description = description.charAt(0).toUpperCase() + description.slice(1);
+  }
 
   // 6 — Confidence. Drives PRESENTATION only: the confirm sheet always opens,
   // and this decides which field gets highlighted and focused.
@@ -379,7 +413,8 @@ export const parseTransaction = (
   if (amount !== null) confidence += WEIGHTS.amount;
   if (kindSource === 'keyword' || kindSource === 'morphology') confidence += WEIGHTS.kindKeyword;
   else if (kindSource === 'category-implied') confidence += WEIGHTS.kindImplied;
-  if (categorySource === 'merchant') confidence += WEIGHTS.merchant;
+  if (categorySource === 'usuario') confidence += WEIGHTS.userCategory;
+  else if (categorySource === 'merchant') confidence += WEIGHTS.merchant;
   else if (categorySource === 'keyword') confidence += WEIGHTS.categoryKeyword;
 
   const ambiguousAmount = candidates.length > 1;

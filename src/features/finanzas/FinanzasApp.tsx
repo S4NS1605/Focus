@@ -199,7 +199,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   }, [delMes, transacciones]);
 
   const handleSubmit = (text: string) => {
-    const parseado = parseTransaction(text, cuentasParaElegir);
+    const parseado = parseTransaction(text, cuentasParaElegir, categorias);
 
     // Tú dices "le mandé 20 mil a mi pa" y en el libro queda "Wilson Gonzalez".
     // El apodo sirve para reconocer de quién hablas; el nombre completo es lo

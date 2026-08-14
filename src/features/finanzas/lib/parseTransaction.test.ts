@@ -335,3 +335,65 @@ describe('parseTransaction — de qué cuenta habla el texto', () => {
     expect(r.cuentaId).toBe('davi');
   });
 });
+
+describe('parseTransaction — categorías del usuario', () => {
+  const cat = (id: string, nombre: string) => ({
+    id,
+    nombre,
+    icon: 'Package',
+    color: '#A8A29E',
+    createdAt: '2026-08-01T00:00:00.000Z',
+    archivedAt: null as string | null,
+  });
+
+  it('reconoce una categoría que el usuario creó, por su nombre', () => {
+    const r = parseTransaction('gasté 30 mil en mascotas', [], [cat('c-masc', 'Mascotas')]);
+    expect(r.amount).toBe(30000);
+    expect(r.category).toBe('c-masc');
+    expect(r.signals.categorySource).toBe('usuario');
+    // El nombre se conserva en la descripción, no se consume.
+    expect(r.description.toLowerCase()).toContain('mascotas');
+  });
+
+  it('la categoría del usuario gana sobre la palabra genérica de fábrica', () => {
+    // "café" de fábrica cae en comida; si el usuario hizo una categoría "Café",
+    // esa gana — es su taxonomía, dicha a propósito.
+    const r = parseTransaction('gasté 5 mil en cafe', [], [cat('c-cafe', 'Café')]);
+    expect(r.category).toBe('c-cafe');
+    expect(r.signals.categorySource).toBe('usuario');
+  });
+
+  it('resuelve un nombre de categoría de varias palabras', () => {
+    const r = parseTransaction(
+      'pagué 80 mil en cosas de la casa',
+      [],
+      [cat('c-casa', 'Cosas de la casa')],
+    );
+    expect(r.category).toBe('c-casa');
+    expect(r.signals.categorySource).toBe('usuario');
+  });
+
+  it('prefiere el nombre más largo cuando dos calzan', () => {
+    const cats = [cat('c-casa', 'Casa'), cat('c-cosas', 'Cosas de la casa')];
+    const r = parseTransaction('80 mil en cosas de la casa', [], cats);
+    expect(r.category).toBe('c-cosas');
+  });
+
+  it('no matchea el nombre dentro de otra palabra', () => {
+    // "Ropa" no debe calzar dentro de "Europa".
+    const r = parseTransaction('gasté 200 mil en un viaje a Europa', [], [cat('c-ropa', 'Ropa')]);
+    expect(r.category).not.toBe('c-ropa');
+  });
+
+  it('un nombre de categoría archivada no resuelve', () => {
+    const viejo = { ...cat('c-x', 'Mascotas'), archivedAt: '2026-01-01T00:00:00.000Z' };
+    const r = parseTransaction('gasté 30 mil en mascotas', [], [viejo]);
+    expect(r.category).not.toBe('c-x');
+  });
+
+  it('sin categorías del usuario, todo sigue igual', () => {
+    const r = parseTransaction('compré almuerzo por 15 mil', [], []);
+    expect(r.category).toBe('comida');
+    expect(r.signals.categorySource).toBe('keyword');
+  });
+});
