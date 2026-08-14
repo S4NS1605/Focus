@@ -2,6 +2,8 @@ import { CATEGORY_LABELS } from '../types';
 import type { CategoriaClave, Category, TxKind } from '../types';
 import type { CategoriaPersonal } from '../categorias';
 import { frasesDeCategorias } from './vocabularioUsuario';
+import { LEXICO_VACIO } from './aprendizaje';
+import type { LexicoAprendido } from './aprendizaje';
 import { normalizeNumericToken, normalizeWord, readNumberAt } from './numerals';
 import {
   AMOUNT_CUES,
@@ -29,7 +31,7 @@ export interface CuentaConocida {
   id: string;
   nombre: string;
 }
-export type CategorySource = 'usuario' | 'merchant' | 'keyword' | 'default';
+export type CategorySource = 'usuario' | 'merchant' | 'aprendida' | 'keyword' | 'default';
 
 export interface ParsedTransaction {
   kind: TxKind;
@@ -82,6 +84,9 @@ const WEIGHTS = {
   // señal explícita suya, no una adivinanza de una lista genérica.
   userCategory: 0.2,
   merchant: 0.2,
+  // Lo aprendido del historial pesa más que la lista genérica —es lo que TÚ
+  // haces— pero menos que una señal explícita del momento.
+  learned: 0.16,
   categoryKeyword: 0.12,
   ambiguityPenalty: 0.1,
 };
@@ -272,6 +277,12 @@ export const parseTransaction = (
    * las adivinanzas de fábrica: es su taxonomía, dicha explícitamente.
    */
   categorias: readonly CategoriaPersonal[] = [],
+  /**
+   * Lo aprendido del historial: qué categoría suele tener cada palabra para este
+   * usuario. Gana sobre la lista genérica de fábrica, pero no sobre lo que dijo
+   * explícitamente (una categoría nombrada o una marca conocida).
+   */
+  lexico: LexicoAprendido = LEXICO_VACIO,
 ): ParsedTransaction => {
   const tokens = tokenize(raw);
   const consumed = new Array<boolean>(tokens.length).fill(false);
@@ -369,6 +380,21 @@ export const parseTransaction = (
     }
   }
 
+  // 3c — Lo aprendido de tu historial. Una palabra que sueles archivar en cierta
+  // categoría gana sobre la lista genérica de fábrica: es lo que TÚ haces, no lo
+  // que la app supone. Va después de las marcas (un hecho) y de tus categorías
+  // nombradas (algo explícito), pero antes de la adivinanza genérica.
+  if (categorySource === 'default') {
+    for (const token of available()) {
+      const aprendida = lexico.categoriaDe(token.norm);
+      if (aprendida) {
+        category = aprendida;
+        categorySource = 'aprendida';
+        break;
+      }
+    }
+  }
+
   if (categorySource === 'default') {
     for (const token of available()) {
       const keyword = lookupWithStem(CATEGORY_KEYWORDS, token.norm);
@@ -415,6 +441,7 @@ export const parseTransaction = (
   else if (kindSource === 'category-implied') confidence += WEIGHTS.kindImplied;
   if (categorySource === 'usuario') confidence += WEIGHTS.userCategory;
   else if (categorySource === 'merchant') confidence += WEIGHTS.merchant;
+  else if (categorySource === 'aprendida') confidence += WEIGHTS.learned;
   else if (categorySource === 'keyword') confidence += WEIGHTS.categoryKeyword;
 
   const ambiguousAmount = candidates.length > 1;

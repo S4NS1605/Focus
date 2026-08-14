@@ -7,6 +7,7 @@ import { bogotaDate, monthKey, shiftMonth } from './lib/localDate';
 import { nuevoId } from './lib/id';
 import { movimientoEnBlanco, parseTransaction } from './lib/parseTransaction';
 import type { ParsedTransaction } from './lib/parseTransaction';
+import { aprenderDe } from './lib/aprendizaje';
 import { useAlmacen } from './data/useAlmacen';
 import { useSesion } from './data/useSesion';
 import { useTema } from './data/useTema';
@@ -198,8 +199,13 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     );
   }, [delMes, transacciones]);
 
+  // Aprendido de todo el libro, no del mes visible: lo que archivaste en junio
+  // también enseña. Se recalcula solo cuando cambian los movimientos, no en cada
+  // tecla — el parseo ocurre al enviar, no mientras se escribe.
+  const lexico = useMemo(() => aprenderDe(transacciones), [transacciones]);
+
   const handleSubmit = (text: string) => {
-    const parseado = parseTransaction(text, cuentasParaElegir, categorias);
+    const parseado = parseTransaction(text, cuentasParaElegir, categorias, lexico);
 
     // Tú dices "le mandé 20 mil a mi pa" y en el libro queda "Wilson Gonzalez".
     // El apodo sirve para reconocer de quién hablas; el nombre completo es lo

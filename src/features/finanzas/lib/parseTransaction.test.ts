@@ -397,3 +397,54 @@ describe('parseTransaction — categorías del usuario', () => {
     expect(r.signals.categorySource).toBe('keyword');
   });
 });
+
+describe('parseTransaction — aprendido del historial', () => {
+  const lex = {
+    // "croquetas" aprendida hacia una categoría del usuario; "cine" desviada por
+    // el usuario hacia 'salud' (contra la de fábrica, entretenimiento).
+    categoriaDe: (n: string) =>
+      n === 'croquetas' ? 'c-mascotas' : n === 'cine' ? 'salud' : null,
+    tamano: 2,
+  };
+
+  it('usa lo aprendido cuando la lista de fábrica no sabe', () => {
+    const r = parseTransaction('gasté 20 mil en croquetas', [], [], lex);
+    expect(r.category).toBe('c-mascotas');
+    expect(r.signals.categorySource).toBe('aprendida');
+  });
+
+  it('lo aprendido gana sobre la palabra genérica de fábrica', () => {
+    // "cine" de fábrica es entretenimiento; el usuario lo mandó a salud siempre.
+    const r = parseTransaction('pagué 18 mil de cine', [], [], lex);
+    expect(r.category).toBe('salud');
+    expect(r.signals.categorySource).toBe('aprendida');
+  });
+
+  it('una categoría nombrada explícitamente gana sobre lo aprendido', () => {
+    const cat = {
+      id: 'c-cine-real',
+      nombre: 'Cine',
+      icon: 'Package',
+      color: '#A8A29E',
+      createdAt: '2026-08-01T00:00:00.000Z',
+      archivedAt: null as string | null,
+    };
+    const r = parseTransaction('pagué 18 mil de cine', [], [cat], lex);
+    expect(r.category).toBe('c-cine-real');
+    expect(r.signals.categorySource).toBe('usuario');
+  });
+
+  it('una marca conocida gana sobre lo aprendido', () => {
+    // Éxito es una marca dura (mercado); lo aprendido no la desplaza.
+    const conExito = { ...lex, categoriaDe: (n: string) => (n === 'exito' ? 'salud' : null) };
+    const r = parseTransaction('gasté 50 mil en Éxito', [], [], conExito);
+    expect(r.category).toBe('mercado');
+    expect(r.signals.categorySource).toBe('merchant');
+  });
+
+  it('sin léxico, todo sigue igual', () => {
+    const r = parseTransaction('gasté 20 mil en croquetas');
+    expect(r.category).toBe('otros');
+    expect(r.signals.categorySource).toBe('default');
+  });
+});
