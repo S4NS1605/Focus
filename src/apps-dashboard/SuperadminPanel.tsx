@@ -27,10 +27,15 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  useBloqueoScroll(isModalOpen);
+  // Cuando hay un perfil aquí, el mismo modal edita en vez de crear. Guardar el
+  // perfil entero (y no solo su id) deja comparar contra lo que ya tenía, para
+  // mandar únicamente lo que de verdad cambió.
+  const [editando, setEditando] = useState<Perfil | null>(null);
+  const [borrando, setBorrando] = useState<Perfil | null>(null);
+  useBloqueoScroll(isModalOpen || borrando !== null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  
+
   // Form states
   const [nuevoEmail, setNuevoEmail] = useState('');
   const [nuevoUsuario, setNuevoUsuario] = useState('');
@@ -41,12 +46,12 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     setLoading(true);
     const cliente = obtenerSupabase();
     if (!cliente) return;
-    
+
     const { data, error } = await cliente
       .from('perfiles')
       .select('*')
       .order('created_at', { ascending: false });
-      
+
     if (data && !error) {
       setUsuarios(data as Perfil[]);
     }
@@ -57,46 +62,101 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     fetchUsuarios();
   }, []);
 
-  const handleCrearUsuario = async (e: React.FormEvent) => {
+  const abrirCrear = () => {
+    setEditando(null);
+    setNuevoEmail('');
+    setNuevoUsuario('');
+    setNuevaPassword('');
+    setNuevoRol('usuario');
+    setFormError(null);
+    setIsModalOpen(true);
+  };
+
+  const abrirEditar = (perfil: Perfil) => {
+    setEditando(perfil);
+    setNuevoEmail(perfil.email);
+    setNuevoUsuario(perfil.usuario ?? '');
+    setNuevaPassword(''); // En blanco = déjala como está, no la vacíes.
+    setNuevoRol(perfil.rol);
+    setFormError(null);
+    setIsModalOpen(true);
+  };
+
+  /** El token de la sesión actual, o revienta si no hay sesión. */
+  const tokenSesion = async (): Promise<string> => {
+    const cliente = obtenerSupabase();
+    const { data: { session } } = await cliente!.auth.getSession();
+    if (!session) throw new Error('No hay sesión activa');
+    return session.access_token;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     setIsSubmitting(true);
-    
+
     try {
-      const cliente = obtenerSupabase();
-      const { data: { session } } = await cliente!.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No hay sesión activa');
+      const token = await tokenSesion();
+
+      if (editando) {
+        // Solo viaja lo que cambió. Igualar contra el perfil original evita
+        // reescribir un correo con el mismo correo, o chocar el usuario contra
+        // su propio índice único.
+        const cambios: Record<string, unknown> = { userId: editando.id };
+        if (nuevoEmail !== editando.email) cambios.email = nuevoEmail;
+        if (nuevoUsuario !== (editando.usuario ?? '')) cambios.usuario = nuevoUsuario;
+        if (nuevaPassword !== '') cambios.password = nuevaPassword;
+        if (nuevoRol !== editando.rol) cambios.rol = nuevoRol;
+
+        const res = await fetch(apiUrl('/api/editar-usuario'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(cambios),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Error al editar usuario');
+      } else {
+        const res = await fetch(apiUrl('/api/crear-usuario'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            email: nuevoEmail,
+            usuario: nuevoUsuario,
+            password: nuevaPassword,
+            rol: nuevoRol,
+          }),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Error al crear usuario');
       }
 
-      const res = await fetch(apiUrl('/api/crear-usuario'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          email: nuevoEmail,
-          usuario: nuevoUsuario,
-          password: nuevaPassword,
-          rol: nuevoRol
-        })
-      });
-
-      const result = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(result.error || 'Error al crear usuario');
-      }
-
-      // Éxito
       setIsModalOpen(false);
-      setNuevoEmail('');
-      setNuevoUsuario('');
-      setNuevaPassword('');
-      setNuevoRol('usuario');
-      fetchUsuarios(); // Recargar la lista
+      setEditando(null);
+      fetchUsuarios();
+    } catch (err: any) {
+      setFormError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEliminar = async () => {
+    if (!borrando) return;
+    setFormError(null);
+    setIsSubmitting(true);
+
+    try {
+      const token = await tokenSesion();
+      const res = await fetch(apiUrl('/api/eliminar-usuario'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: borrando.id }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Error al eliminar usuario');
+
+      setBorrando(null);
+      fetchUsuarios();
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -144,8 +204,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
               </p>
             </div>
             
-            <button 
-              onClick={() => setIsModalOpen(true)}
+            <button
+              onClick={abrirCrear}
               className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:shadow-purple-500/40 hover:-translate-y-0.5"
             >
               <Plus className="h-4 w-4" />
@@ -214,10 +274,20 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button className="rounded-lg p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-blue-500" title="Editar">
+                            <button
+                              onClick={() => abrirEditar(u)}
+                              aria-label={`Editar a ${u.usuario || u.email}`}
+                              className="rounded-lg p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-blue-500"
+                              title="Editar"
+                            >
                               <Edit2 className="h-4 w-4" />
                             </button>
-                            <button className="rounded-lg p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-red-500" title="Eliminar">
+                            <button
+                              onClick={() => { setFormError(null); setBorrando(u); }}
+                              aria-label={`Eliminar a ${u.usuario || u.email}`}
+                              className="rounded-lg p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-red-500"
+                              title="Eliminar"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
@@ -240,21 +310,23 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
         </div>
       </main>
 
-      {/* Modal Crear Usuario */}
+      {/* Modal Crear / Editar Usuario */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm transition-all duration-300">
           <div className="w-full max-w-md scale-100 overflow-hidden rounded-3xl bg-[var(--fin-card)] shadow-2xl shadow-purple-500/10">
             <div className="flex items-center justify-between border-b border-[var(--fin-line)] px-6 py-4">
-              <h3 className="text-lg font-bold tracking-tight">Crear Nuevo Usuario</h3>
-              <button 
+              <h3 className="text-lg font-bold tracking-tight">
+                {editando ? 'Editar Usuario' : 'Crear Nuevo Usuario'}
+              </h3>
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="rounded-lg p-2 text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
-            <form onSubmit={handleCrearUsuario} className="p-6">
+
+            <form onSubmit={handleSubmit} className="p-6">
               {formError && (
                 <div className="mb-4 flex items-start gap-2.5 rounded-xl bg-[var(--fin-out-bg)] px-4 py-3">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" />
@@ -286,15 +358,24 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold text-[var(--fin-ink-soft)]">Contraseña</label>
+                  <label className="mb-1.5 block text-xs font-bold text-[var(--fin-ink-soft)]">
+                    Contraseña
+                    {editando && (
+                      <span className="ml-1 font-normal text-[var(--fin-ink-faint)]">
+                        · déjala en blanco para no cambiarla
+                      </span>
+                    )}
+                  </label>
                   <input
                     type="password"
-                    required
+                    // Al crear es obligatoria; al editar, en blanco significa
+                    // "no la toques", así que no puede ser requerida.
+                    required={!editando}
                     minLength={6}
                     value={nuevaPassword}
                     onChange={(e) => setNuevaPassword(e.target.value)}
                     className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-base transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={editando ? 'Sin cambios' : 'Mínimo 6 caracteres'}
                   />
                 </div>
                 <div>
@@ -344,14 +425,63 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Creando...
+                      {editando ? 'Guardando...' : 'Creando...'}
                     </>
                   ) : (
-                    'Crear Usuario'
+                    editando ? 'Guardar cambios' : 'Crear Usuario'
                   )}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmar eliminación. Aparte del modal de editar porque borrar es
+          irreversible: se lleva la cuenta y, en cascada, todo lo suyo. */}
+      {borrando && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-[var(--fin-card)] shadow-2xl">
+            <div className="p-6">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/15 text-red-500">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold tracking-tight">Eliminar usuario</h3>
+              <p className="mt-2 text-sm text-[var(--fin-ink-soft)]">
+                Vas a borrar la cuenta de{' '}
+                <span className="font-bold text-[var(--fin-ink)]">
+                  {borrando.usuario || borrando.email}
+                </span>{' '}
+                y todo lo que tiene guardado. Esto no se puede deshacer.
+              </p>
+
+              {formError && (
+                <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-[var(--fin-out-bg)] px-4 py-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" />
+                  <p className="text-sm font-medium text-[var(--fin-out-ink)]">{formError}</p>
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBorrando(null)}
+                  disabled={isSubmitting}
+                  className="rounded-xl px-5 py-2.5 text-sm font-bold text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEliminar}
+                  disabled={isSubmitting}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-500/25 transition-all hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Eliminar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
