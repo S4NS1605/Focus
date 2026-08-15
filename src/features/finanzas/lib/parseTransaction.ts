@@ -16,7 +16,6 @@ import {
   MERCHANTS,
   MERCHANT_DISPLAY,
   PAYMENT_METHODS,
-  STOPWORDS,
 } from './vocabulary';
 
 export type AmountSource = 'digits' | 'digits+scale' | 'words' | 'slang' | 'none';

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, X, ArrowDownCircle, ArrowUpCircle, Ear, CheckCircle2 } from 'lucide-react';
-import { tint } from '../types';
 import type { CategoriaClave } from '../types';
 import type { TxKind } from '../types';
 import { COPY } from '../copy';
