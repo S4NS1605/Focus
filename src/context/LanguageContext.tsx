@@ -42,8 +42,6 @@ interface Translations {
     tagline1: string;
     tagline2: string;
     copyright: string;
-    privacidadTitulo: string;
-    privacidadCuerpo: string;
   };
 }
 
@@ -88,9 +86,6 @@ const translations: Record<Language, Translations> = {
       tagline1: 'Julian Gonzalez | Desarrollador de Software & Frontend Designer.',
       tagline2: 'Transformando ideas en soluciones tecnológicas escalables.',
       copyright: '© 2026. Diseñado y desarrollado por Julian Gonzalez.',
-      privacidadTitulo: 'Qué guardo de tu visita',
-      privacidadCuerpo:
-        'La página que miraste, el dominio por el que llegaste, tu país y si entraste desde el celular o desde un computador. No guardo tu dirección IP, ni cookies, ni nada con lo que se te pueda identificar o seguir de un día para otro. El detalle se borra a los 90 días y solo quedan totales.',
     },
   },
   en: {
@@ -133,9 +128,6 @@ const translations: Record<Language, Translations> = {
       tagline1: 'Julian Gonzalez | Software Developer & Frontend Designer.',
       tagline2: 'Transforming ideas into scalable technological solutions.',
       copyright: '© 2026. Designed and developed by Julian Gonzalez.',
-      privacidadTitulo: 'What I keep from your visit',
-      privacidadCuerpo:
-        'The page you looked at, the domain you came from, your country, and whether you arrived from a phone or a computer. I do not store your IP address, cookies, or anything that could identify you or follow you from one day to the next. The details are deleted after 90 days and only totals remain.',
     },
   },
 };
