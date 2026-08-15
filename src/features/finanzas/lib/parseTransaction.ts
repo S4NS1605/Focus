@@ -521,8 +521,13 @@ export const parseTransaction = (
   }
 
   // 6 — Description (Full conversational phrasing)
-  const words = avail
-    .filter(t => !chunks.ignore.includes(t)) // Don't include payment methods or their prepositions
+  const words = tokens
+    .filter((t, i) => {
+      if (chunks.ignore.some(ign => ign.index === i)) return false;
+      if (best && i >= best.start && i < best.end) return false;
+      if (hallada && i >= hallada.start && i < hallada.end) return false;
+      return true;
+    })
     .map((t) => MERCHANT_DISPLAY[t.norm] ?? t.raw);
 
   let description = words.join(' ').trim();

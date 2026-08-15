@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, X, ArrowDownCircle, ArrowUpCircle, Ear, CheckCircle2 } from 'lucide-react';
+import { tint } from '../types';
 import type { CategoriaClave } from '../types';
 import type { TxKind } from '../types';
 import { COPY } from '../copy';
@@ -214,20 +215,36 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           </div>
         </fieldset>
 
-        {/* Category */}
+        {/* Category: Visual grid of colorful buttons */}
         <fieldset className="mt-5">
           <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">{COPY.confirm.category}</legend>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
-          >
-            {opciones.map((entrada) => (
-              <option key={entrada.clave} value={entrada.clave}>
-                {entrada.nombre}
-              </option>
-            ))}
-          </select>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {opciones.map((entrada) => {
+              const option = entrada.clave;
+              const active = category === option;
+              const color = entrada.color;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setCategory(option)}
+                  aria-pressed={active}
+                  className="flex items-center gap-1.5 rounded-full border-2 px-3 py-2 text-xs font-bold transition-colors"
+                  style={{
+                    backgroundColor: active ? tint(color, 0.16) : 'var(--fin-card)',
+                    borderColor: active ? color : 'var(--fin-line)',
+                    color: active ? 'var(--fin-ink)' : 'var(--fin-ink-soft)',
+                  }}
+                >
+                  {(() => {
+                    const Icon = entrada.Icono;
+                    return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
+                  })()}
+                  {entrada.nombre}
+                </button>
+              );
+            })}
+          </div>
         </fieldset>
 
         {/* Signals Extracted */}
