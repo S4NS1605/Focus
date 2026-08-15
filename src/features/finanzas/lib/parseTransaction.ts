@@ -456,7 +456,10 @@ export const parseTransaction = (
   for (const frase of frasesCat) {
     const span = frase.seq.length;
     for (let i = 0; i + span <= dispon.length; i += 1) {
-      if (frase.seq.every((s, k) => dispon[i + k].norm === s)) {
+      if (frase.seq.every((s, k) => {
+        const t = dispon[i + k].norm;
+        return t === s || t + 's' === s || s + 's' === t || t + 'es' === s || s + 'es' === t;
+      })) {
         addCategoryScore(frase.id, 'usuario', 100);
       }
     }
