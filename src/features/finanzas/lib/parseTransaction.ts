@@ -215,6 +215,10 @@ const PREPOSICIONES_DE_CUENTA = new Set([
   'a', 'al', 'de', 'del', 'en', 'desde', 'con', 'hacia', 'para', 'hasta', 'por',
 ]);
 
+const ACCOUNT_DETERMINERS = new Set([
+  'mi', 'tu', 'su', 'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas'
+]);
+
 interface CuentaHallada {
   id: string;
   start: number;
@@ -261,13 +265,28 @@ const buscarCuenta = (
       // Overlapping a longer name already found means this is a fragment of it.
       if (hallazgos.some((h) => i < h.end && i + span > h.start)) continue;
 
-      const anterior = i > 0 && !consumed[i - 1] ? tokens[i - 1].norm : null;
-      const conPreposicion = anterior !== null && PREPOSICIONES_DE_CUENTA.has(anterior);
+      let start = i;
+      let source: CuentaSource = 'nombre';
+
+      if (i > 0 && !consumed[i - 1]) {
+        const prev1 = tokens[i - 1].norm;
+        if (PREPOSICIONES_DE_CUENTA.has(prev1)) {
+          start = i - 1;
+          source = 'preposicion';
+        } else if (ACCOUNT_DETERMINERS.has(prev1) && i > 1 && !consumed[i - 2]) {
+          const prev2 = tokens[i - 2].norm;
+          if (PREPOSICIONES_DE_CUENTA.has(prev2)) {
+            start = i - 2;
+            source = 'preposicion';
+          }
+        }
+      }
+
       hallazgos.push({
         id: candidata.id,
-        start: conPreposicion ? i - 1 : i,
+        start,
         end: i + span,
-        source: conPreposicion ? 'preposicion' : 'nombre',
+        source,
       });
     }
   }
@@ -399,6 +418,21 @@ export const parseTransaction = (
     }
   }
 
+
+
+  // 4 — Account. Its tokens ARE consumed, unlike category keywords: once the
+  // bank is a structured field on the movement, repeating it in the description
+  // says the same thing twice.
+  const hallada = buscarCuenta(tokens, consumed, cuentas);
+  if (hallada) {
+    for (let i = hallada.start; i < hallada.end; i += 1) consumed[i] = true;
+  }
+  const cuentaId = hallada ? hallada.id : null;
+  const cuentaSource: CuentaSource = hallada ? hallada.source : 'ninguna';
+
+  // 5 — Payment method. Consumed so 'en efectivo' or 'con tarjeta' doesn't leak into description.
+  const paymentMethod = detectAndConsumePaymentMethod(tokens, consumed);
+
   // 3 — Category. Token equality only, never substring: `ara` is inside "para",
   // `mil` inside "familia", `d1` inside "d10", `uno` inside "desayuno".
   let category: CategoriaClave = 'otros';
@@ -471,20 +505,6 @@ export const parseTransaction = (
     category = 'ingreso';
     addCategoryScore('ingreso', 'default', 10);
   }
-
-  // 4 — Account. Its tokens ARE consumed, unlike category keywords: once the
-  // bank is a structured field on the movement, repeating it in the description
-  // says the same thing twice.
-  const hallada = buscarCuenta(tokens, consumed, cuentas);
-  if (hallada) {
-    for (let i = hallada.start; i < hallada.end; i += 1) consumed[i] = true;
-  }
-  const cuentaId = hallada ? hallada.id : null;
-  const cuentaSource: CuentaSource = hallada ? hallada.source : 'ninguna';
-
-  // 5 — Payment method. Consumed so 'en efectivo' or 'con tarjeta' doesn't leak into description.
-  const paymentMethod = detectAndConsumePaymentMethod(tokens, consumed);
-
   // 6 — Semantic Chunker for Destinatario, Ubicacion, and Motivo
   let destinatario: string | null = null;
   let ubicacion: string | null = null;
