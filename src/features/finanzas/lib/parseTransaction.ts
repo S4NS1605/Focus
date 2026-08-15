@@ -466,7 +466,7 @@ export const parseTransaction = (
   const tags: string[] = [];
 
   let currentChunk: 'motivo' | 'destinatario' | 'ubicacion' | 'ignore' = 'motivo';
-  const chunks: Record<'motivo' | 'destinatario' | 'ubicacion' | 'ignore', Token[]> = {
+  const chunks: Record<'motivo' | 'destinatario' | 'ubicacion' | 'ignore', (Token & { index: number })[]> = {
     motivo: [],
     destinatario: [],
     ubicacion: [],
@@ -522,7 +522,7 @@ export const parseTransaction = (
 
   // 6 — Description (Full conversational phrasing)
   const words = tokens
-    .filter((t, i) => {
+    .filter((_, i) => {
       if (chunks.ignore.some(ign => ign.index === i)) return false;
       if (best && i >= best.start && i < best.end) return false;
       if (hallada && i >= hallada.start && i < hallada.end) return false;
