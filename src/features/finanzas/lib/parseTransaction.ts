@@ -484,11 +484,28 @@ export const parseTransaction = (
   if (hallada) {
     for (let i = hallada.start; i < hallada.end; i += 1) consumed[i] = true;
   }
-  const cuentaId = hallada ? hallada.id : null;
-  const cuentaSource: CuentaSource = hallada ? hallada.source : 'ninguna';
+  let cuentaId = hallada ? hallada.id : null;
+  let cuentaSource: CuentaSource = hallada ? hallada.source : 'ninguna';
 
   // 5 — Payment method. Consumed so 'en efectivo' or 'con tarjeta' doesn't leak into description.
   const paymentMethod = detectAndConsumePaymentMethod(tokens, consumed);
+
+  // MEGA UPGRADE 4: Implicit accounts by payment method
+  if (!cuentaId) {
+    if (paymentMethod === 'efectivo') {
+      const efectivoAcc = cuentas.find(c => c.nombre.toLowerCase().includes('efectivo') || c.nombre.toLowerCase().includes('billetera'));
+      if (efectivoAcc) {
+        cuentaId = efectivoAcc.id;
+        cuentaSource = 'nombre'; // pretend it matched by name
+      }
+    } else if (paymentMethod === 'tarjeta_credito' || paymentMethod === 'tarjeta_debito') {
+      const tarjetaAcc = cuentas.find(c => c.nombre.toLowerCase().includes('tarjeta') || c.nombre.toLowerCase().includes('credito'));
+      if (tarjetaAcc) {
+        cuentaId = tarjetaAcc.id;
+        cuentaSource = 'nombre';
+      }
+    }
+  }
 
   // 3 — Category. Token equality only, never substring: `ara` is inside "para",
   // `mil` inside "familia", `d1` inside "d10", `uno` inside "desayuno".
