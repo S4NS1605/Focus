@@ -277,10 +277,17 @@ const buscarCuenta = (
   return hallazgos.find((h) => h.source === 'preposicion') ?? hallazgos[0];
 };
 
-const detectPaymentMethod = (tokens: readonly Token[]): PaymentMethod => {
-  for (const token of tokens) {
-    const method = PAYMENT_METHODS[token.norm];
-    if (method) return method as PaymentMethod;
+const detectAndConsumePaymentMethod = (tokens: readonly Token[], consumed: boolean[]): PaymentMethod => {
+  for (let i = 0; i < tokens.length; i++) {
+    if (consumed[i]) continue;
+    const method = PAYMENT_METHODS[tokens[i].norm];
+    if (method) {
+      consumed[i] = true;
+      if (i > 0 && !consumed[i - 1] && (tokens[i - 1].norm === 'con' || tokens[i - 1].norm === 'en')) {
+        consumed[i - 1] = true;
+      }
+      return method as PaymentMethod;
+    }
   }
   return 'desconocido';
 };
@@ -451,29 +458,71 @@ export const parseTransaction = (
   const cuentaId = hallada ? hallada.id : null;
   const cuentaSource: CuentaSource = hallada ? hallada.source : 'ninguna';
 
+  // 5 — Payment method. Consumed so 'en efectivo' or 'con tarjeta' doesn't leak into description.
+  const paymentMethod = detectAndConsumePaymentMethod(tokens, consumed);
+
+  // 6 — Semantic Chunker for Destinatario, Ubicacion, and Motivo
   let destinatario: string | null = null;
   let ubicacion: string | null = null;
   const tags: string[] = [];
 
+  let currentChunk: 'motivo' | 'destinatario' | 'ubicacion' | 'ignore' = 'motivo';
+  const chunks: Record<'motivo' | 'destinatario' | 'ubicacion' | 'ignore', Token[]> = {
+    motivo: [],
+    destinatario: [],
+    ubicacion: [],
+    ignore: []
+  };
+
   const avail = available();
   for (let i = 0; i < avail.length; i++) {
     const t = avail[i];
-    if ((t.norm === 'a' || t.norm === 'para') && i + 1 < avail.length) {
-      const name = avail[i + 1].raw;
-      destinatario = name.charAt(0).toUpperCase() + name.slice(1);
+    const n = t.norm;
+    const nextToken = i + 1 < avail.length ? avail[i + 1].norm : '';
+
+    if (n === 'a' || n === 'hacia') {
+      currentChunk = 'destinatario';
+      continue;
     }
-    if (t.norm === 'en' && i + 1 < avail.length) {
-      const loc = avail[i + 1].raw;
-      ubicacion = loc.charAt(0).toUpperCase() + loc.slice(1);
+    if (n === 'para') {
+      if (['el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas'].includes(nextToken)) {
+        currentChunk = 'motivo';
+      } else {
+        currentChunk = 'destinatario';
+      }
+      continue;
     }
-    if (['viaje', 'regalo', 'emergencia', 'salud', 'vacaciones', 'fiesta', 'prestamo', 'comida', 'transporte'].includes(t.norm)) {
+    if (n === 'en' || n === 'desde') {
+      currentChunk = 'ubicacion';
+      continue;
+    }
+    if (n === 'por' || n === 'concepto') {
+      currentChunk = 'motivo';
+      continue;
+    }
+    if (n === 'con') {
+      currentChunk = 'ignore';
+      continue;
+    }
+
+    if (['viaje', 'regalo', 'emergencia', 'salud', 'vacaciones', 'fiesta', 'prestamo', 'comida', 'transporte', 'suscripcion'].includes(n)) {
       if (!tags.includes(t.raw)) tags.push(t.raw);
     }
+
+    chunks[currentChunk].push(t);
   }
 
-  // 5 — Description. Category keywords are deliberately KEPT: for a merchant
-  // that text is the most useful thing on the row.
-  const words = available()
+  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+
+  if (chunks.destinatario.length > 0) {
+    destinatario = capitalize(chunks.destinatario.map(t => t.raw).join(' '));
+  }
+  if (chunks.ubicacion.length > 0) {
+    ubicacion = capitalize(chunks.ubicacion.map(t => t.raw).join(' '));
+  }
+
+  // 6 — Description (Motivo)
+  const words = chunks.motivo
     .filter((t) => !STOPWORDS.has(t.norm))
     .map((t) => MERCHANT_DISPLAY[t.norm] ?? t.raw);
 
@@ -481,7 +530,7 @@ export const parseTransaction = (
   if (description === '') {
     description = CATEGORY_LABELS[category as Category] ?? category;
   } else {
-    description = description.charAt(0).toUpperCase() + description.slice(1);
+    description = capitalize(description);
   }
 
   const timeMatch = raw.match(/\b([01]?[0-9]|2[0-3]):([0-5][0-9])\b/);
@@ -509,7 +558,7 @@ export const parseTransaction = (
     kindSource !== 'default',
     categorySource,
     cuentaId !== null,
-    detectPaymentMethod(tokens) !== 'desconocido',
+    paymentMethod !== 'desconocido',
   );
 
   const suggestedCategories = [
@@ -534,7 +583,7 @@ export const parseTransaction = (
       kindSource,
       categorySource,
       cuentaSource,
-      paymentMethod: detectPaymentMethod(tokens),
+      paymentMethod,
       recurringPattern: detectarRecurrencia(raw).patrón,
       ambiguousAmount,
       destinatario,
