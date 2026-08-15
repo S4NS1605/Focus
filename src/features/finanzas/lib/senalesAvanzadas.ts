@@ -12,12 +12,6 @@ export interface SenalRecurrencia {
   confianza: number;
 }
 
-const STOPWORDS_RECURRENCIA = new Set([
-  'cada', 'todos', 'todas', 'diario', 'diarios', 'semanal', 'semanales',
-  'mensual', 'mensuales', 'anual', 'anuales', 'lunes', 'martes', 'miercoles',
-  'jueves', 'viernes', 'sabado', 'domingo', 'semana', 'mes', 'ano',
-]);
-
 export const analizarAnomalias = (
   transacciones: readonly Transaction[],
   categoria: string,

@@ -67,12 +67,21 @@ const comoParseado = (tx: Transaction): ParsedTransaction => ({
   description: tx.description,
   raw: tx.rawTranscript,
   confidence: 1,
+  confianzaGranular: {
+    monto: 1,
+    tipo: 1,
+    categoria: 1,
+    cuenta: 1,
+    metodo: 1
+  },
   needsReview: false,
   signals: {
     amountSource: 'digits',
     kindSource: 'keyword',
     categorySource: 'keyword',
     cuentaSource: 'ninguna',
+    paymentMethod: 'desconocido',
+    recurringPattern: 'ninguno',
     ambiguousAmount: false,
   },
 });

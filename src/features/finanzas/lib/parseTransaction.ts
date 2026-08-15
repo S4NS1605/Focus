@@ -5,7 +5,7 @@ import { frasesDeCategorias } from './vocabularioUsuario';
 import { LEXICO_VACIO } from './aprendizaje';
 import type { LexicoAprendido } from './aprendizaje';
 import { detectarRecurrencia } from './senalesAvanzadas';
-import { buscarSimilar, calcularConfianzaGranular, promedioConfianza, type ConfianzaGranular } from './inteligenciaAvanzada';
+import { buscarSimilar, calcularConfianzaGranular, type ConfianzaGranular } from './inteligenciaAvanzada';
 import { normalizeNumericToken, normalizeWord, readNumberAt } from './numerals';
 import {
   AMOUNT_CUES,
