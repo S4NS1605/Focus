@@ -322,6 +322,10 @@ export const parseTransaction = (
   const amount = best ? best.value : null;
   if (best) {
     for (let i = best.start; i < best.end; i += 1) consumed[i] = true;
+    // Consume preceding AMOUNT_CUE ("por", "vale", "son") so it doesn't dangle in description
+    if (best.start > 0 && AMOUNT_CUES.has(tokens[best.start - 1].norm)) {
+      consumed[best.start - 1] = true;
+    }
   }
 
   const available = () =>
@@ -334,15 +338,37 @@ export const parseTransaction = (
   let kind: TxKind = 'gasto';
   let kindSource: KindSource = 'default';
 
+  // Find ALL kind phrase matches to eliminate redundant fillers
+  const kindMatches: { kind: TxKind, startIndex: number, endIndex: number }[] = [];
   const forKind = available();
-  outer: for (const phrase of KIND_PHRASES) {
-    const span = phrase.seq.length;
-    for (let i = 0; i + span <= forKind.length; i += 1) {
-      if (phrase.seq.every((s, k) => forKind[i + k].norm === s)) {
-        kind = phrase.kind;
-        kindSource = 'keyword';
-        for (let k = 0; k < span; k += 1) consumed[forKind[i + k].index] = true;
-        break outer;
+  
+  for (let i = 0; i < forKind.length; i++) {
+    for (const phrase of KIND_PHRASES) {
+      const span = phrase.seq.length;
+      if (i + span <= forKind.length) {
+        if (phrase.seq.every((s, k) => forKind[i + k].norm === s)) {
+          kindMatches.push({
+            kind: phrase.kind,
+            startIndex: i,
+            endIndex: i + span
+          });
+          // Move `i` forward by the length of the matched phrase
+          i += span - 1;
+          break; // break the KIND_PHRASES loop, continue outer forKind loop
+        }
+      }
+    }
+  }
+
+  if (kindMatches.length > 0) {
+    kind = kindMatches[0].kind;
+    kindSource = 'keyword';
+    
+    // We KEEP the first kind phrase in the description (so it starts naturally: "Me compre..."),
+    // but we CONSUME all subsequent redundant kind phrases ("pague", "me costo").
+    for (let m = 1; m < kindMatches.length; m++) {
+      for (let k = kindMatches[m].startIndex; k < kindMatches[m].endIndex; k++) {
+        consumed[forKind[k].index] = true;
       }
     }
   }
@@ -359,8 +385,7 @@ export const parseTransaction = (
       if (list[i].norm === 'me' && MORPHOLOGICAL_INCOME.test(list[i + 1].norm)) {
         kind = 'ingreso';
         kindSource = 'morphology';
-        consumed[list[i].index] = true;
-        consumed[list[i + 1].index] = true;
+        // We also DON'T consume the first morphological match, so "Me transfirieron..." reads naturally
         break;
       }
     }
@@ -523,9 +548,8 @@ export const parseTransaction = (
   // 6 — Description (Full conversational phrasing)
   const words = tokens
     .filter((_, i) => {
+      if (consumed[i]) return false;
       if (chunks.ignore.some(ign => ign.index === i)) return false;
-      if (best && i >= best.start && i < best.end) return false;
-      if (hallada && i >= hallada.start && i < hallada.end) return false;
       return true;
     })
     .map((t) => MERCHANT_DISPLAY[t.norm] ?? t.raw);
