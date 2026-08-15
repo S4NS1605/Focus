@@ -521,9 +521,9 @@ export const parseTransaction = (
     ubicacion = capitalize(chunks.ubicacion.map(t => t.raw).join(' '));
   }
 
-  // 6 — Description (Motivo)
-  const words = chunks.motivo
-    .filter((t) => !STOPWORDS.has(t.norm))
+  // 6 — Description (Full conversational phrasing)
+  const words = avail
+    .filter(t => !chunks.ignore.includes(t)) // Don't include payment methods or their prepositions
     .map((t) => MERCHANT_DISPLAY[t.norm] ?? t.raw);
 
   let description = words.join(' ').trim();
