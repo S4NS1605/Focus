@@ -31,9 +31,50 @@ const leerBooleano = (clave: string, porDefecto: boolean): boolean => {
 const guardarBooleano = (clave: string, valor: boolean): void => {
   try {
     localStorage.setItem(clave, valor ? 'si' : 'no');
+    guardarEnSupabase(clave, valor);
   } catch {
     // The switch still works, it just will not be remembered.
   }
+};
+
+export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
+  if (typeof window === 'undefined') return;
+  let cambio = false;
+
+  const setIf = (k: string, v: string | null) => {
+    if (v === null) {
+      if (localStorage.getItem(k) !== null) {
+        localStorage.removeItem(k);
+        cambio = true;
+      }
+    } else {
+      if (localStorage.getItem(k) !== v) {
+        localStorage.setItem(k, v);
+        cambio = true;
+      }
+    }
+  };
+
+  if (metadata[CLAVE_AHORRO] !== undefined) setIf(CLAVE_AHORRO, metadata[CLAVE_AHORRO] ? 'si' : 'no');
+  if (metadata[CLAVE_UVT] !== undefined) setIf(CLAVE_UVT, JSON.stringify(metadata[CLAVE_UVT]));
+  if (metadata[CLAVE_CUENTAS_GMF] !== undefined) setIf(CLAVE_CUENTAS_GMF, JSON.stringify(metadata[CLAVE_CUENTAS_GMF]));
+  if (metadata[CLAVE_REGIMEN] !== undefined) setIf(CLAVE_REGIMEN, metadata[CLAVE_REGIMEN]);
+  if (metadata[CLAVE_CUENTA_EXENTA] !== undefined) setIf(CLAVE_CUENTA_EXENTA, metadata[CLAVE_CUENTA_EXENTA]);
+
+  // Si hubo algún cambio desde la nube, forzamos que todos los hooks locales se recarguen.
+  if (cambio) {
+    window.dispatchEvent(new StorageEvent('storage', { key: null }));
+  }
+};
+
+const guardarEnSupabase = async (clave: string, valor: any) => {
+  if (typeof window === 'undefined') return;
+  import('./supabase').then(({ obtenerSupabase }) => {
+    const supabase = obtenerSupabase();
+    if (supabase) {
+      supabase.auth.updateUser({ data: { [clave]: valor } }).catch(() => {});
+    }
+  });
 };
 
 /**
@@ -87,6 +128,7 @@ export const useAjustesGmf = () => {
     setEstadoUvt(valor);
     try {
       localStorage.setItem(CLAVE_UVT, JSON.stringify(valor));
+      guardarEnSupabase(CLAVE_UVT, valor);
     } catch {
       // El cambio funciona igual; solo no se recordará.
     }
@@ -97,6 +139,7 @@ export const useAjustesGmf = () => {
     setEstadoCuentas(lista);
     try {
       localStorage.setItem(CLAVE_CUENTAS_GMF, JSON.stringify(lista));
+      guardarEnSupabase(CLAVE_CUENTAS_GMF, lista);
     } catch {
       // Igual que arriba.
     }
@@ -106,6 +149,7 @@ export const useAjustesGmf = () => {
     setEstadoRegimen(valor);
     try {
       localStorage.setItem(CLAVE_REGIMEN, valor);
+      guardarEnSupabase(CLAVE_REGIMEN, valor);
     } catch {
       // Igual.
     }
@@ -114,11 +158,29 @@ export const useAjustesGmf = () => {
   const setCuentaExentaId = useCallback((id: string | null) => {
     setEstadoExenta(id);
     try {
-      if (id === null) localStorage.removeItem(CLAVE_CUENTA_EXENTA);
-      else localStorage.setItem(CLAVE_CUENTA_EXENTA, id);
+      if (id === null) {
+        localStorage.removeItem(CLAVE_CUENTA_EXENTA);
+        guardarEnSupabase(CLAVE_CUENTA_EXENTA, null);
+      } else {
+        localStorage.setItem(CLAVE_CUENTA_EXENTA, id);
+        guardarEnSupabase(CLAVE_CUENTA_EXENTA, id);
+      }
     } catch {
       // Igual.
     }
+  }, []);
+
+  // `storage` fires in the OTHER tabs, so multiple tabs keep in sync when the user changes a preference.
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      // When synced from Supabase, key is passed as null to force a full re-read.
+      if (e.key === null || e.key === CLAVE_UVT) setEstadoUvt(leerUvt());
+      if (e.key === null || e.key === CLAVE_CUENTAS_GMF) setEstadoCuentas(leerLista(CLAVE_CUENTAS_GMF));
+      if (e.key === null || e.key === CLAVE_REGIMEN) setEstadoRegimen(leerRegimen());
+      if (e.key === null || e.key === CLAVE_CUENTA_EXENTA) setEstadoExenta(leerTexto(CLAVE_CUENTA_EXENTA));
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
   }, []);
 
   return {

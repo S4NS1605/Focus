@@ -42,13 +42,21 @@ export const useSesion = (): Sesion => {
 
     let cancelado = false;
     cliente.auth.getSession().then(({ data }) => {
-      if (!cancelado) setEstado(aEstado(data.session));
+      if (!cancelado) {
+        setEstado(aEstado(data.session));
+        if (data.session?.user?.user_metadata) {
+          import('./usePreferencias').then((m) => m.sincronizarDesdeSupabase(data.session!.user.user_metadata));
+        }
+      }
     });
 
     // Covers token refresh and sign-out from another tab, so a session that
     // expires elsewhere does not leave this tab writing into a dead client.
     const { data: sub } = cliente.auth.onAuthStateChange((_evento, sesion) => {
       setEstado(aEstado(sesion));
+      if (sesion?.user?.user_metadata) {
+        import('./usePreferencias').then((m) => m.sincronizarDesdeSupabase(sesion.user.user_metadata));
+      }
     });
 
     return () => {

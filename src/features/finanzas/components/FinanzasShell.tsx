@@ -147,7 +147,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
 
     {/* ---------- Mobile: fixed bottom tab bar ---------- */}
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--fin-line)] bg-[var(--fin-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-[var(--fin-line)] bg-[var(--fin-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       aria-label="Secciones"
     >
       {SECTIONS.filter((item) => SECCIONES_BARRA.includes(item.id)).map((item) => {
@@ -158,14 +158,10 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
             type="button"
             onClick={() => onSectionChange(item.id)}
             aria-current={active ? 'page' : undefined}
-            // `min-w-0` lets the label truncate instead of forcing the grid
-            // wider than the screen: "Movimientos" does not fit a fifth of 375px.
-            className="flex min-w-0 flex-col items-center gap-0.5 px-0.5 py-2.5"
+            className="flex flex-1 min-w-0 flex-col items-center justify-center gap-1 py-2"
           >
-            {/* The active pill is the second channel: the label also changes
-                weight and colour, so it never relies on colour alone. */}
             <span
-              className={`rounded-full px-3 py-1 transition-colors ${
+              className={`flex items-center justify-center rounded-full px-4 py-1 transition-colors ${
                 active ? 'bg-[var(--fin-soft)]' : ''
               }`}
               aria-hidden="true"
@@ -173,7 +169,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
               <item.icon className={`h-5 w-5 ${active ? item.color : ''}`} />
             </span>
             <span
-              className={`max-w-full truncate text-[9px] transition-colors ${
+              className={`max-w-full truncate text-[10px] transition-colors ${
                 active ? 'font-extrabold text-[var(--fin-ink)]' : 'font-semibold text-[var(--fin-ink-faint)]'
               }`}
             >
@@ -190,16 +186,16 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
         onClick={() => setMasAbierto(true)}
         aria-current={enMas ? 'page' : undefined}
         aria-haspopup="dialog"
-        className="flex min-w-0 flex-col items-center gap-0.5 px-0.5 py-2.5"
+        className="flex flex-1 min-w-0 flex-col items-center justify-center gap-1 py-2"
       >
         <span
-          className={`rounded-full px-3 py-1 transition-colors ${enMas ? 'bg-[var(--fin-soft)]' : ''}`}
+          className={`flex items-center justify-center rounded-full px-4 py-1 transition-colors ${enMas ? 'bg-[var(--fin-soft)]' : ''}`}
           aria-hidden="true"
         >
           <ICONO_MAS className={`h-5 w-5 ${enMas ? 'text-[var(--fin-ink)]' : ''}`} />
         </span>
         <span
-          className={`max-w-full truncate text-[9px] transition-colors ${
+          className={`max-w-full truncate text-[10px] transition-colors ${
             enMas ? 'font-extrabold text-[var(--fin-ink)]' : 'font-semibold text-[var(--fin-ink-faint)]'
           }`}
         >

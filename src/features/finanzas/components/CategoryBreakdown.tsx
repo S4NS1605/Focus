@@ -61,8 +61,8 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
 
                   {/* The percentage is written out, so the bar length is never
                       the only way to read the value. */}
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--fin-soft)]">
+                  <div className="mt-1.5 flex flex-nowrap items-center gap-2">
+                    <div className="h-2 flex-1 min-w-0 overflow-hidden rounded-full bg-[var(--fin-soft)]">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${width}%` }}

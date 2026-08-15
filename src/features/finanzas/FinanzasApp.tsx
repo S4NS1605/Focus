@@ -75,6 +75,7 @@ const comoParseado = (tx: Transaction): ParsedTransaction => ({
     metodo: 1
   },
   needsReview: false,
+  suggestedCategories: [tx.category, 'otros', 'comida', 'transporte'].filter((v, i, a) => a.indexOf(v) === i).slice(0, 3),
   signals: {
     amountSource: 'digits',
     kindSource: 'keyword',
@@ -83,6 +84,9 @@ const comoParseado = (tx: Transaction): ParsedTransaction => ({
     paymentMethod: 'desconocido',
     recurringPattern: 'ninguno',
     ambiguousAmount: false,
+    destinatario: null,
+    ubicacion: null,
+    tags: [],
   },
 });
 

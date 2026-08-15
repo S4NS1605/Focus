@@ -66,7 +66,11 @@ export interface ParsedTransaction {
     recurringPattern: 'diario' | 'semanal' | 'mensual' | 'anual' | 'ninguno';
     /** More than one viable amount was found. */
     ambiguousAmount: boolean;
+    destinatario: string | null;
+    ubicacion: string | null;
+    tags: string[];
   };
+  suggestedCategories: CategoriaClave[];
 }
 
 interface Token {
@@ -368,6 +372,14 @@ export const parseTransaction = (
   // `mil` inside "familia", `d1` inside "d10", `uno` inside "desayuno".
   let category: CategoriaClave = 'otros';
   let categorySource: CategorySource = 'default';
+  const categoryCandidates: Map<string, { source: CategorySource; score: number }> = new Map();
+
+  const addCategoryScore = (cat: string, source: CategorySource, score: number) => {
+    const existing = categoryCandidates.get(cat);
+    if (!existing || existing.score < score) {
+      categoryCandidates.set(cat, { source, score });
+    }
+  };
 
   // 3a — Las categorías del usuario, por su nombre. Van PRIMERO: si nombró una
   // categoría suya, esa gana sobre la marca o la palabra genérica que pudiera
@@ -375,76 +387,59 @@ export const parseTransaction = (
   // una categoría "Mascotas", "mascotas" es justo lo que la fila debe decir.
   const frasesCat = frasesDeCategorias(categorias);
   const dispon = available();
-  buscarCat: for (const frase of frasesCat) {
+  
+  for (const frase of frasesCat) {
     const span = frase.seq.length;
     for (let i = 0; i + span <= dispon.length; i += 1) {
       if (frase.seq.every((s, k) => dispon[i + k].norm === s)) {
-        category = frase.id;
-        categorySource = 'usuario';
-        break buscarCat;
+        addCategoryScore(frase.id, 'usuario', 100);
       }
     }
   }
 
-  if (categorySource === 'default') {
-    for (const token of available()) {
-      const merchant = MERCHANTS[token.norm];
-      if (merchant) {
-        category = merchant;
-        categorySource = 'merchant';
-        break;
+  for (const token of dispon) {
+    const merchant = MERCHANTS[token.norm];
+    if (merchant) {
+      addCategoryScore(merchant, 'merchant', 80);
+    }
+    if (token.norm.length > 4) {
+      const similar = buscarSimilar(token.norm, Object.keys(MERCHANTS), 2);
+      if (similar && similar.length > 3) {
+        addCategoryScore(MERCHANTS[similar], 'merchant', 70);
       }
-      // Fuzzy: solo si la palabra es lo bastante larga (evita "d10" → "d1")
-      if (token.norm.length > 4) {
-        const similar = buscarSimilar(token.norm, Object.keys(MERCHANTS), 2);
-        if (similar && similar.length > 3) {
-          category = MERCHANTS[similar];
-          categorySource = 'merchant';
-          break;
+    }
+
+    const aprendida = lexico.categoriaDe(token.norm);
+    if (aprendida) {
+      addCategoryScore(aprendida, 'aprendida', 60);
+    }
+
+    const keyword = lookupWithStem(CATEGORY_KEYWORDS, token.norm);
+    if (keyword) {
+      addCategoryScore(keyword, 'keyword', 50);
+    }
+    if (token.norm.length > 4) {
+      const similar = buscarSimilar(token.norm, Object.keys(CATEGORY_KEYWORDS), 2);
+      if (similar && similar.length > 3) {
+        const keywordSimilar = lookupWithStem(CATEGORY_KEYWORDS, similar);
+        if (keywordSimilar) {
+          addCategoryScore(keywordSimilar, 'keyword', 40);
         }
       }
     }
   }
 
-  // 3c — Lo aprendido de tu historial. Una palabra que sueles archivar en cierta
-  // categoría gana sobre la lista genérica de fábrica: es lo que TÚ haces, no lo
-  // que la app supone. Va después de las marcas (un hecho) y de tus categorías
-  // nombradas (algo explícito), pero antes de la adivinanza genérica.
-  if (categorySource === 'default') {
-    for (const token of available()) {
-      const aprendida = lexico.categoriaDe(token.norm);
-      if (aprendida) {
-        category = aprendida;
-        categorySource = 'aprendida';
-        break;
-      }
-    }
+  const sortedCandidates = Array.from(categoryCandidates.entries()).sort((a, b) => b[1].score - a[1].score);
+  
+  if (sortedCandidates.length > 0) {
+    category = sortedCandidates[0][0];
+    categorySource = sortedCandidates[0][1].source;
   }
 
-  if (categorySource === 'default') {
-    for (const token of available()) {
-      const keyword = lookupWithStem(CATEGORY_KEYWORDS, token.norm);
-      if (keyword) {
-        category = keyword;
-        categorySource = 'keyword';
-        break;
-      }
-      // Fuzzy: solo si palabra es larga (evita falsos positivos con palabras cortas)
-      if (token.norm.length > 4) {
-        const similar = buscarSimilar(token.norm, Object.keys(CATEGORY_KEYWORDS), 2);
-        if (similar && similar.length > 3) {
-          const keywordSimilar = lookupWithStem(CATEGORY_KEYWORDS, similar);
-          if (keywordSimilar) {
-            category = keywordSimilar;
-            categorySource = 'keyword';
-            break;
-          }
-        }
-      }
-    }
+  if (categorySource === 'default' && kind === 'ingreso') {
+    category = 'ingreso';
+    addCategoryScore('ingreso', 'default', 10);
   }
-
-  if (categorySource === 'default' && kind === 'ingreso') category = 'ingreso';
 
   // 4 — Account. Its tokens ARE consumed, unlike category keywords: once the
   // bank is a structured field on the movement, repeating it in the description
@@ -456,6 +451,26 @@ export const parseTransaction = (
   const cuentaId = hallada ? hallada.id : null;
   const cuentaSource: CuentaSource = hallada ? hallada.source : 'ninguna';
 
+  let destinatario: string | null = null;
+  let ubicacion: string | null = null;
+  const tags: string[] = [];
+
+  const avail = available();
+  for (let i = 0; i < avail.length; i++) {
+    const t = avail[i];
+    if ((t.norm === 'a' || t.norm === 'para') && i + 1 < avail.length) {
+      const name = avail[i + 1].raw;
+      destinatario = name.charAt(0).toUpperCase() + name.slice(1);
+    }
+    if (t.norm === 'en' && i + 1 < avail.length) {
+      const loc = avail[i + 1].raw;
+      ubicacion = loc.charAt(0).toUpperCase() + loc.slice(1);
+    }
+    if (['viaje', 'regalo', 'emergencia', 'salud', 'vacaciones', 'fiesta', 'prestamo', 'comida', 'transporte'].includes(t.norm)) {
+      if (!tags.includes(t.raw)) tags.push(t.raw);
+    }
+  }
+
   // 5 — Description. Category keywords are deliberately KEPT: for a merchant
   // that text is the most useful thing on the row.
   const words = available()
@@ -464,11 +479,14 @@ export const parseTransaction = (
 
   let description = words.join(' ').trim();
   if (description === '') {
-    // El respaldo solo aplica a las de fábrica; una categoría del usuario deja
-    // su nombre en los tokens (no se consumen), así que aquí nunca cae vacía.
-    description = CATEGORY_LABELS[category as Category] ?? '';
+    description = CATEGORY_LABELS[category as Category] ?? category;
   } else {
     description = description.charAt(0).toUpperCase() + description.slice(1);
+  }
+
+  const timeMatch = raw.match(/\b([01]?[0-9]|2[0-3]):([0-5][0-9])\b/);
+  if (timeMatch && !description.includes(timeMatch[0])) {
+    description += ` (${timeMatch[0]})`;
   }
 
   // 6 — Confidence. Drives PRESENTATION only: the confirm sheet always opens,
@@ -494,10 +512,17 @@ export const parseTransaction = (
     detectPaymentMethod(tokens) !== 'desconocido',
   );
 
+  const suggestedCategories = [
+    category,
+    ...sortedCandidates.filter(c => c[0] !== category).map(c => c[0]),
+    'otros', 'comida', 'transporte'
+  ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 3);
+
   return {
     kind,
     amount,
     category,
+    suggestedCategories,
     cuentaId,
     description,
     raw,
@@ -512,6 +537,9 @@ export const parseTransaction = (
       paymentMethod: detectPaymentMethod(tokens),
       recurringPattern: detectarRecurrencia(raw).patrón,
       ambiguousAmount,
+      destinatario,
+      ubicacion,
+      tags,
     },
   };
 };
@@ -542,5 +570,9 @@ export const movimientoEnBlanco = (): ParsedTransaction => ({
     paymentMethod: 'desconocido',
     recurringPattern: 'ninguno',
     ambiguousAmount: false,
+    destinatario: null,
+    ubicacion: null,
+    tags: [],
   },
+  suggestedCategories: ['otros', 'comida', 'transporte'],
 });
