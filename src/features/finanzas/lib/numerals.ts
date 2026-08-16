@@ -72,6 +72,7 @@ export const normalizeWord = (value: string): string =>
  * in a grouped run is a thousands separator; anything else is a decimal.
  */
 export const normalizeNumericToken = (token: string): string[] => {
+  if (token === '$') return ['$'];
   let t = token.replace(/\$/g, '').replace(/^cop$/, '');
   if (t === '') return [];
 

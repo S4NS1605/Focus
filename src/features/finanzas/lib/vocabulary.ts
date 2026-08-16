@@ -165,7 +165,7 @@ export const COUNT_NOUNS: ReadonlySet<string> = new Set([
 /** A number right after one of these is very likely the amount. */
 export const AMOUNT_CUES: ReadonlySet<string> = new Set([
   'por', 'de', 'en', 'a', 'vale', 'valen', 'cuesta', 'cuestan', 'costo',
-  'salio', 'son',
+  'salio', 'son', '$', 'cuanto', 'valor'
 ]);
 
 /** Dropped when building the description. May overlap numeral words freely —

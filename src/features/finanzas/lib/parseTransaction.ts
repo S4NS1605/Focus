@@ -114,15 +114,20 @@ const REVIEW_THRESHOLD = 0.7;
  * string length, so any offset computed against a whole-string normalized copy
  * would drift for everything after the first accented character.
  */
-const tokenize = (input: string): Token[] => {
+export const tokenize = (input: string): Token[] => {
   const out: Token[] = [];
 
   for (const piece of input.split(/\s+/)) {
     if (!piece) continue;
 
-    const trimmed = piece
+    let trimmed = piece
       .replace(/^[^\p{L}\p{N}$]+/u, '')
       .replace(/[^\p{L}\p{N}]+$/u, '');
+      
+    if (!trimmed && piece.includes('$')) {
+      trimmed = '$';
+    }
+    
     if (!trimmed) continue;
 
     for (const norm of normalizeNumericToken(normalizeWord(trimmed))) {
@@ -134,7 +139,7 @@ const tokenize = (input: string): Token[] => {
 };
 
 /** Every maximal numeral in the input, with the token span it occupies. */
-const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
+export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
   const norms = tokens.map((t) => t.norm);
   const out: Candidate[] = [];
 
@@ -152,7 +157,21 @@ const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
     let score = 0;
     if (match.hasScale) score += 3;
     if (match.value >= 1000) score += 2;
-    if (before && AMOUNT_CUES.has(before)) score += 1;
+    
+    const STRONG_CUES = new Set(['$', 'usd', 'cop', 'cuanto', 'valor']);
+    if (before) {
+      if (AMOUNT_CUES.has(before)) score += 5;
+      if (STRONG_CUES.has(before)) score += 15;
+    }
+    
+    // If the actual typed token contained a currency symbol, it's almost certainly the amount
+    for (let k = i; k < match.next; k++) {
+      if (tokens[k].raw.includes('$') || tokens[k].raw.toLowerCase().includes('usd') || tokens[k].raw.toLowerCase().includes('cop')) {
+        score += 15;
+        break;
+      }
+    }
+    
     // "compré 2 pizzas por 30 mil" — the 2 is a quantity, not the amount.
     if (after && COUNT_NOUNS.has(after)) score -= 2;
 
@@ -364,10 +383,12 @@ export const parseTransaction = (
     // We will find chains of conjoined valid amounts
     let bestChainTotal = 0;
     let bestChainIndices: number[] = [];
+    let bestChainScore = -Infinity;
     
     for (let startIdx = 0; startIdx < valid.length; startIdx++) {
       let chainTotal = valid[startIdx].value;
       let chainIndices: number[] = [];
+      let chainMaxScore = valid[startIdx].score;
       for(let j=valid[startIdx].start; j<valid[startIdx].end; j++) chainIndices.push(j);
       
       let curr = valid[startIdx];
@@ -377,6 +398,7 @@ export const parseTransaction = (
           const middle = tokens.slice(curr.end, next.start).map(t => t.norm);
           if (middle.length === 0 || middle.some(t => CONJUNCTIONS.has(t))) {
             chainTotal += next.value;
+            chainMaxScore = Math.max(chainMaxScore, next.score);
             for(let j=curr.end; j<next.end; j++) chainIndices.push(j);
             curr = next;
           } else {
@@ -389,10 +411,11 @@ export const parseTransaction = (
       if (chainTotal > bestChainTotal) {
         bestChainTotal = chainTotal;
         bestChainIndices = chainIndices;
+        bestChainScore = chainMaxScore;
       }
     }
     
-    if (bestChainTotal > best.value) {
+    if (bestChainTotal > best.value && bestChainScore >= best.score) {
       amount = Math.round(bestChainTotal * fractionMultiplier);
       for (const idx of bestChainIndices) consumed[idx] = true;
       // Note: we might have consumed the middle tokens too!
@@ -681,17 +704,33 @@ export const parseTransaction = (
   }
 
   // 6 — Description (Full conversational phrasing)
-  const words = tokens
-    .filter((_, i) => {
-      if (consumed[i]) return false;
-      if (chunks.ignore.some(ign => ign.index === i)) return false;
-      return true;
-    })
-    .map((t) => MERCHANT_DISPLAY[t.norm] ?? t.raw);
+  const isOCR = raw.startsWith('[OCR]');
+  let description = '';
 
-  let description = words.join(' ').trim();
-  if (description === '') {
-    description = CATEGORY_LABELS[category as Category] ?? category;
+  if (isOCR) {
+    // Look for common receipt message markers and extract the text until the next marker
+    const messageMatch = raw.match(/(?:mensaje|motivo|concepto|detalle|conversación|conversacion)\s+([\s\S]+?)(?:\s+(?:valor|fecha|costo|referencia|aprobado|hora|desde|hacia|¿cuánto\?|cuanto|numero|número)|$)/i);
+    if (messageMatch && messageMatch[1] && messageMatch[1].trim().length > 0) {
+      description = messageMatch[1].trim();
+    }
+  }
+
+  if (!description) {
+    const words = tokens
+      .filter((t, i) => {
+        if (consumed[i]) return false;
+        if (chunks.ignore.some(ign => ign.index === i)) return false;
+        if (isOCR && t.norm === 'ocr') return false; // Ignore the [OCR] tag
+        return true;
+      })
+      .map((t) => MERCHANT_DISPLAY[t.norm] ?? t.raw);
+
+    description = words.join(' ').trim();
+    if (description === '') {
+      description = CATEGORY_LABELS[category as Category] ?? category;
+    } else {
+      description = capitalize(description);
+    }
   } else {
     description = capitalize(description);
   }

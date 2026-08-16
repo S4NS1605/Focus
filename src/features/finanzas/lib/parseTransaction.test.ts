@@ -194,6 +194,15 @@ describe('parseTransaction — description', () => {
   it('keeps a quantity that is not the amount', () => {
     expect(parseTransaction('compré 2 pizzas por 30 mil').description).toBe('Compré 2 pizzas'); // 'por' is an AMOUNT_CUE and gets consumed!
   });
+
+  it('extracts specific message from OCR receipts', () => {
+    expect(parseTransaction('[OCR] Envío exitoso Destino Julian Mensaje Para la pizza de anoche Valor $ 50.000').description).toBe('Para la pizza de anoche');
+    expect(parseTransaction('[OCR] Aprobado Motivo Pago de arriendo Fecha 12 de Agosto').description).toBe('Pago de arriendo');
+    const nequiRaw = '[OCR] € comprobante de pago (O Envío Realizado A [a] Le I "| E _— L.] NN L a La “ EH El [m] P E, h: O ¡Escanea este GR con Nequi para verificar tu envío al instante! Para Josue Conversación Te envío esto como prueba para la app de finanzas gracias bro ¿Cuánto? $ 100,00 Número Nequi 310 2201494 Fecha 16 de agosto de 2026 alas 06:15 p.m. Referencia M16482536';
+    const nequiTx = parseTransaction(nequiRaw);
+    expect(nequiTx.description).toBe('Te envío esto como prueba para la app de finanzas gracias bro (06:15)');
+    expect(nequiTx.amount).toBe(100);
+  });
 });
 
 describe('parseTransaction — confidence', () => {

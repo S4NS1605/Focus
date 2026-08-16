@@ -22,10 +22,10 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
       
       const text = result.data.text;
       
-      // Replace newlines with spaces so it looks like a continuous sentence
+      // 2. Replace newlines with spaces so it looks like a continuous sentence
       const cleanText = text.replace(/\n/g, ' ').trim();
       
-      onSuccess(cleanText);
+      onSuccess(`[OCR] ${cleanText}`);
     } catch (err) {
       console.error(err);
       setError('No se pudo analizar la imagen.');
