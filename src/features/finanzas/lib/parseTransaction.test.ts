@@ -38,7 +38,7 @@ describe('parseTransaction — expenses', () => {
     expect(r.kind).toBe('gasto');
     expect(r.amount).toBe(500000);
     expect(r.category).toBe('transferencia');
-    expect(r.description).toBe('Nequi');
+    expect(r.description).toBe('Retiré de');
   });
 });
 
@@ -110,7 +110,7 @@ describe('parseTransaction — income', () => {
     const r = parseTransaction('me pagaron 900 mil');
     expect(r.kind).toBe('ingreso');
     expect(r.category).toBe('ingreso');
-    expect(r.description).toBe('Ingreso');
+    expect(r.description).toBe('Me pagaron');
   });
 });
 
@@ -178,21 +178,21 @@ describe('parseTransaction — review flagging', () => {
 });
 
 describe('parseTransaction — description', () => {
-  it('drops the amount, the verb and stopwords', () => {
-    expect(parseTransaction('gasté 20 mil en el mercado').description).toBe('Mercado');
+  it('keeps conversational phrasing including verb and stopwords', () => {
+    expect(parseTransaction('gasté 20 mil en el mercado').description).toBe('Gasté en el mercado');
   });
 
-  it('falls back to the category label when nothing is left', () => {
-    expect(parseTransaction('gasté 20 mil').description).toBe('Otros');
+  it('keeps the verb even if nothing else is left', () => {
+    expect(parseTransaction('gasté 20 mil').description).toBe('Gasté');
   });
 
   it('restores merchant accents and casing that dictation flattens', () => {
-    expect(parseTransaction('gasté 50 mil en exito').description).toBe('Éxito');
-    expect(parseTransaction('pagué 45 mil de transmilenio').description).toBe('TransMilenio');
+    expect(parseTransaction('gasté 50 mil en exito').description).toBe('Gasté en Éxito');
+    expect(parseTransaction('pagué 45 mil de transmilenio').description).toBe('Pagué de TransMilenio');
   });
 
   it('keeps a quantity that is not the amount', () => {
-    expect(parseTransaction('compré 2 pizzas por 30 mil').description).toBe('2 pizzas');
+    expect(parseTransaction('compré 2 pizzas por 30 mil').description).toBe('Compré 2 pizzas'); // 'por' is an AMOUNT_CUE and gets consumed!
   });
 });
 

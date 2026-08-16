@@ -4,6 +4,7 @@ import type { CategoriaPersonal } from '../categorias';
 import { frasesDeCategorias } from './vocabularioUsuario';
 import { LEXICO_VACIO } from './aprendizaje';
 import type { LexicoAprendido } from './aprendizaje';
+import type { Transaction } from '../types';
 import { detectarRecurrencia } from './senalesAvanzadas';
 import { buscarSimilar, calcularConfianzaGranular, type ConfianzaGranular } from './inteligenciaAvanzada';
 import { normalizeNumericToken, normalizeWord, readNumberAt } from './numerals';
@@ -331,6 +332,7 @@ export const parseTransaction = (
    * explícitamente (una categoría nombrada o una marca conocida).
    */
   lexico: LexicoAprendido = LEXICO_VACIO,
+  transacciones: readonly Transaction[] = [],
 ): ParsedTransaction => {
   const tokens = tokenize(raw);
   const consumed = new Array<boolean>(tokens.length).fill(false);
@@ -339,6 +341,15 @@ export const parseTransaction = (
   // downstream, so the category matcher can never see `mil` and the description
   // never repeats the number.
   const candidates = findAmountCandidates(tokens);
+
+  // MEGA UPGRADE 6: Fraction Math
+  let fractionMultiplier = 1;
+  const rawLowerForMath = raw.toLowerCase();
+  if (rawLowerForMath.includes('la mitad de') || rawLowerForMath.includes('mitad de')) fractionMultiplier = 0.5;
+  else if (rawLowerForMath.includes('un tercio de') || rawLowerForMath.includes('tercera parte de')) fractionMultiplier = 1/3;
+  else if (rawLowerForMath.includes('un cuarto de') || rawLowerForMath.includes('cuarta parte de')) fractionMultiplier = 0.25;
+  else if (rawLowerForMath.includes('el doble de')) fractionMultiplier = 2;
+  else if (rawLowerForMath.includes('el triple de')) fractionMultiplier = 3;
   
   // Upgrade 1: Sumar múltiples montos unidos por conjunciones ("20 mil y 3 mil")
   let amount: number | null = null;
@@ -382,7 +393,7 @@ export const parseTransaction = (
     }
     
     if (bestChainTotal > best.value) {
-      amount = bestChainTotal;
+      amount = Math.round(bestChainTotal * fractionMultiplier);
       for (const idx of bestChainIndices) consumed[idx] = true;
       // Note: we might have consumed the middle tokens too!
       // Actually let's manually consume the middle tokens.
@@ -395,7 +406,7 @@ export const parseTransaction = (
         }
       }
     } else {
-      amount = best.value;
+      amount = Math.round(best.value * fractionMultiplier);
       for (let i = best.start; i < best.end; i += 1) consumed[i] = true;
     }
 
@@ -420,11 +431,11 @@ export const parseTransaction = (
   const kindMatches: { kind: TxKind, startIndex: number, endIndex: number }[] = [];
   const forKind = available();
   
-  for (let i = 0; i < forKind.length; i++) {
+  for (let i = 0; i < tokens.length; i++) {
     for (const phrase of KIND_PHRASES) {
       const span = phrase.seq.length;
-      if (i + span <= forKind.length) {
-        if (phrase.seq.every((s, k) => forKind[i + k].norm === s)) {
+      if (i + span <= tokens.length) {
+        if (phrase.seq.every((s, k) => tokens[i + k].norm === s)) {
           kindMatches.push({
             kind: phrase.kind,
             startIndex: i,
@@ -446,7 +457,7 @@ export const parseTransaction = (
     // but we CONSUME all subsequent redundant kind phrases ("pague", "me costo").
     for (let m = 1; m < kindMatches.length; m++) {
       for (let k = kindMatches[m].startIndex; k < kindMatches[m].endIndex; k++) {
-        consumed[forKind[k].index] = true;
+        consumed[k] = true;
       }
     }
   }
@@ -713,6 +724,37 @@ export const parseTransaction = (
     cuentaId !== null,
     paymentMethod !== 'desconocido',
   );
+
+  // MEGA UPGRADE 5: El Oráculo (Contextual Memory for recurring/known expenses)
+  if (amount === null && description !== '' && transacciones.length > 0) {
+    const descLower = description.toLowerCase();
+    // Search newest first
+    for (let i = transacciones.length - 1; i >= 0; i--) {
+      const t = transacciones[i];
+      if (t.description.toLowerCase().includes(descLower) || descLower.includes(t.description.toLowerCase())) {
+        amount = t.amountCop;
+        if (category === 'otros' || categorySource === 'default') {
+          category = t.category as CategoriaClave;
+          categorySource = 'aprendida';
+        }
+        if (cuentaId === null) {
+          cuentaId = t.cuentaId;
+          cuentaSource = 'nombre';
+        }
+        confidence += 0.4;
+        confidence = Math.max(0, Math.min(1, Number(confidence.toFixed(2))));
+        break;
+      }
+    }
+  }
+
+  // MEGA UPGRADE 7: Auto-tagging based on description/raw context
+  const rawLower = raw.toLowerCase();
+  if (rawLower.includes('viaje') || rawLower.includes('vacaciones') || rawLower.includes('vuelo') || rawLower.includes('hotel')) tags.push('viaje');
+  if (rawLower.includes('cumpleaños') || rawLower.includes('regalo') || rawLower.includes('sorpresa')) tags.push('regalo');
+  if (rawLower.includes('fiesta') || rawLower.includes('rumba') || rawLower.includes('salida')) tags.push('fiesta');
+  if (rawLower.includes('multa') || rawLower.includes('infraccion') || rawLower.includes('intereses')) tags.push('multa');
+  if (rawLower.includes('domicilio') || rawLower.includes('delivery') || rawLower.includes('rappi')) tags.push('domicilio');
 
   const suggestedCategories = [
     category,
