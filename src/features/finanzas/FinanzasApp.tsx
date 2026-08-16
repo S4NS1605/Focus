@@ -235,14 +235,15 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       amountCop: draft.amountCop,
       category: draft.category,
       description: draft.description,
-      occurredOn: bogotaDate(),
+      occurredOn: draft.occurredOn || bogotaDate(),
       cuentaId: draft.cuentaId,
       rawTranscript: draft.rawTranscript,
       createdAt: new Date().toISOString(),
     });
     // Jump back to the month the entry landed in, so a save is never invisible
     // because the user was browsing an older month.
-    setMonth(thisMonth);
+    const finalDate = draft.occurredOn || bogotaDate();
+    setMonth(finalDate.slice(0, 7));
     setPending(null);
   };
 

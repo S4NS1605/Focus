@@ -63,7 +63,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
 }) => {
   const editando = modo === 'editar';
   const [amountText, setAmountText] = useState(() => formatAmountInput(parsed.amount));
-  const [fecha, setFecha] = useState(fechaInicial ?? '');
+  const [fecha, setFecha] = useState(fechaInicial ?? parsed.dateOverride ?? '');
   const [kind, setKind] = useState<TxKind>(parsed.kind);
   const [category, setCategory] = useState<CategoriaClave>(parsed.category);
   const [description, setDescription] = useState(parsed.description);
@@ -107,9 +107,8 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
       description: description.trim() || catalogo.de(category).nombre,
       cuentaId,
       rawTranscript: parsed.raw,
-      // Solo viaja si el selector está en juego (edición) y con un valor; al
-      // crear se queda indefinido y la fecha la pone quien guarda.
-      occurredOn: fechaInicial !== undefined && fecha !== '' ? fecha : undefined,
+      // Solo viaja si el selector está en juego (edición) o si el motor de texto extrajo una fecha
+      occurredOn: (fechaInicial !== undefined || parsed.dateOverride) && fecha !== '' ? fecha : parsed.dateOverride,
     });
   };
 
@@ -308,10 +307,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           />
         </div>
 
-        {/* Fecha — solo al editar. Un movimiento nuevo es de hoy por definición;
+        {/* Fecha — solo al editar o si el motor extrajo una fecha (ayer, hoy). Un movimiento nuevo es de hoy por definición;
             corregir el día de uno viejo (lo registré tarde, cayó en otra fecha)
             es justo lo que aquí faltaba poder hacer. */}
-        {fechaInicial !== undefined ? (
+        {(fechaInicial !== undefined || parsed.dateOverride) ? (
           <div className="mt-5">
             <label htmlFor="fin-fecha" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
               {COPY.confirm.fecha}

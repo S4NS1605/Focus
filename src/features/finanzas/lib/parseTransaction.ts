@@ -53,6 +53,8 @@ export interface ParsedTransaction {
   description: string;
   /** The untouched input, always. A mis-parse must stay reconstructable. */
   raw: string;
+  /** Extracted date override in YYYY-MM-DD format, e.g. from 'ayer' or 'anoche'. */
+  dateOverride?: string;
   confidence: number;
   confianzaGranular: ConfianzaGranular;
   needsReview: boolean;
@@ -490,6 +492,32 @@ export const parseTransaction = (
   // 5 — Payment method. Consumed so 'en efectivo' or 'con tarjeta' doesn't leak into description.
   const paymentMethod = detectAndConsumePaymentMethod(tokens, consumed);
 
+  // MEGA UPGRADE 2: Time Machine (Date extraction)
+  let dateOverride: string | undefined = undefined;
+  const today = new Date();
+  
+  // Format Date to YYYY-MM-DD
+  const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+  for (let i = 0; i < tokens.length; i++) {
+    if (consumed[i]) continue;
+    const norm = tokens[i].norm;
+    let offsetDays = null;
+    
+    if (norm === 'ayer' || norm === 'anoche') offsetDays = 1;
+    else if (norm === 'anteayer' || norm === 'antier') offsetDays = 2;
+    else if (norm === 'hoy') offsetDays = 0;
+
+    if (offsetDays !== null) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - offsetDays);
+      dateOverride = formatDate(d);
+      consumed[i] = true;
+      // Also consume preceding prepositions like "de" or "para" if any?
+      // Wait, "ayer" rarely has prepositions.
+    }
+  }
+
   // MEGA UPGRADE 4: Implicit accounts by payment method
   if (!cuentaId) {
     if (paymentMethod === 'efectivo') {
@@ -696,6 +724,7 @@ export const parseTransaction = (
     kind,
     amount,
     category,
+    dateOverride,
     suggestedCategories,
     cuentaId,
     description,
@@ -733,6 +762,7 @@ export const movimientoEnBlanco = (): ParsedTransaction => ({
   cuentaId: null,
   description: '',
   raw: '',
+  dateOverride: undefined,
   confidence: 0,
   confianzaGranular: { monto: 0, tipo: 0, categoria: 0, cuenta: 0, metodo: 0 },
   needsReview: true,
