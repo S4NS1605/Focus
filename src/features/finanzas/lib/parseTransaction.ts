@@ -429,7 +429,6 @@ export const parseTransaction = (
 
   // Find ALL kind phrase matches to eliminate redundant fillers
   const kindMatches: { kind: TxKind, startIndex: number, endIndex: number }[] = [];
-  const forKind = available();
   
   for (let i = 0; i < tokens.length; i++) {
     for (const phrase of KIND_PHRASES) {

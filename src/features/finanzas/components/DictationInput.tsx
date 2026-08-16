@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Info, Mic, Sparkles, Square } from 'lucide-react';
+import { Camera, Info, Mic, Sparkles, Square } from 'lucide-react';
 import { COPY } from '../copy';
 import { useDictation } from '../hooks/useDictation';
+import { useImageOCR } from '../hooks/useImageOCR';
+import { useRef } from 'react';
 
 interface DictationInputProps {
   onSubmit: (text: string) => void;
@@ -15,6 +17,18 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
     setText(finalText);
     onSubmit(finalText);
   });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { scanImage, isScanning, progress, error } = useImageOCR((scannedText) => {
+    setText(scannedText);
+    onSubmit(scannedText);
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) scanImage(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +68,28 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
           {COPY.input.submit}
         </motion.button>
 
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          aria-hidden="true"
+        />
+
+        <motion.button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          disabled={isScanning}
+          aria-label="Subir comprobante"
+          className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--fin-out-bg)] text-[var(--fin-out)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
+        >
+          <Camera className="h-6 w-6" strokeWidth={2.5} />
+        </motion.button>
+
         {/* One-tap dictation, shown only where it genuinely works. */}
         {dictation.supported ? (
           <motion.button
@@ -78,15 +114,19 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
       <p className="flex items-start gap-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]" aria-live="polite">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
         <span>
-          {listening
-            ? COPY.input.listening
-            : dictation.status === 'blocked'
-              ? COPY.input.blocked
-              : dictation.standalone
-                ? COPY.input.keyboardHint
-                : dictation.supported
-                  ? COPY.input.keyboardHint
-                  : COPY.input.offline}
+          {isScanning
+            ? `Analizando comprobante... (${Math.round(progress * 100)}%)`
+            : error
+              ? error
+              : listening
+                ? COPY.input.listening
+                : dictation.status === 'blocked'
+                  ? COPY.input.blocked
+                  : dictation.standalone
+                    ? COPY.input.keyboardHint
+                    : dictation.supported
+                      ? COPY.input.keyboardHint
+                      : COPY.input.offline}
         </span>
       </p>
     </form>
