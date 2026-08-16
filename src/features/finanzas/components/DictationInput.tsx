@@ -71,7 +71,6 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
         <input
           type="file"
           accept="image/*"
-          capture="environment"
           ref={fileInputRef}
           onChange={handleFileChange}
           className="hidden"
