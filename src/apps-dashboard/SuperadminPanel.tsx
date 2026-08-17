@@ -120,15 +120,17 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Error al crear sesión de impersonación');
 
-      // 3. Inyectar la sesión del usuario directamente — sin redirects, sin localhost
-      const { error: setError } = await cliente.auth.setSession({
-        access_token: result.access_token,
-        refresh_token: result.refresh_token,
+      // 3. Intercambiar el token_hash por una sesión real del usuario objetivo.
+      // verifyOtp() es una llamada pura a la API de Supabase — NO abre
+      // ninguna URL en el navegador ni redirige a localhost.
+      const { error: otpError } = await cliente.auth.verifyOtp({
+        token_hash: result.tokenHash,
+        type: 'magiclink',
       });
 
-      if (setError) throw new Error(setError.message);
+      if (otpError) throw new Error(otpError.message);
 
-      // 4. Sesión lista → navegar a Finanzas
+      // 4. Sesión activa → navegar a Finanzas
       setImpersonando(null);
       window.location.href = '/finanzas';
     } catch (err: any) {
