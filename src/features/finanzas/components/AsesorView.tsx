@@ -13,6 +13,7 @@ interface Message {
   role: 'user' | 'bot';
   text: string;
   action?: ParsedTransaction;
+  actions?: ParsedTransaction[];
   suggestions?: string[];
 }
 
@@ -62,9 +63,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
 
     // Simulate thinking delay for better UX
     setTimeout(() => {
-      const { text: respuesta, newContext, action, suggestions } = responderAsesor(userMsg.text, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
+      const { text: respuesta, newContext, action, actions, suggestions } = responderAsesor(userMsg.text, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
       setContext(newContext);
-      const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action, suggestions };
+      const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action, actions, suggestions };
       setMessages((prev) => [...prev, botMsg]);
     }, 400);
   };
@@ -133,6 +134,19 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
                     </button>
                   </div>
                 )}
+                {msg.actions && msg.actions.length > 0 && onCrearTransaccion && (
+                  <div className="mt-3 border-t border-[var(--fin-line)] pt-3 flex flex-col gap-2">
+                    {msg.actions.map((act, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => onCrearTransaccion(act)}
+                        className="w-full rounded-xl bg-fuchsia-600 px-3 py-2 text-[13px] font-bold text-white transition-colors hover:bg-fuchsia-500"
+                      >
+                        Sí, registrar $ {act.amount?.toLocaleString('es-CO')} en {act.category}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {msg.suggestions && msg.suggestions.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2 pt-1">
                     {msg.suggestions.map((sug, idx) => (
@@ -141,15 +155,13 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
                         onClick={() => {
                           setInput(sug);
                           setTimeout(() => {
-                            // En lugar de llamar handleSend directamente (que lee el state anterior),
-                            // despachamos la logica de envio directamente:
                             const userMsg: Message = { id: nuevoId(), role: 'user', text: sug };
                             setMessages((prev) => [...prev, userMsg]);
                             setInput('');
                             setTimeout(() => {
-                              const { text: respuesta, newContext, action, suggestions } = responderAsesor(sug, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
+                              const { text: respuesta, newContext, action, actions, suggestions } = responderAsesor(sug, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
                               setContext(newContext);
-                              const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action, suggestions };
+                              const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action, actions, suggestions };
                               setMessages((prev) => [...prev, botMsg]);
                             }, 400);
                           }, 0);

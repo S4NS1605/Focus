@@ -16,6 +16,7 @@ export interface AsesorResponse {
   text: string;
   newContext: AsesorContext;
   action?: ParsedTransaction;
+  actions?: ParsedTransaction[];
   suggestions?: string[];
 }
 
@@ -200,6 +201,25 @@ export function responderAsesor(
     };
   }
   
+  // 3.4 Exención Inteligente 4x1000 / GMF
+  if (norm.match(/4x1000|cuatro por mil|gmf|impuesto/)) {
+    const bajoMonto = cajitas.filter(c => c.esBajoMonto && c.archivedAt === null);
+    
+    let text = `Acá entre nos, el 4x1000 (o GMF) te quita $4 por cada $1.000 que muevas de tus cuentas financieras hacia afuera.\n\n`;
+    
+    if (bajoMonto.length > 0) {
+      text += `¡Pero buenas noticias! Detecté que marcaste **${bajoMonto[0].nombre}** como Depósito de Bajo Monto. Recuerda que la DIAN te da una exención de hasta 65 UVT (aprox $3 millones de pesos al mes) en retiros de esa cuenta antes de cobrarte un solo peso de 4x1000.\n\nYo internamente llevo esa cuenta por ti. Si veo que te vas a pasar del límite en el mes, te lo advertiré.`;
+    } else {
+      text += `💡 **Un truco de oro:** Si tienes una cuenta como Nequi o Daviplata (Depósitos de Bajo Monto), ¡tienes hasta ~3 millones de pesos al mes libres de este impuesto sin importar cuál sea tu cuenta principal exenta!\n\nAsegúrate de ir a 'Configuración > Editar Cajita' y marcarla como 'Depósito de Bajo Monto' para que yo te calcule exactamente cuánto cupo te queda sin pagar impuestos.`;
+    }
+
+    return { 
+      text, 
+      newContext,
+      suggestions: ['Dame un consejo', 'Resumen del mes']
+    };
+  }
+
   // 3.5. Presupuesto Diario Sugerido ("cuanto puedo gastar", "cuanto me queda")
   if (norm.includes('puedo gastar') || (norm.includes('cuanto') && norm.includes('me queda')) || norm.includes('presupuesto')) {
     const totalCuentas = cajitas
@@ -326,14 +346,93 @@ export function responderAsesor(
     .filter((c) => c.archivedAt === null && c.tipo === 'cuenta')
     .map((c) => ({ id: c.id, nombre: c.nombre, esBajoMonto: false }));
 
-  const intent = parseTransaction(texto, cuentasParaElegir, categorias, lexico, transacciones);
-  
-  // Is this a statement of a new transaction? (Has amount, doesn't have question words)
   const isQuestion = norm.includes('cuanto') || norm.includes('cual') || norm.includes('?') || norm.includes('total') || norm.includes('dime');
   
+  // 4.1 Multi-Transaction NLP Router (ej. "gaste 50 en comida, 20 en transporte y 100 en cine")
+  if (!isQuestion && !context._isRecursive) {
+    const separadores = / y |,| e | luego /;
+    const parts = norm.split(separadores).map(p => p.trim()).filter(p => p.length > 4);
+    
+    // Solo si detectamos que realmente hay multiples partes con numeros (amounts)
+    const partsWithNumbers = parts.filter(p => /\d/.test(p));
+    
+    if (partsWithNumbers.length > 1) {
+      const allActions: ParsedTransaction[] = [];
+      let combinedText = "¡Guau, a la velocidad de la luz! Detecté varias transacciones de una sola pasada:\n\n";
+      
+      let lastKind = 'gasto'; // Default propagation
+      for (const part of partsWithNumbers) {
+        // Try to propagate verbs to context-less chunks ("gaste 50 en x, 20 en y")
+        const partToParse = (part.includes('gaste') || part.includes('pague') || part.includes('me pagaron')) ? part : (lastKind === 'ingreso' ? 'me pagaron ' : 'gaste ') + part;
+        
+        const subIntent = parseTransaction(partToParse, cuentasParaElegir, categorias, lexico, transacciones);
+        if (subIntent && subIntent.amount && subIntent.amount > 0) {
+          lastKind = subIntent.kind;
+          
+          // Memoria profunda: Si no encontró categoria, y la anterior parte sí tenía, heredamos o usamos el ultimoAsunto
+          if ((subIntent.category === 'otros' || !subIntent.category) && context.ultimoAsunto) {
+             subIntent.category = context.ultimoAsunto;
+          }
+          
+          allActions.push(subIntent);
+          combinedText += `• Un ${subIntent.kind} de **$${subIntent.amount.toLocaleString('es-CO')}** en **${subIntent.category}**.\n`;
+        }
+      }
+
+      if (allActions.length > 1) {
+        // Save the last category for deep context memory
+        newContext.ultimoAsunto = allActions[allActions.length - 1].category;
+        
+        return {
+          text: combinedText + "\nRevisa los botones abajo y dale clic a cada uno para registrarlos.",
+          newContext,
+          actions: allActions
+        };
+      }
+    }
+  }
+
+  // 4.2 Single Transaction
+  const intent = parseTransaction(texto, cuentasParaElegir, categorias, lexico, transacciones);
+  
+  // Deep memory context for single transactions
+  if (intent.amount && intent.amount > 0 && intent.category === 'otros' && context.ultimoAsunto) {
+    // Ej: "Agregale 10 mil más" (el Asesor recuerda que hablabas de Rappi)
+    intent.category = context.ultimoAsunto;
+    intent.description = intent.description || `Adición a ${context.ultimoAsunto}`;
+  }
+  
   if (!isQuestion && intent.amount && intent.amount > 0) {
+    newContext.ultimoAsunto = intent.category;
+    
+    // Proactive Budget Alert!
+    let alertText = "";
+    if (intent.kind === 'gasto' && intent.category !== 'otros') {
+      const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
+      const totalMonthCategory = transacciones
+        .filter(t => t.kind === 'gasto' && t.category === intent.category && t.occurredOn.startsWith(currentMonth))
+        .reduce((sum, t) => sum + t.amountCop, 0);
+        
+      const newTotal = totalMonthCategory + intent.amount;
+      
+      // Calculate historical average for this category
+      const pastTxs = transacciones.filter(t => t.kind === 'gasto' && t.category === intent.category && !t.occurredOn.startsWith(currentMonth));
+      if (pastTxs.length > 2) {
+         // Get unique months in past
+         const pastMonths = new Set(pastTxs.map(t => t.occurredOn.substring(0, 7))).size || 1;
+         const pastSum = pastTxs.reduce((sum, t) => sum + t.amountCop, 0);
+         const avgMonth = pastSum / pastMonths;
+         
+         if (newTotal > avgMonth * 1.2) {
+           alertText = `\n\n⚠️ **Alerta Proactiva:** Con este gasto llegarás a **$${newTotal.toLocaleString('es-CO')}** en ${intent.category} este mes. ¡Eso es un 20% más de tu promedio mensual habitual ($${Math.round(avgMonth).toLocaleString('es-CO')})! Trata de frenar aquí.`;
+         } else if (newTotal > avgMonth * 0.9) {
+           alertText = `\n\n💡 **Ojo ahí:** Con este gasto ya estás rozando tu promedio habitual en ${intent.category}. Cuidado con lo que quede del mes.`;
+         }
+      }
+    }
+
     return {
-      text: `Veo que mencionas un ${intent.kind} de **$${intent.amount.toLocaleString('es-CO')}** en **${intent.category}**. ¿Quieres que lo registre de una vez en tus finanzas?`,
+      text: `Veo que mencionas un ${intent.kind} de **$${intent.amount.toLocaleString('es-CO')}** en **${intent.category}**. ¿Quieres que lo registre de una vez en tus finanzas?${alertText}`,
       newContext,
       action: intent
     };
