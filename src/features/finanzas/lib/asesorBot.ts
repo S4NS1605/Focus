@@ -150,6 +150,21 @@ export function responderAsesor(
       text += `\nTu compra más grande fue de **$${biggestTx.amountCop.toLocaleString('es-CO')}** en ${biggestTx.category} el ${biggestTx.occurredOn}.`;
     }
 
+    // Financial Projection (Burn Rate)
+    if (gastos > 0 && today.getDate() > 3) {
+      const burnRate = gastos / today.getDate();
+      const ultimoDia = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+      const proyeccion = burnRate * ultimoDia;
+      
+      text += `\n\n🔮 **Proyección a fin de mes:** Al ritmo que llevas ($${Math.round(burnRate).toLocaleString('es-CO')} diarios), terminarás gastando unos **$${Math.round(proyeccion).toLocaleString('es-CO')}** en total este mes. `;
+      
+      if (proyeccion > ingresos && ingresos > 0) {
+        text += `¡Ojo! Eso es más de lo que ha ingresado.`;
+      } else if (ingresos > 0) {
+        text += `¡Súper! Parece que te sobrará dinero.`;
+      }
+    }
+
     return { text, newContext };
   }
 
