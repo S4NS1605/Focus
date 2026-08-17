@@ -288,13 +288,16 @@ export function responderAsesor(
       }
     }
 
-    const isMeaningfulDescription = intent.description && intent.description.length > 2 && !['este', 'mes', 'dia', 'ayer', 'hoy', 'cuanto', 'gastado', 'gaste', 'total', 'año', 'pasado', 'semana'].includes(normalizarNombre(intent.description));
+    const isMeaningfulDescription = intent.description && intent.description.length > 2 && !['este', 'mes', 'dia', 'ayer', 'hoy', 'cuanto', 'gastado', 'gaste', 'total', 'año', 'pasado', 'semana', 'busca', 'gastos'].includes(normalizarNombre(intent.description));
 
     if (intent.signals.categorySource !== 'default' || isMeaningfulDescription || fuzzyCat) {
       const catFinal = intent.signals.categorySource !== 'default' ? intent.category : (fuzzyCat || intent.category);
       filtered = filtered.filter(t => 
         t.category === catFinal || 
-        (isMeaningfulDescription && normalizarNombre(t.description).includes(normalizarNombre(intent.description))) ||
+        (isMeaningfulDescription && (
+          normalizarNombre(t.description).includes(normalizarNombre(intent.description)) ||
+          (t.rawTranscript && normalizarNombre(t.rawTranscript).includes(normalizarNombre(intent.description)))
+        )) ||
         (fuzzyCat && t.category === fuzzyCat)
       );
       asunto = intent.signals.categorySource !== 'default' ? intent.category : (fuzzyCat || intent.description || 'varios');

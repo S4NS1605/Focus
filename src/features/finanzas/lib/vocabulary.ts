@@ -61,57 +61,71 @@ export const MERCHANTS: Record<string, Category> = {
   exito: 'mercado', d1: 'mercado', ara: 'mercado', jumbo: 'mercado',
   olimpica: 'mercado', carulla: 'mercado', makro: 'mercado', zapatoca: 'mercado',
   colsubsidio: 'mercado', isimo: 'mercado', macro: 'mercado', alkosto: 'mercado',
-  surtimax: 'mercado', merqueo: 'mercado',
+  surtimax: 'mercado', merqueo: 'mercado', mercadolibre: 'otros', pricemart: 'mercado',
+  megatiendas: 'mercado', supermercado: 'mercado', carniceria: 'mercado',
+  fruver: 'mercado', plaza: 'mercado', panamericana: 'otros',
   
-  // Comida
+  // Comida / Restaurantes
   rappi: 'comida', ifood: 'comida', mcdonalds: 'comida', frisby: 'comida',
   kokoriko: 'comida', juanvaldez: 'comida', starbucks: 'comida', subway: 'comida',
   kfc: 'comida', burgerking: 'comida', elcorral: 'comida', crepes: 'comida',
   waffles: 'comida', crepesywaffles: 'comida', tostao: 'comida', oma: 'comida',
   pizzahut: 'comida', dominospizza: 'comida', dominos: 'comida', papajohns: 'comida',
+  wok: 'comida', srwok: 'comida', jenos: 'comida', hornitos: 'comida',
+  archies: 'comida', pbc: 'comida', bbc: 'entretenimiento',
   
-  // Transporte
+  // Transporte y Vehículos
   transmilenio: 'transporte', sitp: 'transporte', metro: 'transporte',
   uber: 'transporte', didi: 'transporte', indriver: 'transporte',
   cabify: 'transporte', terpel: 'transporte', primax: 'transporte',
   texaco: 'transporte', esso: 'transporte', biomax: 'transporte',
-  picap: 'transporte',
+  picap: 'transporte', peaje: 'transporte', parqueadero: 'transporte',
+  soat: 'transporte', tecno: 'transporte', mecanico: 'transporte',
+  gasolina: 'transporte', pasajes: 'transporte', tiquetes: 'transporte',
+  avianca: 'transporte', latam: 'transporte', wingo: 'transporte',
   
   // Transferencias / Finanzas
   nequi: 'transferencia', daviplata: 'transferencia', bancolombia: 'transferencia',
   davivienda: 'transferencia', bbva: 'transferencia', lulo: 'transferencia',
   nubank: 'transferencia', dale: 'transferencia', uala: 'transferencia',
+  cajero: 'transferencia', corresponsal: 'transferencia', cuota: 'otros',
+  intereses: 'otros', dmf: 'otros', rtf: 'otros',
   
-  // Servicios
+  // Servicios y Hogar
   claro: 'servicios', movistar: 'servicios', tigo: 'servicios', etb: 'servicios',
   ptm: 'servicios', wom: 'servicios', directv: 'servicios',
   epm: 'servicios', codensa: 'servicios', vanti: 'servicios', enel: 'servicios',
-  emcali: 'servicios', triplea: 'servicios',
+  emcali: 'servicios', triplea: 'servicios', acueducto: 'servicios',
+  gas: 'servicios', luz: 'servicios', agua: 'servicios', internet: 'servicios',
+  admin: 'hogar', administracion: 'hogar', arriendo: 'hogar',
+  homecenter: 'hogar', easy: 'hogar',
   
-  // Salud
+  // Salud y Cuidado Personal
   farmatodo: 'salud', cruzverde: 'salud', locatel: 'salud',
   copidrogas: 'salud', larebaja: 'salud', pasteur: 'salud',
   smartfit: 'salud', bodytech: 'salud', actionfitness: 'salud',
   sanitas: 'salud', sura: 'salud', compensar: 'salud',
+  eps: 'salud', prepagada: 'salud', medico: 'salud', odontologo: 'salud',
+  barberia: 'salud', peluqueria: 'salud', uñas: 'salud',
   
-  // Entretenimiento
+  // Entretenimiento, Ropa y Salidas
   netflix: 'entretenimiento', spotify: 'entretenimiento', hbo: 'entretenimiento',
   disney: 'entretenimiento', youtube: 'entretenimiento', steam: 'entretenimiento',
   apple: 'entretenimiento', playstore: 'entretenimiento', primevideo: 'entretenimiento',
-  cinecolombia: 'entretenimiento', cinemark: 'entretenimiento', procinal: 'entretenimiento',
-  royalfilms: 'entretenimiento', tuboleta: 'entretenimiento',
+  cine: 'entretenimiento', cinecolombia: 'entretenimiento', cinemark: 'entretenimiento', procinal: 'entretenimiento',
+  concierto: 'entretenimiento', rumba: 'entretenimiento', bar: 'entretenimiento',
+  zara: 'ropa', hmm: 'ropa', bershka: 'ropa', stradivarius: 'ropa',
+  falabella: 'ropa', tenis: 'ropa', zapatos: 'ropa', arturocalle: 'ropa',
+  koaj: 'ropa', pullandbear: 'ropa', gef: 'ropa', puntohblanco: 'ropa',
   
-  // Educacion
-  udemy: 'educacion', platzi: 'educacion', coursera: 'educacion',
-  duolingo: 'educacion',
+  // Educación
+  universidad: 'educacion', colegio: 'educacion', curso: 'educacion',
+  platzi: 'educacion', udemy: 'educacion', domestika: 'educacion',
   
-  // Hogar / Ropa
-  homecenter: 'hogar', falabella: 'ropa', zara: 'ropa', arturocalle: 'ropa',
-  koaj: 'ropa', bershka: 'ropa', stradivarius: 'ropa', hm: 'ropa',
-  pullandbear: 'ropa', gef: 'ropa', puntohblanco: 'ropa',
+  // Otras tiendas
   dollarcity: 'hogar', miniso: 'hogar', ikea: 'hogar',
   
-  // Mascotas (si existiera categoría mascotas, pero cae en hogar por ahora)
+  // Mascotas
   laika: 'hogar', agrocampo: 'hogar',
 };
 
