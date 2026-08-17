@@ -282,7 +282,21 @@ export function responderAsesor(
       return { text: getRandom(VARIANCES.cero).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr), newContext };
     }
     
+    // Top contact/comment within this specific search!
+    const porContacto: Record<string, number> = {};
+    filtered.forEach(t => {
+      const desc = t.description.trim() || 'Sin descripción';
+      porContacto[desc] = (porContacto[desc] || 0) + t.amountCop;
+    });
+    const topContacto = Object.entries(porContacto).sort((a, b) => b[1] - a[1])[0];
+    
+    let drilldown = '';
+    if (topContacto && topContacto[1] > 0 && topContacto[0] !== 'Sin descripción' && !isMeaningfulDescription) {
+      drilldown = `\n\n🔍 **Dato curioso:** De esos $${total.toLocaleString('es-CO')}, la mayor parte se fue en **"${topContacto[0]}"** ($${topContacto[1].toLocaleString('es-CO')}).`;
+    }
+
     // Comparativa mes pasado (Magic AI feel)
+    let tendencia = '';
     if (tipo === 'gasto' && filterDate === null && !norm.includes('año')) {
       const lastMonth = new Date();
       lastMonth.setMonth(lastMonth.getMonth() - 1);
@@ -294,15 +308,13 @@ export function responderAsesor(
         
       if (lastMonthTotal > 0) {
         const diff = total - lastMonthTotal;
-        const tendencia = diff > 0 
+        tendencia = diff > 0 
           ? `(Por cierto, van ⚠️ **$${Math.abs(diff).toLocaleString('es-CO')} más** que el mes pasado a esta misma fecha).`
           : `(Lo bueno es que van ✅ **$${Math.abs(diff).toLocaleString('es-CO')} menos** que el mes pasado a esta fecha).`;
-        
-        return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` ${tendencia}`, newContext };
       }
     }
 
-    return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (Eso fue en ${filtered.length} transacciones).`, newContext };
+    return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (Eso fue en ${filtered.length} transacciones). ${tendencia}` + drilldown, newContext };
   }
 
   // Fallback a LLM-like
