@@ -63,7 +63,7 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
         rows={2}
         // 16px minimum: anything smaller makes iOS auto-zoom on focus and never
         // zoom back out.
-        className="w-full resize-none overflow-y-auto rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:border-[var(--fin-ink-faint)] focus:outline-none transition-all duration-200"
+        className="w-full resize-none overflow-y-auto break-words whitespace-pre-wrap rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:border-[var(--fin-ink-faint)] focus:outline-none transition-all duration-200"
         aria-label={COPY.input.placeholder}
       />
 

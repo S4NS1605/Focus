@@ -403,12 +403,12 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           <KpiRow totals={totals} />
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5 min-w-0">
               {registrar}
               <CategoryBreakdown slices={gastos} title="En qué se te va" />
             </div>
 
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5 min-w-0">
               <CategoryBreakdown slices={ingresos} title="De dónde entra" />
 
               <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
