@@ -117,10 +117,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
                     : 'rounded-bl-sm border border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink)]'
                 }`}
               >
-                {msg.text.split('\\n').map((line, i) => (
+                {msg.text.split('\n').map((line, i) => (
                   <React.Fragment key={i}>
                     {renderMarkdownLine(line)}
-                    {i !== msg.text.split('\\n').length - 1 && <br />}
+                    {i !== msg.text.split('\n').length - 1 && <br />}
                   </React.Fragment>
                 ))}
                 {msg.action && onCrearTransaccion && (
