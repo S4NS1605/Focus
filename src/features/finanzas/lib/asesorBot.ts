@@ -218,6 +218,90 @@ export function responderAsesor(
     return { text: `Te quedan **${diasRestantes} días** para que acabe el mes y tienes **$${totalCuentas.toLocaleString('es-CO')}** en tus cuentas. \n\nSi quieres que esa plata te alcance hasta fin de mes, tu presupuesto sugerido es de **$${diario.toLocaleString('es-CO')} diarios**. ¡Intenta no pasarte de ahí!`, newContext };
   }
 
+  // 3.6. Gastos Recurrentes / Suscripciones
+  if (norm.includes('suscripciones') || norm.includes('gastos fijos') || norm.includes('pagos recurrentes')) {
+    const counts: Record<string, { occurrences: number, amount: number, lastDate: string }> = {};
+    
+    // Agrupar por descripción exacta
+    transacciones.filter(t => t.kind === 'gasto' && t.description.length > 3).forEach(t => {
+      const d = t.description.trim().toLowerCase();
+      if (!counts[d]) counts[d] = { occurrences: 0, amount: t.amountCop, lastDate: t.occurredOn };
+      counts[d].occurrences += 1;
+      // Actualizar a la cantidad más reciente
+      if (t.occurredOn > counts[d].lastDate) {
+        counts[d].amount = t.amountCop;
+        counts[d].lastDate = t.occurredOn;
+      }
+    });
+
+    const recurrentes = Object.entries(counts).filter(([_, v]) => v.occurrences >= 2).sort((a, b) => b[1].amount - a[1].amount);
+    
+    if (recurrentes.length === 0) {
+      return { text: 'No he detectado suscripciones ni gastos fijos que se repitan en tu historial por ahora.', newContext };
+    }
+
+    const sumaRecurrente = recurrentes.reduce((acc, [_, v]) => acc + v.amount, 0);
+    let text = `Detecté **${recurrentes.length} gastos recurrentes** en tu historial (suscripciones o pagos frecuentes). \n\nCalculo que esto te cuesta aproximadamente **$${sumaRecurrente.toLocaleString('es-CO')}** cada mes:\n`;
+    
+    recurrentes.slice(0, 5).forEach(([nombre, data]) => {
+      text += `• **${nombre}**: $${data.amount.toLocaleString('es-CO')}\n`;
+    });
+
+    if (recurrentes.length > 5) text += `• ...y otros ${recurrentes.length - 5} gastos menores.\n`;
+    
+    return { 
+      text, 
+      newContext, 
+      suggestions: ['Dame un consejo', 'Resumen del mes'] 
+    };
+  }
+
+  // 3.7. Analítica Profunda / Anomaly Detection ("sorprendeme", "dato curioso", "algo raro")
+  if (norm.includes('sorprendeme') || norm.includes('dato curioso') || norm.includes('raro') || norm.includes('interesante')) {
+    if (transacciones.length < 10) {
+      return { text: 'Aún no tienes suficientes transacciones para que mi motor analítico encuentre patrones interesantes. ¡Registra más gastos!', newContext };
+    }
+
+    const gastos = transacciones.filter(t => t.kind === 'gasto');
+    const amounts = gastos.map(t => t.amountCop);
+    const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+    
+    const byDayOfWeek = [0,0,0,0,0,0,0]; // 0 = Sunday
+    gastos.forEach(t => {
+      const d = new Date(t.occurredOn);
+      // Ajuste de timezone burdo
+      d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+      byDayOfWeek[d.getDay()] += t.amountCop;
+    });
+
+    const diasNombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const maxDayIdx = byDayOfWeek.indexOf(Math.max(...byDayOfWeek));
+    const dayName = diasNombres[maxDayIdx];
+
+    const anomaly = gastos.find(t => t.amountCop > avg * 4); // Gastó 4x el promedio
+    
+    const opciones = [];
+    
+    opciones.push(`**Tu Día Más Caro:** Históricamente, el día de la semana en el que más dinero gastas es el **${dayName}**. Intenta dejar la tarjeta en casa ese día la próxima semana.`);
+    
+    if (anomaly) {
+      opciones.push(`**Gasto Inusual:** Noté que el ${anomaly.occurredOn} gastaste **$${anomaly.amountCop.toLocaleString('es-CO')}** en "${anomaly.description}". Eso fue muchísimo más alto que tu promedio normal ($${Math.round(avg).toLocaleString('es-CO')}).`);
+    }
+
+    const descFreq: Record<string, number> = {};
+    gastos.forEach(t => { descFreq[t.description] = (descFreq[t.description] || 0) + 1; });
+    const topFreq = Object.entries(descFreq).sort((a, b) => b[1] - a[1])[0];
+    if (topFreq && topFreq[1] > 3) {
+      opciones.push(`**Frecuencia Adictiva:** Has pagado por "${topFreq[0]}" un total de **${topFreq[1]} veces**. ¡Eso sí que es un gasto hormiga constante!`);
+    }
+
+    return { 
+      text: `Aquí tienes un análisis profundo de tu comportamiento:\n\n${getRandom(opciones)}`, 
+      newContext,
+      suggestions: ['Otro dato curioso', 'Mis suscripciones']
+    };
+  }
+
   // 4. Analizar intención usando ParseTransaction
   const cuentasParaElegir = cajitas
     .filter((c) => c.archivedAt === null && c.tipo === 'cuenta')
