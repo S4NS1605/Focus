@@ -46,20 +46,37 @@ export function responderAsesor(
   const norm = normalizarNombre(texto);
   let newContext = { ...context };
 
-  // 1. Saludos
-  if (norm === 'hola' || norm === 'hola asesor' || norm === 'buenas' || norm === 'buenos dias') {
+  // 1. Chitchat y Personalidad
+  if (norm.match(/^(hola|buenas|buenos dias|buenas tardes|buenas noches|saludos|que tal|q tal)/)) {
     return {
       text: getRandom([
-        '¡Hola! Qué gusto saludarte. Estoy aquí para analizar tus movimientos. ¿De qué quieres que hablemos?',
-        '¡Hola! Soy tu asesor privado. ¿Qué dudas tienes sobre tus finanzas hoy?',
-        '¡Qué tal! Listo para ayudarte a revisar tus números. Pregúntame lo que necesites.'
+        '¡Hola! Soy tu Asesor Financiero personal. Mi cerebro vive directo en tu dispositivo, así que tus datos están seguros conmigo. ¿En qué te puedo ayudar hoy?',
+        '¡Hola! Listo para revisar tus números. Puedes preguntarme sobre tus gastos, tus saldos o pedirme un resumen del mes. ¿Qué revisamos?',
+        '¡Qué tal! Siempre es buen momento para cuidar la plata. ¿Qué duda financiera tienes hoy?'
+      ]),
+      newContext
+    };
+  }
+  
+  if (norm.match(/quien (eres|sos)|que eres|como te llamas/)) {
+    return {
+      text: 'Soy el Asesor de Focus. Soy una red de reglas lógicas y análisis semántico que funciona 100% offline en tu celular. No soy GPT, ¡pero me esfuerzo igual para cuidar tu bolsillo!',
+      newContext
+    };
+  }
+  if (norm.match(/gracias|te amo|excelente|genial|buen trabajo/)) {
+    return {
+      text: getRandom([
+        '¡Con todo gusto! Para eso estoy. Si necesitas algo más, aquí sigo.',
+        '¡De nada! Recuerda que un peso ahorrado es un peso ganado. ¿Deseas ver algo más?',
+        '¡Me alegra ayudar! Cuidar tus finanzas es mi pasión.'
       ]),
       newContext
     };
   }
 
-  // 2. Resumen General / Analytics ("como voy", "resumen del mes")
-  if (norm.includes('resumen') || (norm.includes('como') && norm.includes('voy'))) {
+  // 2. Resumen General / Analytics y "Opiniones" ("como voy", "resumen del mes", "estoy gastando mucho?")
+  if (norm.includes('resumen') || norm.includes('como voy') || norm.includes('como me ves') || norm.includes('gastando mucho') || norm.includes('analisis')) {
     const today = new Date();
     const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     const mesTxs = transacciones.filter(t => t.occurredOn.startsWith(currentMonth));
@@ -69,14 +86,22 @@ export function responderAsesor(
     const ahorro = ingresos - gastos;
     const tasaAhorro = ingresos > 0 ? ((ahorro / ingresos) * 100).toFixed(1) : 0;
 
-    let text = `Aquí tienes tu radiografía de este mes:\n\n`;
+    let text = `Aquí tienes tu radiografía financiera de este mes:\n\n`;
     text += `💰 **Ingresos:** $${ingresos.toLocaleString('es-CO')}\n`;
     text += `💸 **Gastos:** $${gastos.toLocaleString('es-CO')}\n`;
     
     if (ahorro > 0) {
-      text += `📈 **Balance:** +$${ahorro.toLocaleString('es-CO')} (¡Estás ahorrando el ${tasaAhorro}% de lo que entra!)`;
+      text += `📈 **Balance:** +$${ahorro.toLocaleString('es-CO')} (¡Ahorrando el ${tasaAhorro}%!)\n\n`;
+      if (Number(tasaAhorro) > 20) {
+        text += '🤖 **Mi Análisis:** ¡Estás volando! Ahorrar más del 20% es el sueño de cualquier financiero. Sigue así y vas a construir un colchón muy sólido.';
+      } else {
+        text += '🤖 **Mi Análisis:** Vas por buen camino, estás en verde. Intenta no subir los gastos de aquí a fin de mes para mantener ese ahorro.';
+      }
+    } else if (ahorro === 0 && ingresos === 0) {
+      text += `\n🤖 **Mi Análisis:** Este mes no has registrado movimientos todavía. ¡Anímate a registrar tus primeros gastos o ingresos para darte un buen diagnóstico!`;
     } else {
-      text += `📉 **Balance:** -$${Math.abs(ahorro).toLocaleString('es-CO')} (Estás gastando más de lo que ingresa, ¡cuidado!).`;
+      text += `📉 **Balance:** -$${Math.abs(ahorro).toLocaleString('es-CO')}\n\n`;
+      text += '🤖 **Mi Análisis:** ¡Alerta roja! 🚨 Estás gastando más de lo que ha entrado este mes. Toca apretarse el cinturón o revisar si te faltó registrar algún ingreso.';
     }
 
     // Top Category
@@ -86,8 +111,8 @@ export function responderAsesor(
     });
     const topCat = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
     
-    if (topCat) {
-      text += `\n\nTu categoría de mayor gasto es **${topCat[0]}** con $${topCat[1].toLocaleString('es-CO')}.`;
+    if (topCat && topCat[1] > 0) {
+      text += `\n\nPor cierto, tu "agujero negro" de dinero este mes es **${topCat[0]}** con $${topCat[1].toLocaleString('es-CO')}... ten cuidado con eso.`;
     }
 
     return { text, newContext };
@@ -156,13 +181,14 @@ export function responderAsesor(
 
     // Use Context Category or Intent Category
     let asunto = 'total';
-    if (intent.signals.categorySource !== 'default' || norm.includes(intent.description.toLowerCase())) {
+    const isMeaningfulDescription = intent.description && intent.description.length > 2 && !['este', 'mes', 'dia', 'ayer', 'hoy', 'cuanto', 'gastado', 'gaste', 'total'].includes(normalizarNombre(intent.description));
+
+    if (intent.signals.categorySource !== 'default' || isMeaningfulDescription) {
       filtered = filtered.filter(t => 
         t.category === intent.category || 
-        normalizarNombre(t.description).includes(normalizarNombre(intent.description)) ||
-        normalizarNombre(t.description).includes(normalizarNombre(texto.replace('cuanto', '').replace('he', '').replace('gastado', '').replace('en', '')))
+        (isMeaningfulDescription && normalizarNombre(t.description).includes(normalizarNombre(intent.description)))
       );
-      asunto = intent.category;
+      asunto = intent.signals.categorySource !== 'default' ? intent.category : (intent.description || 'varios');
       newContext.ultimoAsunto = asunto;
     } else if (context.ultimoAsunto && norm.match(/^(y )?(el|este) (mes|año|dia)/)) {
       // Si dice "y este mes?" y veniamos hablando de comida, recordamos comida.
