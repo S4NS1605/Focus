@@ -257,7 +257,7 @@ export function responderAsesor(
   }
 
   // 3.7. Analítica Profunda / Anomaly Detection ("sorprendeme", "dato curioso", "algo raro")
-  if (norm.includes('sorprendeme') || norm.includes('dato curioso') || norm.includes('raro') || norm.includes('interesante')) {
+  if (norm.match(/sorpren.*deme|dato curioso|raro|interesante|sorprendeme/)) {
     if (transacciones.length < 10) {
       return { text: 'Aún no tienes suficientes transacciones para que mi motor analítico encuentre patrones interesantes. ¡Registra más gastos!', newContext };
     }
