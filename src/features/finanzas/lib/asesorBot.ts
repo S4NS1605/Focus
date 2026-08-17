@@ -282,23 +282,29 @@ export function responderAsesor(
     
     const opciones = [];
     
-    opciones.push(`**Tu Día Más Caro:** Históricamente, el día de la semana en el que más dinero gastas es el **${dayName}**. Intenta dejar la tarjeta en casa ese día la próxima semana.`);
+    opciones.push(`• **Tu Día Más Caro:** Históricamente, el día de la semana en el que más dinero gastas es el **${dayName}**. Intenta dejar la tarjeta en casa ese día la próxima semana.`);
     
     if (anomaly) {
-      opciones.push(`**Gasto Inusual:** Noté que el ${anomaly.occurredOn} gastaste **$${anomaly.amountCop.toLocaleString('es-CO')}** en "${anomaly.description}". Eso fue muchísimo más alto que tu promedio normal ($${Math.round(avg).toLocaleString('es-CO')}).`);
+      opciones.push(`• **Gasto Inusual:** Noté que el ${anomaly.occurredOn} gastaste **$${anomaly.amountCop.toLocaleString('es-CO')}** en "${anomaly.description}". Eso fue muchísimo más alto que tu promedio normal ($${Math.round(avg).toLocaleString('es-CO')}).`);
     }
 
     const descFreq: Record<string, number> = {};
     gastos.forEach(t => { descFreq[t.description] = (descFreq[t.description] || 0) + 1; });
-    const topFreq = Object.entries(descFreq).sort((a, b) => b[1] - a[1])[0];
+    const sortedFreq = Object.entries(descFreq).sort((a, b) => b[1] - a[1]);
+    const topFreq = sortedFreq[0];
     if (topFreq && topFreq[1] > 3) {
-      opciones.push(`**Frecuencia Adictiva:** Has pagado por "${topFreq[0]}" un total de **${topFreq[1]} veces**. ¡Eso sí que es un gasto hormiga constante!`);
+      opciones.push(`• **Frecuencia Adictiva:** Has pagado por "${topFreq[0]}" un total de **${topFreq[1]} veces**. ¡Ese es tu gasto hormiga más constante!`);
+    }
+    
+    const top2Freq = sortedFreq[1];
+    if (top2Freq && top2Freq[1] > 2) {
+      opciones.push(`• **Otro Gasto Frecuente:** "${top2Freq[0]}" también se repite mucho (lo has pagado ${top2Freq[1]} veces).`);
     }
 
     return { 
-      text: `Aquí tienes un análisis profundo de tu comportamiento:\n\n${getRandom(opciones)}`, 
+      text: `¡Claro! Me sumergí en tus datos y encontré varios patrones interesantes:\n\n${opciones.join('\n\n')}\n\n¿Quieres que revisemos cómo bajar esos gastos?`, 
       newContext,
-      suggestions: ['Otro dato curioso', 'Mis suscripciones']
+      suggestions: ['Dame un consejo', 'Mis suscripciones']
     };
   }
 
