@@ -2,23 +2,42 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, BrainCircuit } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
-import { responderAsesor } from '../lib/asesorBot';
+import { responderAsesor, type AsesorContext } from '../lib/asesorBot';
+import type { ParsedTransaction } from '../lib/parseTransaction';
+
+import type { LexicoAprendido } from '../lib/aprendizaje';
+import type { CategoriaPersonal } from '../categorias';
 
 interface Message {
   id: string;
   role: 'user' | 'bot';
   text: string;
+  action?: ParsedTransaction;
 }
 
 interface AsesorViewProps {
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
   cajitasBalances: Record<string, number>;
+  categorias: readonly CategoriaPersonal[];
+  lexico: LexicoAprendido;
+  onCrearTransaccion?: (tx: ParsedTransaction) => void;
 }
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, cajitasBalances }) => {
+const renderMarkdownLine = (line: string) => {
+  const parts = line.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
+
+export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, cajitasBalances, categorias, lexico, onCrearTransaccion }) => {
+  const [context, setContext] = useState<AsesorContext>({ ultimoAsunto: null, ultimaFecha: null });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'init',
@@ -42,8 +61,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
 
     // Simulate thinking delay for better UX
     setTimeout(() => {
-      const respuesta = responderAsesor(userMsg.text, transacciones, cajitas, cajitasBalances);
-      const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta };
+      const { text: respuesta, newContext, action } = responderAsesor(userMsg.text, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
+      setContext(newContext);
+      const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action };
       setMessages((prev) => [...prev, botMsg]);
     }, 400);
   };
@@ -98,10 +118,20 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
               >
                 {msg.text.split('\\n').map((line, i) => (
                   <React.Fragment key={i}>
-                    {line}
+                    {renderMarkdownLine(line)}
                     {i !== msg.text.split('\\n').length - 1 && <br />}
                   </React.Fragment>
                 ))}
+                {msg.action && onCrearTransaccion && (
+                  <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
+                    <button
+                      onClick={() => onCrearTransaccion(msg.action!)}
+                      className="w-full rounded-xl bg-fuchsia-600 px-3 py-2 text-[13px] font-bold text-white transition-colors hover:bg-fuchsia-500"
+                    >
+                      Sí, registrar gasto
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

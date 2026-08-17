@@ -637,6 +637,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           transacciones={transacciones}
           cajitas={cajitas}
           cajitasBalances={cajitasBalances}
+          categorias={categorias}
+          lexico={lexico}
+          onCrearTransaccion={(tx) => setPending(tx)}
         />
       ) : null}
 
