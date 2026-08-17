@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSesion } from '../features/finanzas/data/useSesion';
 import { useTema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
@@ -7,7 +7,16 @@ import { FinanzasApp } from '../features/finanzas/FinanzasApp';
 import { AppLauncher } from './AppLauncher';
 import { SuperadminPanel } from './SuperadminPanel';
 import { EstadisticasPanel } from './EstadisticasPanel';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
+
+const ADMIN_BACKUP_KEY = '__admin_session_backup__';
+
+interface AdminBackup {
+  access_token: string;
+  refresh_token: string;
+  usuario?: string;
+  email?: string;
+}
 
 export type AppId = 'finanzas' | 'superadmin' | 'estadisticas' | null;
 
@@ -23,6 +32,29 @@ export const AppsRoot: React.FC = () => {
   });
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [loadingRol, setLoadingRol] = useState(true);
+
+  // Admin impersonation banner
+  const [adminBackup, setAdminBackup] = useState<AdminBackup | null>(() => {
+    try {
+      const raw = localStorage.getItem(ADMIN_BACKUP_KEY);
+      return raw ? (JSON.parse(raw) as AdminBackup) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const volverAlAdmin = useCallback(async () => {
+    if (!adminBackup) return;
+    const cliente = obtenerSupabase();
+    if (!cliente) return;
+    await cliente.auth.setSession({
+      access_token: adminBackup.access_token,
+      refresh_token: adminBackup.refresh_token,
+    });
+    localStorage.removeItem(ADMIN_BACKUP_KEY);
+    setAdminBackup(null);
+    window.location.href = '/superadmin';
+  }, [adminBackup]);
 
   // Sync URL and Title with state changes
   useEffect(() => {
@@ -91,6 +123,25 @@ export const AppsRoot: React.FC = () => {
     }
   }, [sesion.estado]);
 
+  // Banner de impersonación — se muestra encima de cualquier vista
+  const bannerAdmin = adminBackup ? (
+    <div className="fixed bottom-0 left-0 right-0 z-[200] flex items-center justify-between gap-3 border-t border-amber-400/30 bg-amber-500 px-4 py-2.5 shadow-lg shadow-amber-900/20">
+      <div className="flex items-center gap-2 text-white">
+        <ShieldAlert className="h-4 w-4 shrink-0" />
+        <p className="text-xs font-semibold">
+          Modo asesoría — viendo como <span className="font-bold">{adminBackup.usuario || adminBackup.email}</span>
+        </p>
+      </div>
+      <button
+        onClick={volverAlAdmin}
+        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-white/20 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/30"
+      >
+        <LogOut className="h-3.5 w-3.5" />
+        Volver a mi cuenta
+      </button>
+    </div>
+  ) : null;
+
   if (sesion.estado.modo === 'cargando' || (sesion.estado.modo === 'autenticado' && loadingRol)) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
@@ -104,32 +155,32 @@ export const AppsRoot: React.FC = () => {
   }
 
   if (activeApp === 'finanzas') {
-    // Everyone gets the way back now that the launcher is the landing screen —
-    // without it a non-admin who opens Finanzas is stuck there.
-    return <FinanzasApp onBack={() => setActiveApp(null)} />;
+    return (
+      <>
+        <FinanzasApp onBack={() => setActiveApp(null)} />
+        {bannerAdmin}
+      </>
+    );
   }
 
   if (activeApp === 'superadmin' && rol === 'admin') {
     return <SuperadminPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
   }
 
-  // Las visitas del portafolio son del dueño, no del ecosistema: un usuario
-  // normal no tiene por qué ver por dónde entra la gente. La política de RLS ya
-  // lo impide del lado de la base; esto solo evita mostrar una pantalla vacía.
   if (activeApp === 'estadisticas' && rol === 'admin') {
     return <EstadisticasPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
   }
 
-  // The launcher is the landing screen for every signed-in user, admin or not.
-  // Redirecting a regular user straight into Finanzas hid the fact that this is
-  // an ecosystem, and left them with nowhere to go when a second app appears.
   return (
-    <AppLauncher
-      rol={rol}
-      onSelectApp={setActiveApp}
-      tema={tema}
-      onCambiarTema={setTema}
-      onSalir={() => sesion.salir()}
-    />
+    <>
+      <AppLauncher
+        rol={rol}
+        onSelectApp={setActiveApp}
+        tema={tema}
+        onCambiarTema={setTema}
+        onSalir={() => sesion.salir()}
+      />
+      {bannerAdmin}
+    </>
   );
 };

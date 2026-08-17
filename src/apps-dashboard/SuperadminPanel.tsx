@@ -98,22 +98,53 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     setImpersonacionCargando(true);
     setFormError(null);
     try {
-      const token = await tokenSesion();
+      const cliente = obtenerSupabase();
+      if (!cliente) throw new Error('No hay cliente Supabase');
+
+      // 1. Guardar sesión actual del admin para poder volver
+      const { data: { session: adminSession } } = await cliente.auth.getSession();
+      if (!adminSession) throw new Error('No hay sesión activa');
+
+      localStorage.setItem('__admin_session_backup__', JSON.stringify({
+        access_token: adminSession.access_token,
+        refresh_token: adminSession.refresh_token,
+        usuario: adminSession.user.user_metadata?.usuario || adminSession.user.email,
+        email: adminSession.user.email,
+      }));
+
+      // 2. Pedir al backend el token_hash para hacer verifyOtp
       const res = await fetch(apiUrl('/api/impersonar-usuario'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminSession.access_token}`,
+        },
         body: JSON.stringify({ userId: impersonando.id }),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Error al generar link de impersonación');
-      setImpersonacionLink(result.actionLink);
+      if (!res.ok) throw new Error(result.error || 'Error al generar token de impersonación');
+
+      // 3. Intercambiar el token por una sesión real del usuario objetivo
+      const { error: otpError } = await cliente.auth.verifyOtp({
+        token_hash: result.tokenHash,
+        type: 'magiclink',
+      });
+
+      if (otpError) throw new Error(otpError.message);
+
+      // 4. Sesión cambiada exitosamente → navegar a Finanzas
+      setImpersonando(null);
+      window.location.href = '/finanzas';
     } catch (err: any) {
       setFormError(err.message);
+      // Si algo falló, limpiar el backup para no dejar estado inválido
+      localStorage.removeItem('__admin_session_backup__');
     } finally {
       setImpersonacionCargando(false);
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const copiarLink = async () => {
     if (!impersonacionLink) return;
     await navigator.clipboard.writeText(impersonacionLink);
@@ -121,6 +152,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     setTimeout(() => setLinkCopiado(false), 2500);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const abrirLinkEnNuevaPestana = () => {
     if (!impersonacionLink) return;
     window.open(impersonacionLink, '_blank', 'noopener,noreferrer');
@@ -582,11 +614,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                 </div>
               </div>
 
-              {/* Warning */}
+              {/* Info */}
               <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-amber-200/50 bg-amber-50/80 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-900/10">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                 <p className="text-xs text-amber-800 dark:text-amber-300">
-                  Se generará un <strong>enlace mágico de un solo uso</strong> que inicia sesión como este usuario. Úsalo con cuidado — el link expira en 24 horas y solo puede abrirse <strong>una vez</strong>.
+                  Tu sesión de admin quedará guardada. Entrarás directamente como este usuario y podrás volver a tu cuenta con el banner que aparecerá en la app.
                 </p>
               </div>
 
@@ -597,55 +629,27 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                 </div>
               )}
 
-              {/* Link generado */}
-              {impersonacionLink ? (
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold text-[var(--fin-ink-soft)]">Link de acceso generado:</p>
-                  <div className="flex items-center gap-2 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5">
-                    <p className="flex-1 truncate text-xs font-mono text-[var(--fin-ink-soft)]">
-                      {impersonacionLink.slice(0, 60)}...
-                    </p>
-                    <button
-                      onClick={copiarLink}
-                      className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-[var(--fin-card)]"
-                      title="Copiar link"
-                    >
-                      {linkCopiado
-                        ? <Check className="h-4 w-4 text-green-500" />
-                        : <Copy className="h-4 w-4 text-[var(--fin-ink-soft)]" />
-                      }
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={copiarLink}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-2.5 text-sm font-bold text-[var(--fin-ink)] transition-all hover:bg-[var(--fin-card)]"
-                    >
-                      {linkCopiado ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                      {linkCopiado ? 'Copiado' : 'Copiar link'}
-                    </button>
-                    <button
-                      onClick={abrirLinkEnNuevaPestana}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-600 hover:-translate-y-0.5"
-                    >
-                      <LogIn className="h-4 w-4" />
-                      Abrir sesión
-                    </button>
-                  </div>
-                </div>
-              ) : (
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setImpersonando(null)}
+                  disabled={impersonacionCargando}
+                  className="flex-1 rounded-xl border border-[var(--fin-line)] px-4 py-3 text-sm font-bold text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
                 <button
                   onClick={handleImpersonar}
                   disabled={impersonacionCargando}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-600 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+                  className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-600 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
                 >
                   {impersonacionCargando ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Generando link...</>
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Entrando...</>
                   ) : (
-                    <><Eye className="h-4 w-4" /> Generar link de acceso</>
+                    <><LogIn className="h-4 w-4" /> Entrar como {impersonando.usuario || impersonando.email}</>
                   )}
                 </button>
-              )}
+              </div>
             </div>
           </div>
         </div>

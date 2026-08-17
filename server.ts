@@ -273,8 +273,9 @@ app.post('/api/eliminar-usuario', async (req, res) => {
 
 // ----------------------------------------------------------------------
 // ENDPOINT: Impersonar Usuario (Superadmin)
-// Genera un token de sesión temporal con los permisos del usuario objetivo.
-// El admin puede así ver la app exactamente como la ve ese usuario.
+// Genera un token OTP de un solo uso para que el admin pueda iniciar sesión
+// directamente como ese usuario sin necesidad de su contraseña.
+// El frontend lo intercambia via supabase.auth.verifyOtp().
 // ----------------------------------------------------------------------
 app.post('/api/impersonar-usuario', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
@@ -286,7 +287,6 @@ app.post('/api/impersonar-usuario', async (req, res) => {
   }
 
   try {
-    // Verificar que el que llama es admin
     const acceso = await exigirAdmin(cliente, token);
     if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
 
@@ -295,36 +295,39 @@ app.post('/api/impersonar-usuario', async (req, res) => {
       return res.status(400).json({ error: 'Falta el userId del usuario a impersonar.' });
     }
 
-    // Un admin no puede impersonarse a sí mismo (innecesario)
     if (userId === acceso.userId) {
       return res.status(400).json({ error: 'No puedes impersonarte a ti mismo.' });
     }
 
-    // Verificar que el usuario objetivo existe
+    // Obtener datos del usuario objetivo
     const { data: userTarget, error: getUserError } = await cliente.auth.admin.getUserById(userId);
     if (getUserError || !userTarget.user) {
       return res.status(404).json({ error: 'El usuario objetivo no existe.' });
     }
 
-    // Generar un link de sesión temporal (magic link de admin) usando generateLink
-    // que crea un token de acceso válido sin requerir la contraseña del usuario.
+    // Generar magic link → extraer token_hash del action_link
     const { data: linkData, error: linkError } = await cliente.auth.admin.generateLink({
       type: 'magiclink',
       email: userTarget.user.email!,
     });
 
-    if (linkError || !linkData) {
-      return res.status(500).json({ error: linkError?.message || 'No se pudo generar el token de impersonación.' });
+    if (linkError || !linkData?.properties?.action_link) {
+      return res.status(500).json({ error: linkError?.message || 'No se pudo generar el token.' });
     }
 
-    // Extraer el token de sesión del link generado
-    // El link tiene format: ...#access_token=...&refresh_token=...
-    const url = new URL(linkData.properties.action_link);
-    const accessToken = url.searchParams.get('token') || linkData.properties.action_link;
+    // El action_link tiene la forma: https://xxx.supabase.co/auth/v1/verify?token=TOKEN&type=magiclink&...
+    const actionUrl = new URL(linkData.properties.action_link);
+    const tokenHash = actionUrl.searchParams.get('token');
+    const type = actionUrl.searchParams.get('type') || 'magiclink';
+
+    if (!tokenHash) {
+      return res.status(500).json({ error: 'No se pudo extraer el token del link generado.' });
+    }
 
     return res.status(200).json({
       success: true,
-      actionLink: linkData.properties.action_link,
+      tokenHash,
+      type,
       email: userTarget.user.email,
       usuario: userTarget.user.user_metadata?.usuario || userTarget.user.email,
     });
