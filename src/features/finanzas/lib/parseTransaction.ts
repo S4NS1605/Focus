@@ -718,6 +718,31 @@ export const parseTransaction = (
   if (categorySource === 'default' && kind === 'ingreso') {
     category = 'ingreso';
     addCategoryScore('ingreso', 'default', 10);
+  } else if (categorySource === 'default' && kind === 'gasto') {
+    // Zero-Shot Heuristic Fallback
+    const textNorm = raw.toLowerCase();
+    if (/(burger|pizza|sushi|taco|asadero|restaurante|empanada|panaderia|helado|almuerzo|comida|cena|desayuno|kfc|corrientazo)/.test(textNorm)) {
+      category = 'comida';
+      categorySource = 'keyword';
+    } else if (/(uber|taxi|didi|cabify|bus|transmilenio|metro|gasolina|peaje|parqueadero|pasaje)/.test(textNorm)) {
+      category = 'transporte';
+      categorySource = 'keyword';
+    } else if (/(teca|bar|pub|club|cine|pelicula|concierto|boleta|netflix|spotify|suscripcion)/.test(textNorm)) {
+      category = 'ocio';
+      categorySource = 'keyword';
+    } else if (/(medico|pastilla|farmacia|drogueria|hospital|clinica|eps|cita|salud)/.test(textNorm)) {
+      category = 'salud';
+      categorySource = 'keyword';
+    } else if (/(ropa|zapato|camisa|pantalon|chaqueta|zapatilla|falda|vestido|outfit)/.test(textNorm)) {
+      category = 'compras';
+      categorySource = 'keyword';
+    } else if (/(mercado|supermercado|exito|carulla|jumbo|tienda|fruver|carniceria|viveres)/.test(textNorm)) {
+      category = 'mercado';
+      categorySource = 'keyword';
+    } else if (/(luz|agua|gas|internet|celular|plan|factura|recibo|arriendo)/.test(textNorm)) {
+      category = 'hogar';
+      categorySource = 'keyword';
+    }
   }
   // 6 — Semantic Chunker for Destinatario, Ubicacion, and Motivo
   let destinatario: string | null = null;

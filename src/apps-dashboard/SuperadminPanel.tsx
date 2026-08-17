@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertTriangle, Eye, LogIn, Copy, Check } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
@@ -27,12 +27,16 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Cuando hay un perfil aquí, el mismo modal edita en vez de crear. Guardar el
-  // perfil entero (y no solo su id) deja comparar contra lo que ya tenía, para
-  // mandar únicamente lo que de verdad cambió.
   const [editando, setEditando] = useState<Perfil | null>(null);
   const [borrando, setBorrando] = useState<Perfil | null>(null);
-  useBloqueoScroll(isModalOpen || borrando !== null);
+
+  // Impersonation states
+  const [impersonando, setImpersonando] = useState<Perfil | null>(null);
+  const [impersonacionCargando, setImpersonacionCargando] = useState(false);
+  const [impersonacionLink, setImpersonacionLink] = useState<string | null>(null);
+  const [linkCopiado, setLinkCopiado] = useState(false);
+
+  useBloqueoScroll(isModalOpen || borrando !== null || impersonando !== null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -80,6 +84,46 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     setNuevoRol(perfil.rol);
     setFormError(null);
     setIsModalOpen(true);
+  };
+
+  const abrirImpersonar = (perfil: Perfil) => {
+    setImpersonando(perfil);
+    setImpersonacionLink(null);
+    setLinkCopiado(false);
+    setFormError(null);
+  };
+
+  const handleImpersonar = async () => {
+    if (!impersonando) return;
+    setImpersonacionCargando(true);
+    setFormError(null);
+    try {
+      const token = await tokenSesion();
+      const res = await fetch(apiUrl('/api/impersonar-usuario'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: impersonando.id }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Error al generar link de impersonación');
+      setImpersonacionLink(result.actionLink);
+    } catch (err: any) {
+      setFormError(err.message);
+    } finally {
+      setImpersonacionCargando(false);
+    }
+  };
+
+  const copiarLink = async () => {
+    if (!impersonacionLink) return;
+    await navigator.clipboard.writeText(impersonacionLink);
+    setLinkCopiado(true);
+    setTimeout(() => setLinkCopiado(false), 2500);
+  };
+
+  const abrirLinkEnNuevaPestana = () => {
+    if (!impersonacionLink) return;
+    window.open(impersonacionLink, '_blank', 'noopener,noreferrer');
   };
 
   /** El token de la sesión actual, o revienta si no hay sesión. */
@@ -273,7 +317,15 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                           {new Date(u.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => abrirImpersonar(u)}
+                              aria-label={`Ver sesión de ${u.usuario || u.email}`}
+                              className="rounded-lg p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-amber-500"
+                              title="Acceder como este usuario"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={() => abrirEditar(u)}
                               aria-label={`Editar a ${u.usuario || u.email}`}
@@ -481,6 +533,119 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                   Eliminar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Acceder como usuario (Impersonación) */}
+      {impersonando && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-[var(--fin-card)] shadow-2xl shadow-amber-500/10">
+            <div className="flex items-center justify-between border-b border-[var(--fin-line)] px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
+                  <Eye className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold tracking-tight">Acceder como usuario</h3>
+                  <p className="text-xs text-[var(--fin-ink-soft)]">{impersonando.usuario || impersonando.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setImpersonando(null)}
+                className="rounded-lg p-2 text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)]"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Info del usuario */}
+              <div className="mb-5 rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-soft)]/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-orange-300 dark:from-amber-800 dark:to-orange-900 text-amber-800 dark:text-amber-200 font-bold uppercase text-lg shadow-inner">
+                    {impersonando.email.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-bold text-base">{impersonando.usuario || 'Sin nombre'}</p>
+                    <p className="text-sm text-[var(--fin-ink-soft)]">{impersonando.email}</p>
+                    <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      impersonando.rol === 'admin'
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
+                    }`}>
+                      {impersonando.rol === 'admin' && <ShieldAlert className="h-3 w-3" />}
+                      {impersonando.rol}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warning */}
+              <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-amber-200/50 bg-amber-50/80 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-900/10">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  Se generará un <strong>enlace mágico de un solo uso</strong> que inicia sesión como este usuario. Úsalo con cuidado — el link expira en 24 horas y solo puede abrirse <strong>una vez</strong>.
+                </p>
+              </div>
+
+              {formError && (
+                <div className="mb-4 flex items-start gap-2.5 rounded-xl bg-[var(--fin-out-bg)] px-4 py-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" />
+                  <p className="text-sm font-medium text-[var(--fin-out-ink)]">{formError}</p>
+                </div>
+              )}
+
+              {/* Link generado */}
+              {impersonacionLink ? (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-[var(--fin-ink-soft)]">Link de acceso generado:</p>
+                  <div className="flex items-center gap-2 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5">
+                    <p className="flex-1 truncate text-xs font-mono text-[var(--fin-ink-soft)]">
+                      {impersonacionLink.slice(0, 60)}...
+                    </p>
+                    <button
+                      onClick={copiarLink}
+                      className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-[var(--fin-card)]"
+                      title="Copiar link"
+                    >
+                      {linkCopiado
+                        ? <Check className="h-4 w-4 text-green-500" />
+                        : <Copy className="h-4 w-4 text-[var(--fin-ink-soft)]" />
+                      }
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={copiarLink}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-2.5 text-sm font-bold text-[var(--fin-ink)] transition-all hover:bg-[var(--fin-card)]"
+                    >
+                      {linkCopiado ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      {linkCopiado ? 'Copiado' : 'Copiar link'}
+                    </button>
+                    <button
+                      onClick={abrirLinkEnNuevaPestana}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-600 hover:-translate-y-0.5"
+                    >
+                      <LogIn className="h-4 w-4" />
+                      Abrir sesión
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleImpersonar}
+                  disabled={impersonacionCargando}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-600 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+                >
+                  {impersonacionCargando ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Generando link...</>
+                  ) : (
+                    <><Eye className="h-4 w-4" /> Generar link de acceso</>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

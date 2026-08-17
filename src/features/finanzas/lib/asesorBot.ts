@@ -25,12 +25,25 @@ const VARIANCES = {
     "Mmm, revisando tus números, veo que en Y Z se te han ido **$X**.",
     "Haciendo cuentas, llevas **$X** gastados en Y Z. ¡Ojo ahí!",
     "Acabo de sumar todo y tienes **$X** en Y Z.",
-    "Pues mira, tienes registrados **$X** en Y Z. Nada mal, ¿no?"
+    "Pues mira, tienes registrados **$X** en Y Z.",
+    "Revisé la caja fuerte virtual y veo **$X** en Y Z.",
+    "Te confirmo que el total en Y Z suma **$X**."
   ],
-  cero: [
+  ingreso: [
+    "¡Buenas noticias! Revisando tus números, veo que te han entrado **$X** por Y Z.",
+    "Haciendo cuentas, has recibido **$X** en Y Z. ¡A seguir sumando!",
+    "Acabo de sumar todo y tienes **$X** de ingresos en Y Z.",
+    "Pues mira, lograste generar **$X** en Y Z. ¡Excelente trabajo!"
+  ],
+  cero_gasto: [
     "¡Qué bien! No veo ni un solo peso gastado en Y Z.",
     "Todo en cero. No hay transacciones de eso Z.",
     "Parece que te portaste bien: no has gastado nada en Y Z."
+  ],
+  cero_ingreso: [
+    "Aún no veo ingresos registrados en Y Z.",
+    "Por ahora, no hay plata entrando por Y Z.",
+    "Todo en cero en cuanto a ingresos Z. ¡A buscar nuevas oportunidades!"
   ]
 };
 
@@ -107,8 +120,22 @@ export function responderAsesor(
     };
   }
 
+  // 1.5 Memoria de Edición al Vuelo (Correcciones)
+  if (context.ultimoAsunto && (norm.startsWith('fueron ') || norm.startsWith('era ') || norm.startsWith('eran ') || norm.includes('corrijo') || norm.includes('ah no,'))) {
+    const intent = parseTransaction(texto, [], categorias, lexico, transacciones);
+    if (intent.amount && intent.amount > 0) {
+      intent.category = context.ultimoAsunto;
+      intent.description = `Corrección en ${context.ultimoAsunto}`;
+      return {
+        text: `¡Listo! Entendido, en realidad fueron **$${intent.amount.toLocaleString('es-CO')}** en **${context.ultimoAsunto}**. (Recuerda que para eliminar el registro erróneo anterior, debes deslizarlo en la pestaña Movimientos). ¿Registro este nuevo monto corregido?`,
+        newContext,
+        action: intent
+      };
+    }
+  }
+
   // 2. Resumen General / Analytics y "Opiniones" ("como voy", "resumen del mes", "estoy gastando mucho?")
-  if (norm.includes('resumen') || norm.includes('como voy') || norm.includes('como me ves') || norm.includes('gastando mucho') || norm.includes('analisis')) {
+  if (norm.includes('resumen') || norm.includes('como voy') || norm.includes('como me ves') || norm.includes('como ves') || norm.includes('finanzas') || norm.includes('gastando mucho') || norm.includes('analisis')) {
     const today = new Date();
     const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     const mesTxs = transacciones.filter(t => t.occurredOn.startsWith(currentMonth));
@@ -402,7 +429,9 @@ export function responderAsesor(
     intent.description = intent.description || `Adición a ${context.ultimoAsunto}`;
   }
   
-  if (!isQuestion && intent.amount && intent.amount > 0) {
+  const isWeakAmount = intent.amount !== null && intent.amount < 100 && intent.signals.amountSource === 'words' && !norm.includes('peso') && !norm.includes('dolar') && !norm.includes('euro');
+  
+  if (!isQuestion && intent.amount && intent.amount > 0 && !isWeakAmount) {
     newContext.ultimoAsunto = intent.category;
     
     // Proactive Budget Alert!
@@ -435,6 +464,14 @@ export function responderAsesor(
       text: `Veo que mencionas un ${intent.kind} de **$${intent.amount.toLocaleString('es-CO')}** en **${intent.category}**. ¿Quieres que lo registre de una vez en tus finanzas?${alertText}`,
       newContext,
       action: intent
+    };
+  }
+
+  // 4.3 Missing amount fallback
+  if (!isQuestion && !intent.amount && (norm.includes('gaste') || norm.includes('compre') || norm.includes('pague') || norm.includes('costo') || norm.includes('cobraron') || norm.includes('me pagaron') || norm.match(/fui a (comer|cenar|comprar|mercar)/))) {
+    return {
+      text: `¡Entiendo! Pero me faltó el dato más importante: ¿cuánto fue el monto exacto? Dímelo y lo registro de inmediato en ${intent.category !== 'otros' ? intent.category : 'tus cuentas'}.`,
+      newContext
     };
   }
 
@@ -529,7 +566,8 @@ export function responderAsesor(
     const concepto = asunto === 'total' ? 'general' : `**${asunto}**`;
 
     if (filtered.length === 0) {
-      return { text: getRandom(VARIANCES.cero).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr), newContext };
+      const varsCero = tipo === 'ingreso' ? VARIANCES.cero_ingreso : VARIANCES.cero_gasto;
+      return { text: getRandom(varsCero).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr), newContext };
     }
     
     // Top contact/comment within this specific search!
@@ -564,8 +602,9 @@ export function responderAsesor(
       }
     }
 
+    const varsFinal = tipo === 'ingreso' ? VARIANCES.ingreso : VARIANCES.gasto;
     return { 
-      text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (Eso fue en ${filtered.length} transacciones). ${tendencia}` + drilldown, 
+      text: getRandom(varsFinal).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (Eso fue en ${filtered.length} transacciones). ${tendencia}` + drilldown, 
       newContext,
       suggestions: topContacto && topContacto[0] !== 'Sin descripción' ? [`¿Y el mes pasado?`, `¿Cuánto puedo gastar?`] : ['Dime mi resumen', 'Dame un consejo']
     };
@@ -675,6 +714,55 @@ export function responderAsesor(
         '¡Claro! Mi mejor consejo es la regla del 50/30/20: destina 50% de tus ingresos a necesidades básicas, 30% a gustos y un 20% inténtalo ahorrar o invertir. Si quieres, pregúntame por tu resumen y miramos cómo vas.',
         'Te doy un tip: revisa siempre los "gastos hormiga" (esos cafés o snacks diarios que parecen poco pero suman mucho a fin de mes). Si me dices "¿cuánto gasté en café?", podemos investigarlo juntos.',
         'La mejor recomendación que te puedo dar es que mantengas tus ahorros separados de tu cuenta principal (por ejemplo, en una Cajita). Así tu cerebro cree que tienes menos dinero disponible y evitarás gastar por impulso.'
+      ]
+    },
+    {
+      regex: /robo|estafa|atraco|carisimo|muy caro/i,
+      responses: [
+        '¡Uy, qué dolor de bolsillo! A veces toca aprender a la mala. ¡Registremos esto y tratemos de recuperarnos ahorrando en otras cosas esta semana!',
+        'Eso suena terrible. 🤕 Cuando pagamos más de la cuenta da mucha rabia, pero míralo como una alerta para no volver a caer. ¿Lo anotamos de todas formas?'
+      ]
+    },
+    {
+      regex: /ganga|barato|promocion|descuento|ofertazo/i,
+      responses: [
+        '¡Excelente! Aprovechar buenas ofertas es la base del ahorro inteligente. Ojalá todas las compras fueran así. ¡Dime el monto y lo anoto con gusto!',
+        '¡Eso sí que es una victoria financiera! 🎉 Cada peso que te ahorras en una promoción es un peso que puedes mandar a tu Cajita de ahorros.'
+      ]
+    },
+    {
+      regex: /cdt|invertir|inversion|acciones|bitcoin|cripto|bolsa/i,
+      responses: [
+        '¡Me encanta que pienses en el futuro! Si vas a invertir en algo seguro, un CDT es ideal hoy en día porque las tasas suelen estar altas. Si buscas cripto o acciones, hazlo solo con dinero que "estés dispuesto a perder". Recuerda diversificar.',
+        'Regla de oro: nunca inviertas en negocios que no entiendes. Si quieres empezar suave, los depósitos a plazo fijo (CDT) de los bancos son buena opción. Si quieres más riesgo, busca ETFs en la bolsa. ¡Pero siempre con cabeza fría!'
+      ]
+    },
+    {
+      regex: /cuanto me falta para|meta de ahorro|como va mi meta/i,
+      responses: [
+        'Para revisar el progreso de tus metas, ve a la sección "Cuentas" y mira el progreso de tu "Cajita" asignada. Si le pones una meta clara y le asignas un monto total, la app te mostrará exactamente qué porcentaje llevas. ¡Sigue así!',
+        '¡Vas por buen camino! Cada vez que guardas dinero en una Cajita te acercas a esa meta. Intenta establecer transferencias automáticas para que el ahorro crezca sin que te des cuenta.'
+      ]
+    },
+    {
+      regex: /(como|puedo) (borrar|eliminar|editar|modificar|corregir|cancelar|deshacer)|me equivoque/i,
+      responses: [
+        '¡No te preocupes! Si te equivocaste con un gasto, simplemente ve a la pestaña "Movimientos" en la barra inferior. Ahí puedes tocar cualquier transacción para editarla o deslizarla hacia la izquierda para eliminarla.',
+        'Es muy fácil corregir errores: ve a "Movimientos", busca el registro y tócalo para cambiar el monto o la categoría. ¡O elimínalo si fue una prueba!'
+      ]
+    },
+    {
+      regex: /como (ahorrar|ahorro)|quiero ahorrar|empezar a ahorrar/i,
+      responses: [
+        '¡Esa es la actitud! La mejor forma de ahorrar aquí es crear una "Cajita". Ve a la pestaña "Cuentas", crea una Cajita y muévele dinero. Así separas tu ahorro de tu plata de uso diario y evitas gastarlo.',
+        'Te recomiendo la técnica de "pagarte a ti primero". Apenas recibas tu sueldo, manda el 10% a una Cajita de ahorro en la app. ¡Ojos que no ven, corazón que no gasta!'
+      ]
+    },
+    {
+      regex: /prestamo|deuda|me prestaron|le preste/i,
+      responses: [
+        'Las deudas pueden ser engañosas. Si prestaste plata, regístralo como un Gasto en la categoría "Préstamos". Cuando te paguen, lo registras como un Ingreso en esa misma categoría. Así tu balance se mantendrá exacto.',
+        'Para llevar el control de préstamos, te sugiero crear una categoría personalizada llamada "Deudas" o "Préstamos" y registrar ahí los movimientos. ¡Que no se te olvide cobrar!'
       ]
     }
   ];

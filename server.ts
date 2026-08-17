@@ -272,6 +272,69 @@ app.post('/api/eliminar-usuario', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
+// ENDPOINT: Impersonar Usuario (Superadmin)
+// Genera un token de sesión temporal con los permisos del usuario objetivo.
+// El admin puede así ver la app exactamente como la ve ese usuario.
+// ----------------------------------------------------------------------
+app.post('/api/impersonar-usuario', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) {
+    return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+  }
+
+  try {
+    // Verificar que el que llama es admin
+    const acceso = await exigirAdmin(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const { userId } = req.body ?? {};
+    if (typeof userId !== 'string' || userId === '') {
+      return res.status(400).json({ error: 'Falta el userId del usuario a impersonar.' });
+    }
+
+    // Un admin no puede impersonarse a sí mismo (innecesario)
+    if (userId === acceso.userId) {
+      return res.status(400).json({ error: 'No puedes impersonarte a ti mismo.' });
+    }
+
+    // Verificar que el usuario objetivo existe
+    const { data: userTarget, error: getUserError } = await cliente.auth.admin.getUserById(userId);
+    if (getUserError || !userTarget.user) {
+      return res.status(404).json({ error: 'El usuario objetivo no existe.' });
+    }
+
+    // Generar un link de sesión temporal (magic link de admin) usando generateLink
+    // que crea un token de acceso válido sin requerir la contraseña del usuario.
+    const { data: linkData, error: linkError } = await cliente.auth.admin.generateLink({
+      type: 'magiclink',
+      email: userTarget.user.email!,
+    });
+
+    if (linkError || !linkData) {
+      return res.status(500).json({ error: linkError?.message || 'No se pudo generar el token de impersonación.' });
+    }
+
+    // Extraer el token de sesión del link generado
+    // El link tiene format: ...#access_token=...&refresh_token=...
+    const url = new URL(linkData.properties.action_link);
+    const accessToken = url.searchParams.get('token') || linkData.properties.action_link;
+
+    return res.status(200).json({
+      success: true,
+      actionLink: linkData.properties.action_link,
+      email: userTarget.user.email,
+      usuario: userTarget.user.user_metadata?.usuario || userTarget.user.email,
+    });
+  } catch (error: any) {
+    console.error('Error impersonando usuario:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+// ----------------------------------------------------------------------
 // ENDPOINT: Analizar Extracto Bancario
 // ----------------------------------------------------------------------
 const MAX_BYTES_PDF = 4 * 1024 * 1024; // 4MB
