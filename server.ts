@@ -273,9 +273,9 @@ app.post('/api/eliminar-usuario', async (req, res) => {
 
 // ----------------------------------------------------------------------
 // ENDPOINT: Impersonar Usuario (Superadmin)
-// Genera un token OTP de un solo uso para que el admin pueda iniciar sesión
-// directamente como ese usuario sin necesidad de su contraseña.
-// El frontend lo intercambia via supabase.auth.verifyOtp().
+// Crea una sesión directa para el usuario objetivo usando la service role key.
+// No usa magic links ni redirects — devuelve access_token + refresh_token
+// directamente para que el frontend los inyecte con setSession().
 // ----------------------------------------------------------------------
 app.post('/api/impersonar-usuario', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
@@ -305,29 +305,45 @@ app.post('/api/impersonar-usuario', async (req, res) => {
       return res.status(404).json({ error: 'El usuario objetivo no existe.' });
     }
 
-    // Generar magic link → extraer token_hash del action_link
-    const { data: linkData, error: linkError } = await cliente.auth.admin.generateLink({
-      type: 'magiclink',
-      email: userTarget.user.email!,
-    });
+    // Crear sesión directa — sin magic links, sin redirects, sin localhost.
+    // auth.admin.createSession() devuelve tokens válidos inmediatamente.
+    const { data: sessionData, error: sessionError } = await (cliente.auth.admin as any).createSession(userId);
 
-    if (linkError || !linkData?.properties?.action_link) {
-      return res.status(500).json({ error: linkError?.message || 'No se pudo generar el token.' });
-    }
+    if (sessionError || !sessionData?.session) {
+      // Fallback: si la versión de la lib no tiene createSession, llamar al endpoint REST directamente
+      const supabaseUrl = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL)!;
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-    // El action_link tiene la forma: https://xxx.supabase.co/auth/v1/verify?token=TOKEN&type=magiclink&...
-    const actionUrl = new URL(linkData.properties.action_link);
-    const tokenHash = actionUrl.searchParams.get('token');
-    const type = actionUrl.searchParams.get('type') || 'magiclink';
+      const resp = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceKey}`,
+          'apikey': serviceKey,
+        },
+      });
 
-    if (!tokenHash) {
-      return res.status(500).json({ error: 'No se pudo extraer el token del link generado.' });
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        return res.status(500).json({
+          error: errBody.message || sessionError?.message || 'No se pudo crear la sesión para este usuario.',
+        });
+      }
+
+      const tokenData = await resp.json();
+      return res.status(200).json({
+        success: true,
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        email: userTarget.user.email,
+        usuario: userTarget.user.user_metadata?.usuario || userTarget.user.email,
+      });
     }
 
     return res.status(200).json({
       success: true,
-      tokenHash,
-      type,
+      access_token: sessionData.session.access_token,
+      refresh_token: sessionData.session.refresh_token,
       email: userTarget.user.email,
       usuario: userTarget.user.user_metadata?.usuario || userTarget.user.email,
     });

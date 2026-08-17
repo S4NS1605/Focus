@@ -112,7 +112,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
         email: adminSession.user.email,
       }));
 
-      // 2. Pedir al backend el token_hash para hacer verifyOtp
+      // 2. Pedir al backend los tokens directos (sin magic link, sin redirect)
       const res = await fetch(apiUrl('/api/impersonar-usuario'), {
         method: 'POST',
         headers: {
@@ -122,22 +122,21 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
         body: JSON.stringify({ userId: impersonando.id }),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Error al generar token de impersonación');
+      if (!res.ok) throw new Error(result.error || 'Error al crear sesión de impersonación');
 
-      // 3. Intercambiar el token por una sesión real del usuario objetivo
-      const { error: otpError } = await cliente.auth.verifyOtp({
-        token_hash: result.tokenHash,
-        type: 'magiclink',
+      // 3. Inyectar la sesión del usuario directamente — sin redirects, sin localhost
+      const { error: setError } = await cliente.auth.setSession({
+        access_token: result.access_token,
+        refresh_token: result.refresh_token,
       });
 
-      if (otpError) throw new Error(otpError.message);
+      if (setError) throw new Error(setError.message);
 
-      // 4. Sesión cambiada exitosamente → navegar a Finanzas
+      // 4. Sesión lista → navegar a Finanzas
       setImpersonando(null);
       window.location.href = '/finanzas';
     } catch (err: any) {
       setFormError(err.message);
-      // Si algo falló, limpiar el backup para no dejar estado inválido
       localStorage.removeItem('__admin_session_backup__');
     } finally {
       setImpersonacionCargando(false);
