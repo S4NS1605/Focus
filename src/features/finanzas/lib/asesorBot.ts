@@ -121,6 +121,12 @@ export function responderAsesor(
       text += `\n\nPor cierto, tu "agujero negro" de dinero este mes es **${topCat[0]}** con $${topCat[1].toLocaleString('es-CO')}... ten cuidado con eso.`;
     }
 
+    // Biggest Transaction
+    const biggestTx = mesTxs.filter(t => t.kind === 'gasto').sort((a, b) => b.amountCop - a.amountCop)[0];
+    if (biggestTx && biggestTx.amountCop > 0) {
+      text += `\nTu compra más grande fue de **$${biggestTx.amountCop.toLocaleString('es-CO')}** en ${biggestTx.category} el ${biggestTx.occurredOn}.`;
+    }
+
     return { text, newContext };
   }
 
@@ -139,7 +145,13 @@ export function responderAsesor(
       return { text: `En tu cuenta **${cuentaEspecifica.nombre}** tienes un saldo de $${bal.toLocaleString('es-CO')}.`, newContext };
     }
 
-    return { text: `Actualmente tienes **$${totalCuentas.toLocaleString('es-CO')}** disponibles en tus cuentas, y **$${totalAhorro.toLocaleString('es-CO')}** en tus ahorros/bolsillos.`, newContext };
+    let resp = `Actualmente tienes **$${totalCuentas.toLocaleString('es-CO')}** disponibles en tus cuentas principales, y **$${totalAhorro.toLocaleString('es-CO')}** en tus ahorros o bolsillos.`;
+    
+    if (totalCuentas > 1000000 && totalAhorro < 100000) {
+      resp += `\n\n🤖 **Mi Consejo:** Veo que tienes bastante dinero líquido en tus cuentas y poco en tus cajitas de ahorro. Te sugiero mover un porcentaje a una "Cajita" para separarlo de tu plata de uso diario. ¡Te ayudará a no gastártelo sin querer!`;
+    }
+
+    return { text: resp, newContext };
   }
   
   // 3.5. Presupuesto Diario Sugerido ("cuanto puedo gastar", "cuanto me queda")
@@ -324,7 +336,7 @@ export function responderAsesor(
     {
       regex: /que (puedes|sabes) hacer/i,
       responses: [
-        'Puedo hacer muchas cosas: preguntarme cuánto gastaste en algo, pedirme un resumen del mes, comparar tus gastos con el mes pasado, o incluso decirme directamente "ayer gasté 20 lucas en cine" para que lo anote por ti.',
+        'Puedo hacer muchas cosas: preguntarme cuánto gastaste en algo, pedirme un resumen del mes, comparar tus gastos con el mes pasado, pedirme tu saldo o incluso decirme directamente "ayer gasté 20 lucas en cine" para que lo anote por ti.',
         'Mi especialidad es tu bolsillo. Pregúntame sobre tus gastos en fechas específicas, pídeme un resumen financiero, o dime cuánto gastaste en algo para que lo sume a tus cuentas.'
       ]
     },
@@ -361,6 +373,13 @@ export function responderAsesor(
       responses: [
         '¡Tranquilo! Las malas rachas pasan. Lo importante es empezar a registrar cada peso para saber por dónde se está fugando el dinero. Si quieres, dime un resumen de lo que tienes ahora mismo en el bolsillo y empezamos desde ahí.',
         'A todos nos pasa. El primer paso para mejorar es medir. Intenta no gastar más de lo necesario esta semana y revisemos tu resumen en unos días.'
+      ]
+    },
+    {
+      regex: /(mierda|puta|joder|carajo|maldita sea|puto|hijueputa)/i,
+      responses: [
+        '¡Uy, respira profundo! Sé que los números a veces estresan y dan ganas de tirar todo por la ventana, pero todo tiene arreglo si nos organizamos. ¿Qué pasó? ¿Hiciste un gasto que no debías?',
+        '¡Calma, calma! Las finanzas pueden ser un dolor de cabeza. Tomemos un vaso de agua y revisemos los números con cabeza fría.'
       ]
     }
   ];
