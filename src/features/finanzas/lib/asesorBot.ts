@@ -172,6 +172,23 @@ export function responderAsesor(
     if (filterDate) {
       filtered = filtered.filter(t => t.occurredOn === filterDate);
       newContext.ultimaFecha = filterDate;
+    } else if (norm.includes('mes pasado') || norm.includes('mes anterior')) {
+      const lm = new Date();
+      lm.setMonth(lm.getMonth() - 1);
+      const lmKey = `${lm.getFullYear()}-${String(lm.getMonth() + 1).padStart(2, '0')}`;
+      filtered = filtered.filter(t => t.occurredOn.startsWith(lmKey));
+      newContext.ultimaFecha = lmKey;
+      filterDate = lmKey;
+    } else if (norm.includes('año pasado')) {
+      const ly = new Date().getFullYear() - 1;
+      filtered = filtered.filter(t => t.occurredOn.startsWith(String(ly)));
+      newContext.ultimaFecha = String(ly);
+      filterDate = String(ly);
+    } else if (norm.includes('este año') || norm.includes('el año')) {
+      const cy = new Date().getFullYear();
+      filtered = filtered.filter(t => t.occurredOn.startsWith(String(cy)));
+      newContext.ultimaFecha = String(cy);
+      filterDate = String(cy);
     } else {
       const today = new Date();
       const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -181,16 +198,33 @@ export function responderAsesor(
 
     // Use Context Category or Intent Category
     let asunto = 'total';
-    const isMeaningfulDescription = intent.description && intent.description.length > 2 && !['este', 'mes', 'dia', 'ayer', 'hoy', 'cuanto', 'gastado', 'gaste', 'total'].includes(normalizarNombre(intent.description));
+    
+    // Fuzzy match manual si no hay signals directos del parser
+    const palabras = norm.split(' ');
+    let fuzzyCat: string | null = null;
+    const catNombres = categorias.map(c => normalizarNombre(c.nombre));
+    for (const p of palabras) {
+      if (p.length < 4) continue;
+      // Levenshtein simplificado o startsWith/endsWith
+      const match = catNombres.find(c => c.includes(p) || p.includes(c) || c === p);
+      if (match) {
+        fuzzyCat = categorias.find(c => normalizarNombre(c.nombre) === match)?.id || match;
+        break;
+      }
+    }
 
-    if (intent.signals.categorySource !== 'default' || isMeaningfulDescription) {
+    const isMeaningfulDescription = intent.description && intent.description.length > 2 && !['este', 'mes', 'dia', 'ayer', 'hoy', 'cuanto', 'gastado', 'gaste', 'total', 'año', 'pasado', 'semana'].includes(normalizarNombre(intent.description));
+
+    if (intent.signals.categorySource !== 'default' || isMeaningfulDescription || fuzzyCat) {
+      const catFinal = intent.signals.categorySource !== 'default' ? intent.category : (fuzzyCat || intent.category);
       filtered = filtered.filter(t => 
-        t.category === intent.category || 
-        (isMeaningfulDescription && normalizarNombre(t.description).includes(normalizarNombre(intent.description)))
+        t.category === catFinal || 
+        (isMeaningfulDescription && normalizarNombre(t.description).includes(normalizarNombre(intent.description))) ||
+        (fuzzyCat && t.category === fuzzyCat)
       );
-      asunto = intent.signals.categorySource !== 'default' ? intent.category : (intent.description || 'varios');
+      asunto = intent.signals.categorySource !== 'default' ? intent.category : (fuzzyCat || intent.description || 'varios');
       newContext.ultimoAsunto = asunto;
-    } else if (context.ultimoAsunto && norm.match(/^(y )?(el|este) (mes|año|dia)/)) {
+    } else if (context.ultimoAsunto && norm.match(/^(y )?(el|este) (mes|año|dia|semana)/)) {
       // Si dice "y este mes?" y veniamos hablando de comida, recordamos comida.
       filtered = filtered.filter(t => t.category === context.ultimoAsunto);
       asunto = context.ultimoAsunto;
@@ -201,15 +235,43 @@ export function responderAsesor(
 
     const total = filtered.reduce((acc, t) => acc + t.amountCop, 0);
 
-    let fechaStr = filterDate ? `el ${filterDate}` : 'este mes';
+    let fechaStr = filterDate ? (filterDate.length === 7 ? `en el mes de ${filterDate}` : (filterDate.length === 4 ? `en el año ${filterDate}` : `el ${filterDate}`)) : 'este mes';
+    if (norm.includes('año pasado')) fechaStr = 'el año pasado';
+    else if (norm.includes('mes pasado') || norm.includes('mes anterior')) fechaStr = 'el mes pasado';
+    
     const concepto = asunto === 'total' ? 'en general' : `en **${asunto}**`;
 
     if (filtered.length === 0) {
       return { text: getRandom(VARIANCES.cero).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr), newContext };
     }
+    
+    // Comparativa mes pasado (Magic AI feel)
+    if (tipo === 'gasto' && filterDate === null && !norm.includes('año')) {
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      const lmKey = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+      
+      const lastMonthTotal = transacciones
+        .filter(t => t.occurredOn.startsWith(lmKey) && t.kind === 'gasto' && (asunto === 'total' || t.category === asunto || (isMeaningfulDescription && normalizarNombre(t.description).includes(normalizarNombre(intent.description)))))
+        .reduce((sum, t) => sum + t.amountCop, 0);
+        
+      if (lastMonthTotal > 0) {
+        const diff = total - lastMonthTotal;
+        const tendencia = diff > 0 
+          ? `(⚠️ **$${Math.abs(diff).toLocaleString('es-CO')} más** que el mes pasado a esta fecha)`
+          : `(✅ **$${Math.abs(diff).toLocaleString('es-CO')} menos** que el mes pasado, ¡bien!)`;
+        
+        return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` ${tendencia}`, newContext };
+      }
+    }
 
     return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (en ${filtered.length} transacciones).`, newContext };
   }
 
-  return { text: 'No estoy seguro de entender... Recuerda que puedes preguntarme cosas como: "¿Cuánto gasté en Rappi este mes?", "Hazme un resumen del mes" o simplemente escribirme un gasto: "Ayer me gasté 20 mil en pizza" para que lo anote.', newContext };
+  // Fallback a LLM-like
+  if (norm.length > 30) {
+    return { text: '¡Esa es una pregunta profunda! Como soy una IA local basada en reglas, soy experto en buscar sumas, fechas y gastos exactos, pero me cuesta leer párrafos muy largos. Prueba preguntándome montos o resúmenes directos.', newContext };
+  }
+
+  return { text: 'Mmm, no estoy seguro de entender... Recuerda que puedes preguntarme cosas como: "¿Cuánto gasté en Rappi este mes?", "Hazme un resumen" o simplemente escribirme un gasto: "Ayer me gasté 20 mil en pizza" para que lo anote.', newContext };
 }
