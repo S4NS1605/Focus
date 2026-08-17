@@ -269,9 +269,90 @@ export function responderAsesor(
   }
 
   // Fallback a LLM-like
-  if (norm.length > 30) {
+  if (norm.length > 30 && !norm.includes('gaste') && !norm.includes('gastado')) {
     return { text: '¡Esa es una pregunta profunda! Como soy una IA local basada en reglas, soy experto en buscar sumas, fechas y gastos exactos, pero me cuesta leer párrafos muy largos. Prueba preguntándome montos o resúmenes directos.', newContext };
   }
 
-  return { text: 'Mmm, no estoy seguro de entender... Recuerda que puedes preguntarme cosas como: "¿Cuánto gasté en Rappi este mes?", "Hazme un resumen" o simplemente escribirme un gasto: "Ayer me gasté 20 mil en pizza" para que lo anote.', newContext };
+  // ELIZA-like Chitchat Fallback
+  const chitchatRules: Array<{ regex: RegExp, responses: string[] }> = [
+    {
+      regex: /me (entiendes|comprendes|escuchas)/i,
+      responses: [
+        '¡Te entiendo perfectamente! Aunque mi lenguaje principal son los números y las finanzas, hago mi mejor esfuerzo por procesar todo lo que dices. ¿De qué te gustaría hablar?',
+        'Claro que sí. Leo tus mensajes en tiempo real. Soy mejor calculando gastos que filosofando, ¡pero aquí estoy para ti!'
+      ]
+    },
+    {
+      regex: /(eres|sos) (inteligente|bruto|tonto|ia|robot)/i,
+      responses: [
+        'Hago lo mejor que puedo con mis algoritmos. No soy tan grande como ChatGPT, pero tengo la ventaja de que vivo en tu dispositivo y protejo tu privacidad al 100%.',
+        'Soy una inteligencia especializada. Pregúntame sobre tus finanzas y verás cómo hago magia con tus números.'
+      ]
+    },
+    {
+      regex: /(jaja|jeje|jiji|lol|lmao|xdd)/i,
+      responses: [
+        '¡Jaja! 😄 Siempre es bueno mantener el humor, sobre todo cuando hablamos de plata.',
+        'Me alegra que te diviertas. ¡Las finanzas no tienen por qué ser aburridas!'
+      ]
+    },
+    {
+      regex: /que (puedes|sabes) hacer/i,
+      responses: [
+        'Puedo hacer muchas cosas: preguntarme cuánto gastaste en algo, pedirme un resumen del mes, comparar tus gastos con el mes pasado, o incluso decirme directamente "ayer gasté 20 lucas en cine" para que lo anote por ti.',
+        'Mi especialidad es tu bolsillo. Pregúntame sobre tus gastos en fechas específicas, pídeme un resumen financiero, o dime cuánto gastaste en algo para que lo sume a tus cuentas.'
+      ]
+    },
+    {
+      regex: /como (te sientes|estas)/i,
+      responses: [
+        '¡Funcionando al 100% de mi capacidad de procesamiento local! Listo para analizar tus transacciones.',
+        'Muy bien, con todos mis circuitos enfocados en cuidar tu presupuesto. ¿Cómo estás tú?'
+      ]
+    },
+    {
+      regex: /te (amo|quiero)/i,
+      responses: [
+        '¡Yo también aprecio que confíes en mí para cuidar tus finanzas! 💜',
+        '¡Aww! Yo solo quiero ver crecer tus ahorros. 💰'
+      ]
+    },
+    {
+      regex: /chao|adios|hasta luego|nos vemos/i,
+      responses: [
+        '¡Hasta pronto! Aquí estaré guardando tus finanzas bajo llave.',
+        '¡Nos vemos! Recuerda pensar dos veces antes de ese "gasto hormiga". 😉'
+      ]
+    },
+    {
+      regex: /estoy (triste|feliz|cansado|aburrido)/i,
+      responses: [
+        'Entiendo que te sientas así. A veces ordenar las finanzas ayuda a tener una mente más tranquila. ¿Quieres que miremos tus números para ver si hay buenas noticias?',
+        'Tomo nota de cómo te sientes. Si quieres distraerte un poco, podemos revisar tu balance o buscar oportunidades de ahorro.'
+      ]
+    },
+    {
+      regex: /estoy (quebrado|pobre|sin plata|arruinado)/i,
+      responses: [
+        '¡Tranquilo! Las malas rachas pasan. Lo importante es empezar a registrar cada peso para saber por dónde se está fugando el dinero. Si quieres, dime un resumen de lo que tienes ahora mismo en el bolsillo y empezamos desde ahí.',
+        'A todos nos pasa. El primer paso para mejorar es medir. Intenta no gastar más de lo necesario esta semana y revisemos tu resumen en unos días.'
+      ]
+    }
+  ];
+
+  for (const rule of chitchatRules) {
+    if (rule.regex.test(norm)) {
+      return { text: getRandom(rule.responses), newContext };
+    }
+  }
+
+  // Fallback final
+  return { 
+    text: getRandom([
+      'Mmm, creo que no te copié bien. Recuerda que puedes preguntarme cosas puntuales como: "¿Cuánto gasté en Rappi?", "Hazme un resumen" o directamente un gasto: "Gasté 20 mil en pizza".',
+      'No logré procesar eso con mis reglas financieras. Intenta preguntarme por categorías, fechas o saldos específicos.',
+      'Me quedé procesando... soy experto en gastos e ingresos, pero aún estoy aprendiendo a tener charlas libres. ¿Probamos preguntándome tu saldo o tus gastos del mes?'
+    ]), 
+    newContext 
+  };
 }
