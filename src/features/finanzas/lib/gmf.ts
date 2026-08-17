@@ -51,17 +51,19 @@ export const uvtDesactualizada = (uvt: ValorUvt, anioActual: number): boolean =>
 /** El tope exento del mes, en pesos. */
 export const topeExentoCop = (uvt: ValorUvt): number => TOPE_EXENTO_UVT * uvt.pesos;
 
+/** Los depósitos de bajo monto tienen una exención independiente de 65 UVT mensuales. */
+export const TOPE_BAJO_MONTO_UVT = 65;
+export const topeBajoMontoCop = (uvt: ValorUvt): number => TOPE_BAJO_MONTO_UVT * uvt.pesos;
+
 /** Lo que costaría de GMF un monto que NO esté cubierto por la exención. */
 export const gmfDe = (montoCop: number): number => Math.round(Math.abs(montoCop) * TARIFA_GMF);
 
 /**
- * Bajo qué esquema se está aplicando la exención.
+ * Los dos esquemas del 4x1000 en Colombia.
  *
- * Existen los dos porque en la práctica conviven: la norma dice `distribuido`
- * desde el 13 de diciembre de 2024, pero el reparto automático depende de que
- * cada entidad haya montado su sistema de información, y mientras alguna no lo
- * tenga sigue cobrando como antes. Obligar al usuario a ver el esquema nuevo
- * cuando su banco le aplica el viejo sería mostrarle un cupo que no tiene.
+ * El 13 de diciembre de 2024 entró en vigencia la norma que cambia el cupo a la
+ * persona y no a la cuenta. Sin embargo, en la práctica conviven mientras las
+ * entidades se conectan al sistema central.
  */
 export type RegimenGmf =
   /** El cupo es de la persona y se reparte entre sus cuentas. */
@@ -71,7 +73,7 @@ export type RegimenGmf =
 
 export interface ConsumoDelMes {
   mes: string;
-  /** Retiros del mes que cuentan contra el cupo exento. */
+  /** Retiros del mes que cuentan contra el cupo exento (350 UVT). */
   baseCop: number;
   topeCop: number;
   /** Cuánto del cupo queda. Nunca negativo. */
@@ -89,6 +91,10 @@ export interface ConsumoDelMes {
   gmfEstimadoCop: number;
   /** 0..100, para una barra. */
   pctUsado: number;
+  /** Detalle del consumo de las cuentas de bajo monto (65 UVT). */
+  bajoMonto: {
+    totalGravadoCop: number;
+  };
 }
 
 /**
@@ -109,18 +115,28 @@ export const consumoDelMes = (
     regimen?: RegimenGmf;
     /** Solo se usa bajo `marcada`. Sin ella, ninguna cuenta goza del cupo. */
     cuentaExentaId?: string | null;
+    /** Cuentas marcadas como Depósito de Bajo Monto (tienen exención propia de 65 UVT). */
+    bajoMontoIds?: ReadonlySet<string>;
   } = {},
 ): ConsumoDelMes => {
   const regimen = opciones.regimen ?? 'distribuido';
   const cuentaExentaId = opciones.cuentaExentaId ?? null;
+  const bajoMontoIds = opciones.bajoMontoIds ?? new Set<string>();
 
   let baseCop = 0;
   let sinCupoCop = 0;
+  const consumoBajoMonto = new Map<string, number>();
 
   for (const tx of transacciones) {
     if (tx.kind !== 'gasto') continue;
     if (tx.cuentaId === null || !cuentasCubiertas.has(tx.cuentaId)) continue;
     if (monthKey(tx.occurredOn) !== mes) continue;
+
+    // Si es una cuenta de bajo monto, consume su propio tope de 65 UVT, independiente del régimen
+    if (bajoMontoIds.has(tx.cuentaId)) {
+      consumoBajoMonto.set(tx.cuentaId, (consumoBajoMonto.get(tx.cuentaId) ?? 0) + tx.amountCop);
+      continue;
+    }
 
     // Bajo `marcada`, lo que sale de cualquier otra cuenta nunca tuvo cupo: no
     // consume nada, simplemente paga. Meterlo en `baseCop` haría creer que el
@@ -134,7 +150,16 @@ export const consumoDelMes = (
 
   const topeCop = topeExentoCop(uvt);
   const excedidoCop = Math.max(0, baseCop - topeCop);
-  const gravadoCop = excedidoCop + sinCupoCop;
+  
+  const topeBajoCop = topeBajoMontoCop(uvt);
+  let gravadoBajoMontoCop = 0;
+  for (const consumido of consumoBajoMonto.values()) {
+    if (consumido > topeBajoCop) {
+      gravadoBajoMontoCop += (consumido - topeBajoCop);
+    }
+  }
+
+  const gravadoCop = excedidoCop + sinCupoCop + gravadoBajoMontoCop;
 
   return {
     mes,
@@ -145,6 +170,9 @@ export const consumoDelMes = (
     gravadoCop,
     gmfEstimadoCop: gmfDe(gravadoCop),
     pctUsado: topeCop === 0 ? 0 : Math.min(100, Math.round((baseCop / topeCop) * 1000) / 10),
+    bajoMonto: {
+      totalGravadoCop: gravadoBajoMontoCop,
+    }
   };
 };
 

@@ -55,6 +55,8 @@ export interface Cajita {
   createdAt: string;
   /** Set when retired. Archived pockets keep their history but leave the totals. */
   archivedAt: string | null;
+  /** Indica si la cuenta es un depósito de bajo monto (tiene exención propia de 65 UVT para el GMF). */
+  esBajoMonto?: boolean;
 }
 
 /**

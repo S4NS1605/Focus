@@ -199,7 +199,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     () =>
       cajitas
         .filter((c) => c.archivedAt === null && c.tipo === 'cuenta')
-        .map((c) => ({ id: c.id, nombre: c.nombre })),
+        .map((c) => ({ id: c.id, nombre: c.nombre, esBajoMonto: c.esBajoMonto })),
     [cajitas],
   );
 

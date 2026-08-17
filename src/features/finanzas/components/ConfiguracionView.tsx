@@ -48,6 +48,7 @@ const FilaCajita: React.FC<{
   const [metaTexto, setMetaTexto] = useState(formatAmountInput(cajita.metaCop));
   const [tasaTexto, setTasaTexto] = useState(cajita.tasaEaPct === null ? '' : String(cajita.tasaEaPct));
   const [saldoTexto, setSaldoTexto] = useState(formatAmountInput(saldoCop));
+  const [bajoMonto, setBajoMonto] = useState(cajita.esBajoMonto ?? false);
 
   const Icono = iconoDeCajita(cajita.icon);
   const pasivo = ES_PASIVO[cajita.tipo];
@@ -66,6 +67,7 @@ const FilaCajita: React.FC<{
       icon,
       metaCop: parseAmountInput(metaTexto),
       tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
+      esBajoMonto: bajoMonto,
     });
     setEditando(false);
   };
@@ -187,6 +189,25 @@ const FilaCajita: React.FC<{
               })}
             </div>
           </fieldset>
+
+          {!pasivo ? (
+            <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={bajoMonto}
+                onChange={(e) => setBajoMonto(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
+              />
+              <span className="min-w-0">
+                <span className="block text-[11px] font-bold text-[var(--fin-ink)]">
+                  Es un depósito de bajo monto (ej. Nequi)
+                </span>
+                <span className="mt-0.5 block text-[10px] text-[var(--fin-ink-faint)]">
+                  Tiene una exención de 4x1000 de hasta 65 UVT mensuales.
+                </span>
+              </span>
+            </label>
+          ) : null}
 
           <button
             type="submit"

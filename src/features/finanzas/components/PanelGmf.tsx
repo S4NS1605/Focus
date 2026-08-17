@@ -15,7 +15,7 @@ interface PanelGmfProps {
   transacciones: readonly Transaction[];
   mes: string;
   anioActual: number;
-  cuentas: readonly { id: string; nombre: string }[];
+  cuentas: readonly { id: string; nombre: string; esBajoMonto?: boolean }[];
   uvt: ValorUvt;
   onCambiarUvt: (uvt: ValorUvt) => void;
   cuentasGmf: readonly string[];
@@ -56,7 +56,8 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
   const [borrador, setBorrador] = useState('');
 
   const cubiertas = new Set(cuentasGmf);
-  const consumo = consumoDelMes(transacciones, mes, uvt, cubiertas, { regimen, cuentaExentaId });
+  const bajoMontoIds = new Set(cuentas.filter((c) => c.esBajoMonto).map((c) => c.id));
+  const consumo = consumoDelMes(transacciones, mes, uvt, cubiertas, { regimen, cuentaExentaId, bajoMontoIds });
   const vieja = uvtDesactualizada(uvt, anioActual);
 
   const alternar = (id: string) =>
@@ -185,6 +186,12 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
               {' '}
               Otros <b className="text-[var(--fin-ink)]">{formatCop(consumo.sinCupoCop)}</b>{' '}
               salieron de cuentas sin cupo y pagan desde el primer peso.
+            </>
+          ) : null}
+          {consumo.bajoMonto.totalGravadoCop > 0 ? (
+            <>
+              {' '}
+              Se excedió el tope de depósitos de bajo monto por <b className="text-[var(--fin-out)]">{formatCop(consumo.bajoMonto.totalGravadoCop)}</b>, que también pagan.
             </>
           ) : null}
           {consumo.gravadoCop > 0 ? (
