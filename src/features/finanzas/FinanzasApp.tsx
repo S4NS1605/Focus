@@ -15,6 +15,7 @@ import { obtenerSupabase } from './data/supabase';
 import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
+import { AsesorView } from './components/AsesorView';
 import { CajitasView } from './components/CajitasView';
 import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
@@ -217,6 +218,21 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   // también enseña. Se recalcula solo cuando cambian los movimientos, no en cada
   // tecla — el parseo ocurre al enviar, no mientras se escribe.
   const lexico = useMemo(() => aprenderDe(transacciones), [transacciones]);
+
+  const cajitasBalances = useMemo(() => {
+    const balances: Record<string, number> = {};
+    for (const mov of cajitaMovimientos) {
+      balances[mov.cajitaId] = (balances[mov.cajitaId] || 0) + mov.deltaCop;
+    }
+    // Ingresos a cuenta suman, gastos de cuenta restan
+    for (const tx of transacciones) {
+      if (!tx.cuentaId) continue;
+      const haciaArriba = tx.kind === 'ingreso';
+      const sube = ES_PASIVO[cajitas.find(c => c.id === tx.cuentaId)?.tipo ?? 'cuenta'] ? !haciaArriba : haciaArriba;
+      balances[tx.cuentaId] = (balances[tx.cuentaId] || 0) + (sube ? tx.amountCop : -tx.amountCop);
+    }
+    return balances;
+  }, [cajitas, cajitaMovimientos, transacciones]);
 
   const handleSubmit = (text: string) => {
     const parseado = parseTransaction(text, cuentasParaElegir, categorias, lexico, transacciones);
@@ -613,6 +629,14 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         <AnalistaView
           existentes={transacciones}
           onImportar={(nuevos) => void almacen.importarTransacciones(nuevos)}
+        />
+      ) : null}
+
+      {section === 'asesor' ? (
+        <AsesorView 
+          transacciones={transacciones}
+          cajitas={cajitas}
+          cajitasBalances={cajitasBalances}
         />
       ) : null}
 

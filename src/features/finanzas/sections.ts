@@ -24,6 +24,7 @@ import {
 export const SECTIONS = [
   { id: 'resumen', icon: BarChart2, label: 'Resumen', color: 'text-sky-500 dark:text-sky-400' },
   { id: 'movimientos', icon: ReceiptText, label: 'Movimientos', color: 'text-amber-500 dark:text-amber-400' },
+  { id: 'asesor', icon: FileText, label: 'Asesor', color: 'text-fuchsia-500 dark:text-fuchsia-400' },
   { id: 'cuentas', icon: Landmark, label: 'Cuentas', color: 'text-sky-500 dark:text-sky-400' },
   { id: 'ahorro', icon: PiggyBank, label: 'Ahorro', color: 'text-emerald-500 dark:text-emerald-400' },
   { id: 'deudas', icon: CreditCard, label: 'Deudas', color: 'text-rose-500 dark:text-rose-400' },
@@ -42,6 +43,7 @@ export const SECTIONS = [
 export const SECCIONES_BARRA: readonly SectionId[] = [
   'resumen',
   'movimientos',
+  'asesor',
   'cuentas',
   'ahorro',
 ];
