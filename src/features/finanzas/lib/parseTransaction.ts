@@ -22,6 +22,10 @@ import {
 export type AmountSource = 'digits' | 'digits+scale' | 'words' | 'slang' | 'none';
 export type KindSource = 'keyword' | 'morphology' | 'category-implied' | 'default';
 
+const DIAS_SEMANA = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
+const MESES_ANO = { enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5, julio: 6, agosto: 7, septiembre: 8, octubre: 9, noviembre: 10, diciembre: 11 };
+
+
 /**
  * How the account was decided. `preposicion` is the strong case — "a
  * Bancolombia", "desde Nequi" — where the sentence says the word is a
@@ -172,13 +176,28 @@ export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
       }
     }
     
+    // MEGA UPGRADE: Multidivisa Automática
+    let finalValue = match.value;
+    let endToken = match.next;
+    const isUSD = after === 'usd' || after === 'dolares' || after === 'dolar';
+    const isEUR = after === 'eur' || after === 'euros' || after === 'euro' || tokens[match.next - 1]?.raw.includes('€');
+    if (isUSD) {
+      finalValue = match.value * 4000;
+      score += 15; // Mentioning "dolares" is a huge amount cue
+      endToken += 1; // Consume the currency word
+    } else if (isEUR) {
+      finalValue = match.value * 4400;
+      score += 15;
+      if (after === 'eur' || after === 'euros' || after === 'euro') endToken += 1;
+    }
+
     // "compré 2 pizzas por 30 mil" — the 2 is a quantity, not the amount.
     if (after && COUNT_NOUNS.has(after)) score -= 2;
 
     out.push({
-      value: match.value,
+      value: finalValue,
       start: i,
-      end: match.next,
+      end: endToken,
       score,
       hasScale: match.hasScale,
       usedDigits: match.usedDigits,
@@ -186,7 +205,7 @@ export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
       usedSlang: match.usedSlang,
     });
 
-    i = match.next;
+    i = endToken;
   }
 
   return out;
@@ -535,19 +554,62 @@ export const parseTransaction = (
   for (let i = 0; i < tokens.length; i++) {
     if (consumed[i]) continue;
     const norm = tokens[i].norm;
-    let offsetDays = null;
-    
-    if (norm === 'ayer' || norm === 'anoche') offsetDays = 1;
-    else if (norm === 'anteayer' || norm === 'antier') offsetDays = 2;
-    else if (norm === 'hoy') offsetDays = 0;
+    let d: Date | null = null;
+    let consumedIdx: number[] = [];
 
-    if (offsetDays !== null) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - offsetDays);
+    // 1. Días relativos simples
+    if (norm === 'ayer' || norm === 'anoche') { d = new Date(today); d.setDate(d.getDate() - 1); consumedIdx = [i]; }
+    else if (norm === 'anteayer' || norm === 'antier') { d = new Date(today); d.setDate(d.getDate() - 2); consumedIdx = [i]; }
+    else if (norm === 'hoy') { d = new Date(today); consumedIdx = [i]; }
+
+    // 2. "hace X dias"
+    if (!d && norm === 'hace' && i + 2 < tokens.length && (tokens[i + 2].norm === 'dias' || tokens[i + 2].norm === 'dia' || tokens[i + 2].norm === 'dí­as')) {
+      const match = readNumberAt(tokens.map(t => t.norm), i + 1);
+      if (match && match.value > 0) {
+        d = new Date(today);
+        d.setDate(d.getDate() - match.value);
+        consumedIdx = [i, i + 1, match.next]; // match.next is the index of "dias"
+      }
+    }
+
+    // 3. "el [lunes] pasado"
+    if (!d && norm === 'el' && i + 2 < tokens.length && tokens[i + 2].norm === 'pasado') {
+      const diaStr = tokens[i + 1].norm;
+      if (diaStr in DIAS_SEMANA) {
+        const targetDay = DIAS_SEMANA[diaStr as keyof typeof DIAS_SEMANA];
+        d = new Date(today);
+        d.setDate(d.getDate() - 1); // Empezamos a buscar desde ayer
+        while (d.getDay() !== targetDay) {
+          d.setDate(d.getDate() - 1);
+        }
+        consumedIdx = [i, i + 1, i + 2];
+      }
+    }
+
+    // 4. "el [numero] de [mes]"
+    if (!d && norm === 'el' && i + 3 < tokens.length && tokens[i + 2].norm === 'de') {
+      const match = readNumberAt(tokens.map(t => t.norm), i + 1);
+      if (match && match.value >= 1 && match.value <= 31) {
+        // match.next is the index of 'de', so month is match.next + 1
+        const mesIdx = match.next + 1;
+        if (mesIdx < tokens.length) {
+          const mesStr = tokens[mesIdx].norm;
+          if (mesStr in MESES_ANO) {
+            const mesNum = MESES_ANO[mesStr as keyof typeof MESES_ANO];
+            d = new Date(today.getFullYear(), mesNum, match.value);
+            // Si la fecha es en el futuro, probablemente fue del año pasado
+            if (d > today) d.setFullYear(d.getFullYear() - 1);
+            consumedIdx = [i, i + 1, match.next, mesIdx];
+          }
+        }
+      }
+    }
+
+    if (d !== null) {
       dateOverride = formatDate(d);
-      consumed[i] = true;
-      // Also consume preceding prepositions like "de" or "para" if any?
-      // Wait, "ayer" rarely has prepositions.
+      for (const idx of consumedIdx) {
+        consumed[idx] = true;
+      }
     }
   }
 
