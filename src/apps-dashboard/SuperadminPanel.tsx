@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertTriangle, Eye, LogIn, Copy, Check } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertTriangle, Eye, LogIn } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
@@ -33,8 +33,6 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   // Impersonation states
   const [impersonando, setImpersonando] = useState<Perfil | null>(null);
   const [impersonacionCargando, setImpersonacionCargando] = useState(false);
-  const [impersonacionLink, setImpersonacionLink] = useState<string | null>(null);
-  const [linkCopiado, setLinkCopiado] = useState(false);
 
   useBloqueoScroll(isModalOpen || borrando !== null || impersonando !== null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,8 +86,6 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
 
   const abrirImpersonar = (perfil: Perfil) => {
     setImpersonando(perfil);
-    setImpersonacionLink(null);
-    setLinkCopiado(false);
     setFormError(null);
   };
 
@@ -141,20 +137,6 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     } finally {
       setImpersonacionCargando(false);
     }
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const copiarLink = async () => {
-    if (!impersonacionLink) return;
-    await navigator.clipboard.writeText(impersonacionLink);
-    setLinkCopiado(true);
-    setTimeout(() => setLinkCopiado(false), 2500);
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const abrirLinkEnNuevaPestana = () => {
-    if (!impersonacionLink) return;
-    window.open(impersonacionLink, '_blank', 'noopener,noreferrer');
   };
 
   /** El token de la sesión actual, o revienta si no hay sesión. */
