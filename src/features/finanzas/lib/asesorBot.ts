@@ -8,6 +8,7 @@ import type { CategoriaPersonal } from '../categorias';
 export interface AsesorContext {
   ultimoAsunto: string | null;
   ultimaFecha: string | null;
+  _isRecursive?: boolean;
 }
 
 export interface AsesorResponse {
@@ -45,6 +46,28 @@ export function responderAsesor(
 ): AsesorResponse {
   const norm = normalizarNombre(texto);
   let newContext = { ...context };
+
+  // 0. Multi-Query NLP Router (ej. "cuanto tengo en cuentas y cuanto gaste en rappi")
+  if (!context._isRecursive && norm.includes(' y ') && !norm.startsWith('y ') && !norm.includes('ayer') && !norm.includes('hoy')) {
+    const parts = norm.split(' y ');
+    // Intentar partir la oración en dos preguntas completas si son suficientemente largas
+    if (parts.length === 2 && parts[0].length > 6 && parts[1].length > 6) {
+      const p1 = parts[0];
+      // Restauramos la intención natural a la segunda parte (ej. si la parte 1 es "dime mi saldo", la 2 es "cuanto gaste en comida")
+      const p2 = parts[1].includes('cuanto') ? parts[1] : (parts[0].includes('cuanto') ? 'cuanto ' + parts[1] : parts[1]);
+      
+      const r1 = responderAsesor(p1, transacciones, cajitas, cajitasBalances, categorias, lexico, { ...context, _isRecursive: true });
+      const r2 = responderAsesor(p2, transacciones, cajitas, cajitasBalances, categorias, lexico, { ...r1.newContext, _isRecursive: true });
+      
+      // Solo combinamos si ninguna de las dos falló al fallback de chitchat
+      if (!r1.text.includes('No logré procesar') && !r2.text.includes('No logré procesar') && !r1.text.includes('Mmm, creo que no te copié')) {
+        return {
+          text: `${r1.text}\n\n**Por otro lado...**\n${r2.text}`,
+          newContext: { ...r2.newContext, _isRecursive: false }
+        };
+      }
+    }
+  }
 
   // Saludos dinámicos por hora del día
   if (norm.match(/^(hola|buenas|buenos dias|buenas tardes|buenas noches|saludos|que tal|q tal)/)) {
@@ -392,6 +415,14 @@ export function responderAsesor(
       responses: [
         '¡Uy, respira profundo! Sé que los números a veces estresan y dan ganas de tirar todo por la ventana, pero todo tiene arreglo si nos organizamos. ¿Qué pasó? ¿Hiciste un gasto que no debías?',
         '¡Calma, calma! Las finanzas pueden ser un dolor de cabeza. Tomemos un vaso de agua y revisemos los números con cabeza fría.'
+      ]
+    },
+    {
+      regex: /(consejo|tip|recomendacion|recomiendas)/i,
+      responses: [
+        '¡Claro! Mi mejor consejo es la regla del 50/30/20: destina 50% de tus ingresos a necesidades básicas, 30% a gustos y un 20% inténtalo ahorrar o invertir. Si quieres, pregúntame por tu resumen y miramos cómo vas.',
+        'Te doy un tip: revisa siempre los "gastos hormiga" (esos cafés o snacks diarios que parecen poco pero suman mucho a fin de mes). Si me dices "¿cuánto gasté en café?", podemos investigarlo juntos.',
+        'La mejor recomendación que te puedo dar es que mantengas tus ahorros separados de tu cuenta principal (por ejemplo, en una Cajita). Así tu cerebro cree que tienes menos dinero disponible y evitarás gastar por impulso.'
       ]
     }
   ];
