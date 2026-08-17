@@ -18,15 +18,15 @@ export interface AsesorResponse {
 
 const VARIANCES = {
   gasto: [
-    "Revisando tus números, veo que has gastado **$X** Y Z.",
-    "Uff, tienes un total de **$X** registrados Y Z.",
-    "Llevas **$X** Y Z. ¡Ojo con ese presupuesto!",
-    "Acabo de sumar y tienes **$X** en gastos Y Z."
+    "Mmm, revisando tus números, veo que en Y Z se te han ido **$X**.",
+    "Haciendo cuentas, llevas **$X** gastados en Y Z. ¡Ojo ahí!",
+    "Acabo de sumar todo y tienes **$X** en Y Z.",
+    "Pues mira, tienes registrados **$X** en Y Z. Nada mal, ¿no?"
   ],
   cero: [
-    "¡Qué bien! No encontré ningún gasto registrado Y Z.",
-    "Todo en cero. No hay transacciones Y Z.",
-    "Parece que no has gastado nada Y Z."
+    "¡Qué bien! No veo ni un solo peso gastado en Y Z.",
+    "Todo en cero. No hay transacciones de eso Z.",
+    "Parece que te portaste bien: no has gastado nada en Y Z."
   ]
 };
 
@@ -46,13 +46,19 @@ export function responderAsesor(
   const norm = normalizarNombre(texto);
   let newContext = { ...context };
 
-  // 1. Chitchat y Personalidad
+  // Saludos dinámicos por hora del día
   if (norm.match(/^(hola|buenas|buenos dias|buenas tardes|buenas noches|saludos|que tal|q tal)/)) {
+    const hora = new Date().getHours();
+    let saludo = '¡Hola!';
+    if (hora < 12) saludo = '¡Buenos días!';
+    else if (hora < 19) saludo = '¡Buenas tardes!';
+    else saludo = '¡Buenas noches!';
+
     return {
       text: getRandom([
-        '¡Hola! Soy tu Asesor Financiero personal. Mi cerebro vive directo en tu dispositivo, así que tus datos están seguros conmigo. ¿En qué te puedo ayudar hoy?',
-        '¡Hola! Listo para revisar tus números. Puedes preguntarme sobre tus gastos, tus saldos o pedirme un resumen del mes. ¿Qué revisamos?',
-        '¡Qué tal! Siempre es buen momento para cuidar la plata. ¿Qué duda financiera tienes hoy?'
+        `${saludo} Por aquí estoy, revisando tus números. ¿En qué te ayudo hoy?`,
+        `${saludo} Listo para hacer cuentas. ¿Qué quieres que revisemos?`,
+        `${saludo} Siempre es buen momento para organizar la plata. ¡Dime qué necesitas!`
       ]),
       newContext
     };
@@ -134,6 +140,25 @@ export function responderAsesor(
     }
 
     return { text: `Actualmente tienes **$${totalCuentas.toLocaleString('es-CO')}** disponibles en tus cuentas, y **$${totalAhorro.toLocaleString('es-CO')}** en tus ahorros/bolsillos.`, newContext };
+  }
+  
+  // 3.5. Presupuesto Diario Sugerido ("cuanto puedo gastar", "cuanto me queda")
+  if (norm.includes('puedo gastar') || (norm.includes('cuanto') && norm.includes('me queda')) || norm.includes('presupuesto')) {
+    const totalCuentas = cajitas
+      .filter((c) => c.tipo === 'cuenta' && c.archivedAt === null)
+      .reduce((sum, c) => sum + (cajitasBalances[c.id] || 0), 0);
+      
+    if (totalCuentas === 0) {
+      return { text: "No tienes saldo en tus cuentas ahora mismo para calcular un presupuesto.", newContext };
+    }
+
+    const hoy = new Date();
+    const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
+    const diasRestantes = ultimoDia - hoy.getDate() + 1; // +1 to include today
+    
+    const diario = Math.floor(totalCuentas / diasRestantes);
+    
+    return { text: `Te quedan **${diasRestantes} días** para que acabe el mes y tienes **$${totalCuentas.toLocaleString('es-CO')}** en tus cuentas. \n\nSi quieres que esa plata te alcance hasta fin de mes, tu presupuesto sugerido es de **$${diario.toLocaleString('es-CO')} diarios**. ¡Intenta no pasarte de ahí!`, newContext };
   }
 
   // 4. Analizar intención usando ParseTransaction
@@ -239,7 +264,7 @@ export function responderAsesor(
     if (norm.includes('año pasado')) fechaStr = 'el año pasado';
     else if (norm.includes('mes pasado') || norm.includes('mes anterior')) fechaStr = 'el mes pasado';
     
-    const concepto = asunto === 'total' ? 'en general' : `en **${asunto}**`;
+    const concepto = asunto === 'total' ? 'general' : `**${asunto}**`;
 
     if (filtered.length === 0) {
       return { text: getRandom(VARIANCES.cero).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr), newContext };
@@ -258,14 +283,14 @@ export function responderAsesor(
       if (lastMonthTotal > 0) {
         const diff = total - lastMonthTotal;
         const tendencia = diff > 0 
-          ? `(⚠️ **$${Math.abs(diff).toLocaleString('es-CO')} más** que el mes pasado a esta fecha)`
-          : `(✅ **$${Math.abs(diff).toLocaleString('es-CO')} menos** que el mes pasado, ¡bien!)`;
+          ? `(Por cierto, van ⚠️ **$${Math.abs(diff).toLocaleString('es-CO')} más** que el mes pasado a esta misma fecha).`
+          : `(Lo bueno es que van ✅ **$${Math.abs(diff).toLocaleString('es-CO')} menos** que el mes pasado a esta fecha).`;
         
         return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` ${tendencia}`, newContext };
       }
     }
 
-    return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (en ${filtered.length} transacciones).`, newContext };
+    return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (Eso fue en ${filtered.length} transacciones).`, newContext };
   }
 
   // Fallback a LLM-like
