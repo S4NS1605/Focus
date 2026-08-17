@@ -48,7 +48,7 @@ describe('plantilla Bancolombia', () => {
       fecha: '2026-04-04',
       montoCop: 54000,
       tipo: 'gasto',
-      categoria: 'otros',
+      categoria: 'hogar',
     });
     // ".03" pesos of paid interest — no leading digit before the decimal point.
     expect(movimientos[2]).toMatchObject({ montoCop: 0, tipo: 'ingreso' });

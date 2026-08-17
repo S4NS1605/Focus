@@ -662,7 +662,21 @@ export const parseTransaction = (
     }
   }
 
-  for (const token of dispon) {
+  for (let i = 0; i < dispon.length; i++) {
+    const token = dispon[i];
+
+    // Check bigrams for merchants (e.g., "cruz verde" -> "cruzverde")
+    if (i < dispon.length - 1) {
+      const stopWords = new Set(['en', 'el', 'la', 'de', 'del', 'a', 'los', 'las', 'un', 'una']);
+      if (!stopWords.has(token.norm) && !stopWords.has(dispon[i + 1].norm)) {
+        const bigram = token.norm + dispon[i + 1].norm;
+        const bigramMerchant = MERCHANTS[bigram];
+        if (bigramMerchant) {
+          addCategoryScore(bigramMerchant, 'merchant', 85);
+        }
+      }
+    }
+
     const merchant = MERCHANTS[token.norm];
     if (merchant) {
       addCategoryScore(merchant, 'merchant', 80);

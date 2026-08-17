@@ -57,27 +57,62 @@ export const KIND_WORDS: ReadonlySet<string> = new Set(
 
 /** Known Colombian brands and services. Checked before generic keywords. */
 export const MERCHANTS: Record<string, Category> = {
+  // Mercado
   exito: 'mercado', d1: 'mercado', ara: 'mercado', jumbo: 'mercado',
   olimpica: 'mercado', carulla: 'mercado', makro: 'mercado', zapatoca: 'mercado',
+  colsubsidio: 'mercado', isimo: 'mercado', macro: 'mercado', alkosto: 'mercado',
+  surtimax: 'mercado', merqueo: 'mercado',
+  
+  // Comida
   rappi: 'comida', ifood: 'comida', mcdonalds: 'comida', frisby: 'comida',
   kokoriko: 'comida', juanvaldez: 'comida', starbucks: 'comida', subway: 'comida',
+  kfc: 'comida', burgerking: 'comida', elcorral: 'comida', crepes: 'comida',
+  waffles: 'comida', crepesywaffles: 'comida', tostao: 'comida', oma: 'comida',
+  pizzahut: 'comida', dominospizza: 'comida', dominos: 'comida', papajohns: 'comida',
+  
+  // Transporte
   transmilenio: 'transporte', sitp: 'transporte', metro: 'transporte',
   uber: 'transporte', didi: 'transporte', indriver: 'transporte',
   cabify: 'transporte', terpel: 'transporte', primax: 'transporte',
+  texaco: 'transporte', esso: 'transporte', biomax: 'transporte',
+  picap: 'transporte',
+  
+  // Transferencias / Finanzas
   nequi: 'transferencia', daviplata: 'transferencia', bancolombia: 'transferencia',
   davivienda: 'transferencia', bbva: 'transferencia', lulo: 'transferencia',
+  nubank: 'transferencia', dale: 'transferencia', uala: 'transferencia',
+  
+  // Servicios
   claro: 'servicios', movistar: 'servicios', tigo: 'servicios', etb: 'servicios',
-  ptm: 'servicios',
+  ptm: 'servicios', wom: 'servicios', directv: 'servicios',
   epm: 'servicios', codensa: 'servicios', vanti: 'servicios', enel: 'servicios',
-  farmatodo: 'salud', cruzverde: 'salud', locatel: 'salud', colsubsidio: 'salud',
+  emcali: 'servicios', triplea: 'servicios',
+  
+  // Salud
+  farmatodo: 'salud', cruzverde: 'salud', locatel: 'salud',
+  copidrogas: 'salud', larebaja: 'salud', pasteur: 'salud',
+  smartfit: 'salud', bodytech: 'salud', actionfitness: 'salud',
+  sanitas: 'salud', sura: 'salud', compensar: 'salud',
+  
+  // Entretenimiento
   netflix: 'entretenimiento', spotify: 'entretenimiento', hbo: 'entretenimiento',
   disney: 'entretenimiento', youtube: 'entretenimiento', steam: 'entretenimiento',
-  // App-store billing lines ("COMPRA EN APPLE COM BILL"), alongside the
-  // streaming services above rather than under servicios: on a personal
-  // statement these are overwhelmingly apps and media, not utilities.
-  apple: 'entretenimiento', playstore: 'entretenimiento',
+  apple: 'entretenimiento', playstore: 'entretenimiento', primevideo: 'entretenimiento',
+  cinecolombia: 'entretenimiento', cinemark: 'entretenimiento', procinal: 'entretenimiento',
+  royalfilms: 'entretenimiento', tuboleta: 'entretenimiento',
+  
+  // Educacion
   udemy: 'educacion', platzi: 'educacion', coursera: 'educacion',
+  duolingo: 'educacion',
+  
+  // Hogar / Ropa
   homecenter: 'hogar', falabella: 'ropa', zara: 'ropa', arturocalle: 'ropa',
+  koaj: 'ropa', bershka: 'ropa', stradivarius: 'ropa', hm: 'ropa',
+  pullandbear: 'ropa', gef: 'ropa', puntohblanco: 'ropa',
+  dollarcity: 'hogar', miniso: 'hogar', ikea: 'hogar',
+  
+  // Mascotas (si existiera categoría mascotas, pero cae en hogar por ahora)
+  laika: 'hogar', agrocampo: 'hogar',
 };
 
 /** Restores accents and casing that dictation flattens. */
@@ -93,42 +128,45 @@ export const MERCHANT_DISPLAY: Record<string, string> = {
   farmatodo: 'Farmatodo', cruzverde: 'Cruz Verde', locatel: 'Locatel',
   netflix: 'Netflix', spotify: 'Spotify', udemy: 'Udemy', platzi: 'Platzi',
   homecenter: 'Homecenter', falabella: 'Falabella', arturocalle: 'Arturo Calle',
+  elcorral: 'El Corral', smartfit: 'SmartFit', bodytech: 'Bodytech',
+  cinecolombia: 'Cine Colombia', dollarcity: 'Dollarcity', miniso: 'Miniso',
 };
 
 const KEYWORDS_BY_CATEGORY: Record<Category, readonly string[]> = {
   mercado: ['mercado', 'supermercado', 'plaza', 'verduras', 'frutas', 'carne',
-    'huevos', 'leche', 'arroz', 'granero', 'tienda', 'abarrotes'],
+    'huevos', 'leche', 'arroz', 'granero', 'tienda', 'abarrotes', 'despensa', 'viveres'],
   comida: ['almuerzo', 'desayuno', 'cena', 'comida', 'restaurante', 'domicilio',
     'domicilios', 'pizza', 'hamburguesa', 'empanada', 'empanadas', 'cafe',
     'tinto', 'helado', 'pan', 'panaderia', 'corrientazo', 'bandeja', 'asado',
     'sushi', 'onces', 'algo', 'asados', 'asadero', 'carnes', 'malteada',
-    'snack', 'snacks', 'postre', 'dulces', 'dulce'],
+    'snack', 'snacks', 'postre', 'dulces', 'dulce', 'pollo', 'arepa'],
   transporte: ['gasolina', 'transporte', 'taxi', 'bus', 'pasaje', 'pasajes',
     'peaje', 'parqueadero', 'parqueo', 'moto', 'carro', 'avion', 'vuelo',
-    'tiquete', 'tiquetes', 'soat', 'mecanico', 'llantas', 'lavado'],
+    'tiquete', 'tiquetes', 'soat', 'mecanico', 'llantas', 'lavado', 'peajes'],
   servicios: ['luz', 'agua', 'internet', 'celular', 'factura', 'recibo',
     'arriendo', 'administracion', 'energia', 'telefono', 'datos', 'recarga',
-    'servicios', 'acueducto'],
+    'servicios', 'acueducto', 'gas', 'television', 'cable', 'plan'],
   salud: ['farmacia', 'medicina', 'medicamentos', 'drogueria', 'medico',
     'doctor', 'eps', 'odontologo', 'dentista', 'gym', 'gimnasio', 'examenes',
-    'terapia', 'vitaminas', 'droga'],
+    'terapia', 'vitaminas', 'droga', 'pastillas', 'cita', 'psicologo', 'optica'],
   hogar: ['muebles', 'ferreteria', 'aseo', 'detergente', 'jabon', 'escoba',
-    'bombillo', 'reparacion', 'arreglo', 'herramientas', 'cocina', 'colchon'],
+    'bombillo', 'reparacion', 'arreglo', 'herramientas', 'cocina', 'colchon',
+    'mascota', 'perro', 'gato', 'veterinaria', 'cuido', 'purina'],
   entretenimiento: ['cine', 'bar', 'cerveza', 'cervezas', 'salida', 'fiesta',
     'concierto', 'juego', 'videojuego', 'suscripcion', 'paseo', 'discoteca',
-    'trago', 'tragos', 'rumba', 'entradas'],
+    'trago', 'tragos', 'rumba', 'entradas', 'licor', 'suscripciones', 'apuestas'],
   ropa: ['ropa', 'camisa', 'camiseta', 'camisetas', 'pantalon', 'zapatos',
-    'tenis', 'chaqueta', 'vestido', 'gorra', 'sudadera'],
+    'tenis', 'chaqueta', 'vestido', 'gorra', 'sudadera', 'botas', 'pantaloneta', 'jeans'],
   educacion: ['curso', 'libro', 'libros', 'universidad', 'semestre',
     'matricula', 'colegio', 'cuaderno', 'cuadernos', 'utiles', 'clase',
     'clases', 'certificacion', 'diplomado', 'preuniversitario', 'preicfes',
-    'instituto', 'academia'],
+    'instituto', 'academia', 'pension'],
   transferencia: ['transferencia', 'giro', 'envio', 'retiro', 'cajero',
-    'consignacion'],
-  ahorro: ['ahorro', 'ahorros', 'cdt', 'inversion', 'fondo'],
+    'consignacion', 'prestamo'],
+  ahorro: ['ahorro', 'ahorros', 'cdt', 'inversion', 'fondo', 'fidu'],
   ingreso: ['salario', 'sueldo', 'nomina', 'quincena', 'bono', 'prima',
     'cesantias', 'venta', 'ventas', 'honorarios', 'freelance', 'propina',
-    'comision', 'subsidio', 'reembolso'],
+    'comision', 'subsidio', 'reembolso', 'ingreso'],
   otros: [],
 };
 
