@@ -15,6 +15,7 @@ export interface AsesorResponse {
   text: string;
   newContext: AsesorContext;
   action?: ParsedTransaction;
+  suggestions?: string[];
 }
 
 const VARIANCES = {
@@ -165,7 +166,9 @@ export function responderAsesor(
       }
     }
 
-    return { text, newContext };
+    const suggestions = topCat ? [`¿Cuánto he gastado en ${topCat[0]}?`, 'Dame un consejo'] : ['Dime mi saldo', 'Dame un consejo'];
+
+    return { text, newContext, suggestions };
   }
 
   // 3. Consulta de Saldos (Cuentas/Cajitas)
@@ -189,7 +192,11 @@ export function responderAsesor(
       resp += `\n\n🤖 **Mi Consejo:** Veo que tienes bastante dinero líquido en tus cuentas y poco en tus cajitas de ahorro. Te sugiero mover un porcentaje a una "Cajita" para separarlo de tu plata de uso diario. ¡Te ayudará a no gastártelo sin querer!`;
     }
 
-    return { text: resp, newContext };
+    return { 
+      text: resp, 
+      newContext, 
+      suggestions: totalCuentas > 1000000 && totalAhorro < 100000 ? ['¿Cómo crear una Cajita?', 'Dime mi resumen'] : ['Dime mi resumen', '¿Cuánto puedo gastar?']
+    };
   }
   
   // 3.5. Presupuesto Diario Sugerido ("cuanto puedo gastar", "cuanto me queda")
@@ -355,7 +362,11 @@ export function responderAsesor(
       }
     }
 
-    return { text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (Eso fue en ${filtered.length} transacciones). ${tendencia}` + drilldown, newContext };
+    return { 
+      text: getRandom(VARIANCES.gasto).replace('X', total.toLocaleString('es-CO')).replace('Y', concepto).replace('Z', fechaStr) + ` (Eso fue en ${filtered.length} transacciones). ${tendencia}` + drilldown, 
+      newContext,
+      suggestions: topContacto && topContacto[0] !== 'Sin descripción' ? [`¿Y el mes pasado?`, `¿Cuánto puedo gastar?`] : ['Dime mi resumen', 'Dame un consejo']
+    };
   }
 
   // Fallback a LLM-like

@@ -13,6 +13,7 @@ interface Message {
   role: 'user' | 'bot';
   text: string;
   action?: ParsedTransaction;
+  suggestions?: string[];
 }
 
 interface AsesorViewProps {
@@ -61,9 +62,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
 
     // Simulate thinking delay for better UX
     setTimeout(() => {
-      const { text: respuesta, newContext, action } = responderAsesor(userMsg.text, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
+      const { text: respuesta, newContext, action, suggestions } = responderAsesor(userMsg.text, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
       setContext(newContext);
-      const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action };
+      const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action, suggestions };
       setMessages((prev) => [...prev, botMsg]);
     }, 400);
   };
@@ -130,6 +131,34 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
                     >
                       Sí, registrar gasto
                     </button>
+                  </div>
+                )}
+                {msg.suggestions && msg.suggestions.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2 pt-1">
+                    {msg.suggestions.map((sug, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setInput(sug);
+                          setTimeout(() => {
+                            // En lugar de llamar handleSend directamente (que lee el state anterior),
+                            // despachamos la logica de envio directamente:
+                            const userMsg: Message = { id: nuevoId(), role: 'user', text: sug };
+                            setMessages((prev) => [...prev, userMsg]);
+                            setInput('');
+                            setTimeout(() => {
+                              const { text: respuesta, newContext, action, suggestions } = responderAsesor(sug, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
+                              setContext(newContext);
+                              const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action, suggestions };
+                              setMessages((prev) => [...prev, botMsg]);
+                            }, 400);
+                          }, 0);
+                        }}
+                        className="rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-[12px] font-medium text-fuchsia-700 transition-colors hover:bg-fuchsia-100 dark:border-fuchsia-900/50 dark:bg-fuchsia-900/20 dark:text-fuchsia-300 dark:hover:bg-fuchsia-900/40"
+                      >
+                        {sug}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
