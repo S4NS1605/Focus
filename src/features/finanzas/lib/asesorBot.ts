@@ -9,6 +9,7 @@ export interface AsesorContext {
   ultimoAsunto: string | null;
   ultimaFecha: string | null;
   _isRecursive?: boolean;
+  lastInsightIdx?: number;
 }
 
 export interface AsesorResponse {
@@ -269,7 +270,6 @@ export function responderAsesor(
     const byDayOfWeek = [0,0,0,0,0,0,0]; // 0 = Sunday
     gastos.forEach(t => {
       const d = new Date(t.occurredOn);
-      // Ajuste de timezone burdo
       d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
       byDayOfWeek[d.getDay()] += t.amountCop;
     });
@@ -279,32 +279,45 @@ export function responderAsesor(
     const dayName = diasNombres[maxDayIdx];
 
     const anomaly = gastos.find(t => t.amountCop > avg * 4); // Gastó 4x el promedio
-    
-    const opciones = [];
-    
-    opciones.push(`• **Tu Día Más Caro:** Históricamente, el día de la semana en el que más dinero gastas es el **${dayName}**. Intenta dejar la tarjeta en casa ese día la próxima semana.`);
-    
-    if (anomaly) {
-      opciones.push(`• **Gasto Inusual:** Noté que el ${anomaly.occurredOn} gastaste **$${anomaly.amountCop.toLocaleString('es-CO')}** en "${anomaly.description}". Eso fue muchísimo más alto que tu promedio normal ($${Math.round(avg).toLocaleString('es-CO')}).`);
-    }
 
     const descFreq: Record<string, number> = {};
     gastos.forEach(t => { descFreq[t.description] = (descFreq[t.description] || 0) + 1; });
     const sortedFreq = Object.entries(descFreq).sort((a, b) => b[1] - a[1]);
     const topFreq = sortedFreq[0];
-    if (topFreq && topFreq[1] > 3) {
-      opciones.push(`• **Frecuencia Adictiva:** Has pagado por "${topFreq[0]}" un total de **${topFreq[1]} veces**. ¡Ese es tu gasto hormiga más constante!`);
-    }
-    
     const top2Freq = sortedFreq[1];
-    if (top2Freq && top2Freq[1] > 2) {
-      opciones.push(`• **Otro Gasto Frecuente:** "${top2Freq[0]}" también se repite mucho (lo has pagado ${top2Freq[1]} veces).`);
+
+    const insights = [];
+    
+    insights.push(`🗓️ **Tu Día Más Caro:** Históricamente, el día de la semana en el que más dinero gastas es el **${dayName}**. Intenta dejar la tarjeta en casa ese día la próxima semana para probarte a ti mismo.`);
+    
+    if (anomaly) {
+      insights.push(`🚨 **Gasto Inusual:** Noté que el ${anomaly.occurredOn} gastaste **$${anomaly.amountCop.toLocaleString('es-CO')}** en "${anomaly.description}". Eso fue muchísimo más alto que tu promedio normal por compra ($${Math.round(avg).toLocaleString('es-CO')}). ¡Fue un golpe fuerte!`);
     }
 
+    if (topFreq && topFreq[1] > 3) {
+      insights.push(`🐜 **Frecuencia Adictiva:** Ojo acá, has pagado por "${topFreq[0]}" un total de **${topFreq[1]} veces**. ¡Ese es tu gasto hormiga más constante y silencioso!`);
+    }
+    
+    if (top2Freq && top2Freq[1] > 2) {
+      insights.push(`☕ **Otro Gasto Frecuente:** "${top2Freq[0]}" se repite mucho en tu historial (lo has pagado ${top2Freq[1]} veces). Si puedes recortarlo a la mitad, verás cómo crece tu ahorro.`);
+    }
+
+    const intros = [
+      '¡Claro! Me sumergí en tus datos y encontré esto interesante:',
+      'Mira este patrón oculto en tus finanzas:',
+      'Analizando tu historial de gastos, hay algo que me llamó la atención:',
+      'Aquí tienes un dato curioso sobre cómo manejas tu dinero:'
+    ];
+
+    const idx = (context.lastInsightIdx || 0) % insights.length;
+    const selectedInsight = insights[idx];
+    
+    newContext.lastInsightIdx = idx + 1;
+
     return { 
-      text: `¡Claro! Me sumergí en tus datos y encontré varios patrones interesantes:\n\n${opciones.join('\n\n')}\n\n¿Quieres que revisemos cómo bajar esos gastos?`, 
+      text: `${getRandom(intros)}\n\n${selectedInsight}`, 
       newContext,
-      suggestions: ['Dame un consejo', 'Mis suscripciones']
+      suggestions: ['Dame otro dato', 'Mis suscripciones', 'Dame un consejo']
     };
   }
 
