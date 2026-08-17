@@ -43,6 +43,16 @@ export const AppsRoot: React.FC = () => {
     }
   });
 
+  // Info del usuario que se está viendo (para el banner)
+  const [impersonatedUser, setImpersonatedUser] = useState<{ usuario: string | null; email: string } | null>(() => {
+    try {
+      const raw = localStorage.getItem('__impersonated_user__');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const volverAlAdmin = useCallback(async () => {
     if (!adminBackup) return;
     const cliente = obtenerSupabase();
@@ -52,7 +62,9 @@ export const AppsRoot: React.FC = () => {
       refresh_token: adminBackup.refresh_token,
     });
     localStorage.removeItem(ADMIN_BACKUP_KEY);
+    localStorage.removeItem('__impersonated_user__');
     setAdminBackup(null);
+    setImpersonatedUser(null);
     window.location.href = '/superadmin';
   }, [adminBackup]);
 
@@ -129,7 +141,10 @@ export const AppsRoot: React.FC = () => {
       <div className="flex items-center gap-2 text-white">
         <ShieldAlert className="h-4 w-4 shrink-0" />
         <p className="text-xs font-semibold">
-          Modo asesoría — viendo como <span className="font-bold">{adminBackup.usuario || adminBackup.email}</span>
+          Modo asesoría — viendo como{' '}
+          <span className="font-bold">
+            {impersonatedUser?.usuario || impersonatedUser?.email || 'usuario'}
+          </span>
         </p>
       </div>
       <button

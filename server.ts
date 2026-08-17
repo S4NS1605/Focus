@@ -317,9 +317,13 @@ app.post('/api/impersonar-usuario', async (req, res) => {
       return res.status(500).json({ error: linkError?.message || 'No se pudo generar el token de acceso.' });
     }
 
-    // Extraer token_hash de la URL generada (query param "token")
-    const actionUrl = new URL(linkData.properties.action_link);
-    const tokenHash = actionUrl.searchParams.get('token');
+    // Supabase devuelve en properties.hashed_token el token_hash correcto para verifyOtp.
+    // Si no está disponible, lo extraemos del action_link como fallback.
+    const tokenHash = linkData.properties.hashed_token
+      || (() => {
+          const u = new URL(linkData.properties.action_link);
+          return u.searchParams.get('token');
+        })();
 
     if (!tokenHash) {
       return res.status(500).json({ error: 'No se pudo extraer el token del link generado.' });
