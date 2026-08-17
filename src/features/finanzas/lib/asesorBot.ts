@@ -426,6 +426,27 @@ export function responderAsesor(
       ]
     },
     {
+      regex: /y si no me alcanza/i,
+      responses: [
+        '¡Tranquilo! Ese es el miedo de todos. Si sientes que no te va a alcanzar, lo mejor es frenar cualquier "gasto hormiga" desde ya. ¿Quieres que miremos en qué estás gastando más este mes para cortarlo a tiempo?',
+        'Si no te alcanza, tenemos que entrar en "modo supervivencia". Cero domicilios, cero salidas innecesarias. ¿Te parece si hacemos un presupuesto diario con la plata que te queda?'
+      ]
+    },
+    {
+      regex: /no me rinde|no me alcanza|se me va( la plata| el dinero)/i,
+      responses: [
+        'Es una sensación horrible, lo sé. Generalmente la plata "se va" sin darnos cuenta en compras chiquitas. Intenta registrar *absolutamente todo* esta semana, hasta un chicle, y te prometo que encontraremos el hueco.',
+        'Suele pasar cuando no tenemos un presupuesto fijo. ¡Pero para eso estoy aquí! Hagamos el ejercicio: ¿ya registraste todos los gastos de hoy?'
+      ]
+    },
+    {
+      regex: /que (hago|me recomiendas|deberia hacer)/i,
+      responses: [
+        'Mi primera recomendación es que siempre sepas cuánto tienes. Pídeme un "resumen" a menudo. Si ves que el balance está en rojo, corta gastos. Si está en verde, ¡ahorra la diferencia!',
+        'Haz un presupuesto a principio de mes y no te salgas de él. Y si sobra alguito, mételo directo a una Cajita para que no te pique la mano por gastarlo.'
+      ]
+    },
+    {
       regex: /estoy (triste|feliz|cansado|aburrido)/i,
       responses: [
         'Entiendo que te sientas así. A veces ordenar las finanzas ayuda a tener una mente más tranquila. ¿Quieres que miremos tus números para ver si hay buenas noticias?',
@@ -433,14 +454,14 @@ export function responderAsesor(
       ]
     },
     {
-      regex: /estoy (quebrado|pobre|sin plata|arruinado)/i,
+      regex: /estoy (quebrado|pobre|sin plata|arruinado|endeudado)/i,
       responses: [
         '¡Tranquilo! Las malas rachas pasan. Lo importante es empezar a registrar cada peso para saber por dónde se está fugando el dinero. Si quieres, dime un resumen de lo que tienes ahora mismo en el bolsillo y empezamos desde ahí.',
         'A todos nos pasa. El primer paso para mejorar es medir. Intenta no gastar más de lo necesario esta semana y revisemos tu resumen en unos días.'
       ]
     },
     {
-      regex: /(mierda|puta|joder|carajo|maldita sea|puto|hijueputa)/i,
+      regex: /(mierda|puta|joder|carajo|maldita sea|puto|hijueputa|hpta)/i,
       responses: [
         '¡Uy, respira profundo! Sé que los números a veces estresan y dan ganas de tirar todo por la ventana, pero todo tiene arreglo si nos organizamos. ¿Qué pasó? ¿Hiciste un gasto que no debías?',
         '¡Calma, calma! Las finanzas pueden ser un dolor de cabeza. Tomemos un vaso de agua y revisemos los números con cabeza fría.'
@@ -458,17 +479,22 @@ export function responderAsesor(
 
   for (const rule of chitchatRules) {
     if (rule.regex.test(norm)) {
-      return { text: getRandom(rule.responses), newContext };
+      return { 
+        text: getRandom(rule.responses), 
+        newContext,
+        suggestions: ['Dime mi resumen', '¿Cuánto puedo gastar?']
+      };
     }
   }
 
-  // Fallback final
+  // Fallback final más humano
   return { 
     text: getRandom([
-      'Mmm, creo que no te copié bien. Recuerda que puedes preguntarme cosas puntuales como: "¿Cuánto gasté en Rappi?", "Hazme un resumen" o directamente un gasto: "Gasté 20 mil en pizza".',
-      'No logré procesar eso con mis reglas financieras. Intenta preguntarme por categorías, fechas o saldos específicos.',
-      'Me quedé procesando... soy experto en gastos e ingresos, pero aún estoy aprendiendo a tener charlas libres. ¿Probamos preguntándome tu saldo o tus gastos del mes?'
-    ]), 
-    newContext 
+      'Ups, me perdí un poco con eso último. 😅 Mi fuerte son los números, sumas y fechas. ¿Por qué no me preguntas por tu saldo, tu resumen del mes o directamente me dictas un gasto?',
+      'Ay, me corchaste. Sigo siendo una IA aprendiendo a conversar. Si me das instrucciones más directas como "Cuánto gasté en Rappi" o "Resumen de mis cuentas", ¡te ayudaré de inmediato!',
+      'Mmm, creo que no te copié bien. Recuerda que soy mejor para las cuentas claras. Prueba preguntarme montos, resúmenes o dime qué gastaste hoy para registrarlo.'
+    ]),
+    newContext,
+    suggestions: ['¿Cuánto he gastado?', 'Dame un resumen']
   };
 }
