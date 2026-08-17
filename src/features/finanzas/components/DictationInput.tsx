@@ -40,19 +40,30 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
 
   const listening = dictation.status === 'listening';
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  React.useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+    }
+  }, [text, dictation.interim]);
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       {/* The textarea is the PRIMARY voice path: tapping it brings up the iOS
           keyboard, whose microphone key is on-device dictation. That works in the
           installed app and offline, which the Web Speech API does not. */}
       <textarea
+        ref={textareaRef}
         value={listening && dictation.interim ? dictation.interim : text}
         onChange={(e) => setText(e.target.value)}
         placeholder={COPY.input.placeholder}
         rows={2}
         // 16px minimum: anything smaller makes iOS auto-zoom on focus and never
         // zoom back out.
-        className="w-full resize-none rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+        className="w-full resize-none overflow-y-auto rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:border-[var(--fin-ink-faint)] focus:outline-none transition-all duration-200"
         aria-label={COPY.input.placeholder}
       />
 

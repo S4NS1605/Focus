@@ -656,55 +656,64 @@ export const parseTransaction = (
     ignore: []
   };
 
-  const avail = available();
-  for (let i = 0; i < avail.length; i++) {
-    const t = avail[i];
-    const n = t.norm;
-    const nextToken = i + 1 < avail.length ? avail[i + 1].norm : '';
-
-    if (n === 'a' || n === 'hacia') {
-      currentChunk = 'destinatario';
-      continue;
-    }
-    if (n === 'para') {
-      if (['el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas'].includes(nextToken)) {
-        currentChunk = 'motivo';
-      } else {
-        currentChunk = 'destinatario';
-      }
-      continue;
-    }
-    if (n === 'en' || n === 'desde') {
-      currentChunk = 'ubicacion';
-      continue;
-    }
-    if (n === 'por' || n === 'concepto') {
-      currentChunk = 'motivo';
-      continue;
-    }
-    if (n === 'con') {
-      currentChunk = 'ignore';
-      continue;
-    }
-
-    if (['viaje', 'regalo', 'emergencia', 'salud', 'vacaciones', 'fiesta', 'prestamo', 'comida', 'transporte', 'suscripcion'].includes(n)) {
-      if (!tags.includes(t.raw)) tags.push(t.raw);
-    }
-
-    chunks[currentChunk].push(t);
-  }
+  const isOCR = raw.startsWith('[OCR]');
 
   const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
-  if (chunks.destinatario.length > 0) {
-    destinatario = capitalize(chunks.destinatario.map(t => t.raw).join(' '));
-  }
-  if (chunks.ubicacion.length > 0) {
-    ubicacion = capitalize(chunks.ubicacion.map(t => t.raw).join(' '));
+  if (!isOCR) {
+    const avail = available();
+    for (let i = 0; i < avail.length; i++) {
+      const t = avail[i];
+      const n = t.norm;
+      const nextToken = i + 1 < avail.length ? avail[i + 1].norm : '';
+
+      if (n === 'a' || n === 'hacia') {
+        currentChunk = 'destinatario';
+        continue;
+      }
+      if (n === 'para') {
+        if (['el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas'].includes(nextToken)) {
+          currentChunk = 'motivo';
+        } else {
+          currentChunk = 'destinatario';
+        }
+        continue;
+      }
+      if (n === 'en' || n === 'desde') {
+        currentChunk = 'ubicacion';
+        continue;
+      }
+      if (n === 'por' || n === 'concepto') {
+        currentChunk = 'motivo';
+        continue;
+      }
+      if (n === 'con') {
+        currentChunk = 'ignore';
+        continue;
+      }
+
+      if (['viaje', 'regalo', 'emergencia', 'salud', 'vacaciones', 'fiesta', 'prestamo', 'comida', 'transporte', 'suscripcion'].includes(n)) {
+        if (!tags.includes(t.raw)) tags.push(t.raw);
+      }
+
+      chunks[currentChunk].push(t);
+    }
+
+    if (chunks.destinatario.length > 0) {
+      destinatario = capitalize(chunks.destinatario.map(t => t.raw).join(' '));
+    }
+    if (chunks.ubicacion.length > 0) {
+      ubicacion = capitalize(chunks.ubicacion.map(t => t.raw).join(' '));
+    }
+  } else {
+    // OCR specific destinatario extraction
+    const destMatch = raw.match(/(?:para|destino)\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)/i);
+    if (destMatch && destMatch[1]) {
+      destinatario = destMatch[1].charAt(0).toUpperCase() + destMatch[1].slice(1).toLowerCase();
+    }
   }
 
   // 6 — Description (Full conversational phrasing)
-  const isOCR = raw.startsWith('[OCR]');
   let description = '';
 
   if (isOCR) {
