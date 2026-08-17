@@ -19,7 +19,7 @@ const tx = (over: Partial<Transaction> = {}): Transaction => ({
 });
 
 const montar = (movimientos: Transaction[]) =>
-  render(<EstadoDelMes totals={monthTotals(movimientos)} delMes={movimientos} />);
+  render(<EstadoDelMes totals={monthTotals(movimientos)} delMes={movimientos} mes="2026-08" hoy="2026-08-16" />);
 
 /** The stacked bar's segments, in render order. */
 const segmentos = () => screen.getAllByRole('button').filter((b) => b.style.width.endsWith('%'));

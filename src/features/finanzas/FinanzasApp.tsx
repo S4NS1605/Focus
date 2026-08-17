@@ -389,7 +389,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             mostrarAhorro={mostrarAhorro}
           />
 
-          <EstadoDelMes totals={totals} delMes={delMes} />
+          <EstadoDelMes totals={totals} delMes={delMes} mes={month} hoy={today} />
 
           <PresupuestosView
             presupuestos={almacen.datos.presupuestos}

@@ -12,6 +12,8 @@ import { useCatalogo } from '../catalogoContexto';
 interface EstadoDelMesProps {
   totals: MonthTotals;
   delMes: readonly Transaction[];
+  mes: string;
+  hoy: string;
 }
 
 /**
@@ -39,14 +41,8 @@ const MAX_SEGMENTOS = 5;
 
 /**
  * The month at a glance: one hero figure, one meter, one part-to-whole bar.
- *
- * A meter rather than a two-slice donut, because the question is a single ratio
- * against a limit — how much of what came in is already gone. A horizontal
- * stacked bar rather than a pie of thirteen categories, because past about six
- * segments adjacent classes blur no matter which hues are chosen; the tail folds
- * into "Otros" and the full list below is the table that carries the detail.
  */
-export const EstadoDelMes: React.FC<EstadoDelMesProps> = ({ totals, delMes }) => {
+export const EstadoDelMes: React.FC<EstadoDelMesProps> = ({ totals, delMes, mes, hoy }) => {
   const catalogo = useCatalogo();
   const oscuro = useEsOscuro();
   const [activo, setActivo] = useState<string | null>(null);
@@ -77,16 +73,42 @@ export const EstadoDelMes: React.FC<EstadoDelMesProps> = ({ totals, delMes }) =>
   ];
 
   const totalGasto = segmentos.reduce((t, s) => t + s.total, 0);
-  // Capped at 100: spending more than came in is a real state, and a bar running
-  // past its own track would say nothing the number above it does not.
   const consumido =
     totals.ingresos > 0 ? Math.min(100, (totals.gastos / totals.ingresos) * 100) : 0;
 
   const detalle = activo ? segmentos.find((s) => s.clave === activo) : null;
 
+  // MEGA UPGRADE: El Vidente (Proyección de Cierre de Mes)
+  const esMesActual = mes === hoy.substring(0, 7);
+  const [año, mesNum] = mes.split('-').map(Number);
+  const diasEnMes = new Date(año, mesNum, 0).getDate();
+  const diaActual = esMesActual ? Math.max(1, parseInt(hoy.split('-')[2], 10)) : diasEnMes;
+
+  let proyeccionActiva = false;
+  let balanceProyectado = 0;
+  // Solo proyectamos si es el mes actual, ha pasado al menos 1 día, y hay gastos.
+  if (esMesActual && diaActual > 1 && diaActual < diasEnMes && totals.gastos > 0) {
+    proyeccionActiva = true;
+    const gastoDiarioPromedio = totals.gastos / diaActual;
+    const gastoTotalProyectado = gastoDiarioPromedio * diasEnMes;
+    balanceProyectado = totals.ingresos - gastoTotalProyectado;
+  }
+
   return (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-      <div className="flex items-center gap-2">
+    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 relative overflow-hidden">
+      {proyeccionActiva && (
+        <div className="absolute top-0 right-0 bg-[var(--fin-surface)] rounded-bl-2xl px-3 py-1.5 border-b border-l border-[var(--fin-line)]">
+          <p className="text-[10px] font-bold text-[var(--fin-ink-soft)] flex items-center gap-1.5">
+            <span>🔮 Vidente: </span>
+            <span style={{ color: balanceProyectado >= 0 ? 'var(--fin-in)' : 'var(--fin-out)' }}>
+              {balanceProyectado >= 0 ? 'Te sobrarán ' : 'Te faltarán '}
+              {formatCop(Math.abs(balanceProyectado))}
+            </span>
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 mt-2">
         <Icono className="h-4 w-4 shrink-0" style={{ color: tono }} strokeWidth={2.5} aria-hidden="true" />
         <h2 className="text-xs font-bold" style={{ color: tono }}>
           {titulo}

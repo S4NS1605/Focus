@@ -2,6 +2,7 @@ import type { CategoriaClave, Transaction, TxKind } from '../types';
 import type { Catalogo } from '../categorias';
 import { extraerContraparte } from './contraparte';
 import { normalizarNombre } from './contactos';
+import { parseTransaction } from './parseTransaction';
 
 /**
  * What the user is looking for.
@@ -55,7 +56,12 @@ const soloDigitos = (texto: string): string => texto.replace(/\D/g, '');
  * someone searching "juan perez" should find it whichever way the rail spelled
  * the prefix.
  */
-const calzaTexto = (tx: Transaction, consulta: string, catalogo: Catalogo | null): boolean => {
+const calzaTexto = (
+  tx: Transaction,
+  consulta: string,
+  catalogo: Catalogo | null,
+  parsedIntent?: ReturnType<typeof parseTransaction>
+): boolean => {
   const q = normalizarNombre(consulta);
   if (q === '') return true;
 
@@ -69,15 +75,49 @@ const calzaTexto = (tx: Transaction, consulta: string, catalogo: Catalogo | null
   // Amounts are matched on digits so the thousands separators never get in the
   // way — nobody types "45.000" the same way twice.
   const digitos = soloDigitos(consulta);
-  return digitos !== '' && String(tx.amountCop).includes(digitos);
+  if (digitos !== '' && String(tx.amountCop).includes(digitos)) return true;
+
+  // MEGA UPGRADE: Natural Language Search!
+  if (parsedIntent) {
+    let magicMatch = false;
+
+    // Si la consulta implica una categoría específica de forma confiable
+    if (parsedIntent.signals.categorySource !== 'default' && parsedIntent.signals.categorySource !== 'aprendida') {
+      if (tx.category === parsedIntent.category) magicMatch = true;
+    }
+    
+    // Si implica un tipo específico de manera explícita (ej. "ingresos")
+    if (parsedIntent.signals.kindSource !== 'default') {
+      if (tx.kind === parsedIntent.kind && consulta.trim().split(' ').length === 1) magicMatch = true;
+    }
+
+    // Si detectó una fecha exacta (ej. "de ayer")
+    if (parsedIntent.dateOverride) {
+      if (tx.occurredOn === parsedIntent.dateOverride) {
+        // If it also has a category, both must match
+        if (magicMatch && tx.category !== parsedIntent.category) return false;
+        return true;
+      }
+    } else if (magicMatch) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 export const filtrarMovimientos = (
   transacciones: readonly Transaction[],
   filtro: Filtro,
   catalogo: Catalogo | null = null,
-): Transaction[] =>
-  transacciones.filter((tx) => {
+): Transaction[] => {
+  // Parse the search text only ONCE to extract natural language intents
+  let parsedIntent: ReturnType<typeof parseTransaction> | undefined;
+  if (filtro.texto.length >= 3) {
+    parsedIntent = parseTransaction(filtro.texto);
+  }
+
+  return transacciones.filter((tx) => {
     if (filtro.kind !== null && tx.kind !== filtro.kind) return false;
     if (filtro.categoria !== null && tx.category !== filtro.categoria) return false;
     if (filtro.cuentaId !== null && tx.cuentaId !== filtro.cuentaId) return false;
@@ -85,8 +125,10 @@ export const filtrarMovimientos = (
     // object, and therefore no timezone to get wrong.
     if (filtro.desde !== null && tx.occurredOn < filtro.desde) return false;
     if (filtro.hasta !== null && tx.occurredOn > filtro.hasta) return false;
-    return calzaTexto(tx, filtro.texto, catalogo);
+    
+    return calzaTexto(tx, filtro.texto, catalogo, parsedIntent);
   });
+};
 
 /** What the result adds up to, so a filtered view still answers "how much". */
 export interface ResumenFiltro {
