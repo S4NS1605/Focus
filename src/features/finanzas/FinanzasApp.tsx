@@ -399,8 +399,12 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
           <div className="lg:hidden">{monthNav}</div>
 
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">Resumen Ejecutivo</span>
+          {/* "Resumen Ejecutivo" -- redundante con el título "Resumen" que ya
+              pone el encabezado de la sección, y en un registro más
+              corporativo que el resto de la app ("Vas bien este mes",
+              "Sin contar $X en ahorros"). Se quita en vez de reescribirla:
+              el botón de al lado no necesita una etiqueta para tener sentido. */}
+          <div className="flex items-center justify-end px-1">
             <button
               type="button"
               onClick={() => setMostrarReporte(true)}
