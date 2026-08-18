@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Shield, LogOut, ChevronRight, PieChart, Activity, BarChart3 } from 'lucide-react';
+import { LayoutGrid, Shield, LogOut, ChevronRight, PieChart, Activity } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
 import type { AppId } from './AppsRoot';
@@ -83,7 +83,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, onSelectApp, tema
                 </div>
                 <h3 className="mb-2 text-xl font-bold">Superadmin</h3>
                 <p className="mb-6 flex-1 text-sm text-[var(--fin-ink-soft)]">
-                  Panel de control maestro para gestionar usuarios, roles y accesos del sistema.
+                  Panel de control maestro para gestionar usuarios, roles, IA y analítica del sistema.
                 </p>
                 
                 <div className="flex items-center justify-between text-purple-600 dark:text-purple-400">
@@ -92,29 +92,6 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, onSelectApp, tema
                 </div>
                 
                 <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-purple-500/5 blur-3xl transition-all group-hover:bg-purple-500/10"></div>
-              </button>
-            )}
-
-            {/* Estadísticas del portafolio (solo admin) */}
-            {rol === 'admin' && (
-              <button
-                onClick={() => onSelectApp('estadisticas')}
-                className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-left shadow-sm transition-all duration-300 hover:border-sky-500/30 hover:shadow-lg hover:shadow-sky-500/10 hover:-translate-y-1"
-              >
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400">
-                  <BarChart3 className="h-6 w-6" />
-                </div>
-                <h3 className="mb-2 text-xl font-bold">Visitantes</h3>
-                <p className="mb-6 flex-1 text-sm text-[var(--fin-ink-soft)]">
-                  Quién pasa por el portafolio: qué miran, de dónde son y por dónde llegaron.
-                </p>
-
-                <div className="flex items-center justify-between text-sky-600 dark:text-sky-400">
-                  <span className="text-sm font-semibold">Ver estadísticas</span>
-                  <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </div>
-
-                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-500/5 blur-3xl transition-all group-hover:bg-sky-500/10"></div>
               </button>
             )}
 
