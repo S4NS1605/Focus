@@ -48,6 +48,20 @@ create table if not exists public.permisos_por_rol (
 );
 
 -- ---------------------------------------------------------------------------
+-- A qué rol personalizado pertenece un perfil, si a alguno.
+--
+-- Nullable y separada de `rol` a propósito: no reemplaza el modelo admin/
+-- usuario, lo extiende. Nace null en todas las filas existentes — ningún
+-- backfill, cero cambio de comportamiento el día del deploy.
+--
+-- Va ANTES de tiene_permiso(): una función `language sql` se valida contra el
+-- catálogo al crearse (a diferencia de plpgsql, que solo se revisa al
+-- ejecutarse), así que definirla primero y esta columna después falla en el
+-- acto con "column does not exist" — el orden aquí no es cosmético.
+alter table public.perfiles
+  add column if not exists rol_personalizado_id text references public.roles(id) on delete set null;
+
+-- ---------------------------------------------------------------------------
 -- ¿Quién tiene tal permiso?
 --
 -- Reusa es_admin() en vez de reimplementar el chequeo de admin — una sola
@@ -78,15 +92,6 @@ $$;
 
 revoke all on function public.tiene_permiso(text) from public;
 grant execute on function public.tiene_permiso(text) to authenticated;
-
--- ---------------------------------------------------------------------------
--- A qué rol personalizado pertenece un perfil, si a alguno.
---
--- Nullable y separada de `rol` a propósito: no reemplaza el modelo admin/
--- usuario, lo extiende. Nace null en todas las filas existentes — ningún
--- backfill, cero cambio de comportamiento el día del deploy.
-alter table public.perfiles
-  add column if not exists rol_personalizado_id text references public.roles(id) on delete set null;
 
 -- ---------------------------------------------------------------------------
 -- RLS de las tablas nuevas.
