@@ -48,7 +48,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
     // meses (la más alta) ocupa su propia columna; las otras dos, más cortas,
     // se apilan en la segunda -- así el ancho se usa de verdad en vez de
     // solo estirar tarjetas pequeñas para que se vean más anchas.
-    <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-5 lg:grid-cols-2">
+    <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-5 lg:grid-cols-2">
       {/* Six-month bars */}
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
