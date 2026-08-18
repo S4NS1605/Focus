@@ -286,7 +286,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
             escribir primero. */}
         {messages.length === 1 ? (
           <div className="mx-auto flex h-full max-w-lg flex-col items-center justify-center gap-5 text-center">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white shadow-lg shadow-fuchsia-500/25">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-400">
               <BrainCircuit className="h-8 w-8" strokeWidth={2} />
               <span
                 aria-hidden="true"

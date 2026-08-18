@@ -227,7 +227,7 @@ describe('responderAsesor — detectar y proponer un movimiento', () => {
       tx({ category: 'comida', amountCop: 50_000, occurredOn: '2026-06-20' }),
     ];
     const r = preguntar('gaste 100 mil en comida', { transacciones });
-    expect(r.text).toMatch(/alerta proactiva|ojo ahí/i);
+    expect(r.text).toMatch(/alerta|ojo ahí/i);
   });
 });
 

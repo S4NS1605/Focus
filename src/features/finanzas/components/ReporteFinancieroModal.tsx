@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, X, FileSpreadsheet } from 'lucide-react';
+import { Printer, X, FileSpreadsheet, FileText } from 'lucide-react';
 import type { Instantanea } from '../data/repositorio';
 import { formatCop } from '../lib/formatCop';
 import { ES_PASIVO } from '../data/modelos';
@@ -60,8 +60,8 @@ export const ReporteFinancieroModal: React.FC<ReporteFinancieroModalProps> = ({
         {/* Barra superior de acciones (Oculta al imprimir) */}
         <div className="flex items-center justify-between border-b border-[var(--fin-line)] bg-[var(--fin-bg-soft)] px-6 py-4 print:hidden">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/15 text-blue-500 font-bold text-sm">
-              📄
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/15 text-blue-500">
+              <FileText className="h-4 w-4" strokeWidth={2.5} />
             </span>
             <div>
               <h3 className="text-sm font-bold text-[var(--fin-ink)]">Informe Financiero Mensual</h3>

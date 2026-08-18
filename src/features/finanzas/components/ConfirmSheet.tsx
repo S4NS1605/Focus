@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, X, ArrowDownCircle, ArrowUpCircle, Ear, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, X, ArrowDownCircle, ArrowUpCircle, Ear, CheckCircle2, User, MapPin, Tag } from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, Transaction } from '../types';
 import type { TxKind } from '../types';
@@ -275,18 +275,18 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         {(!editando && (parsed.signals.destinatario || parsed.signals.ubicacion || parsed.signals.tags?.length > 0)) ? (
           <div className="mt-4 flex flex-wrap gap-2">
             {parsed.signals.destinatario && (
-              <span className="inline-flex items-center rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
-                👤 {parsed.signals.destinatario}
+              <span className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
+                <User className="h-3 w-3" strokeWidth={2.5} /> {parsed.signals.destinatario}
               </span>
             )}
             {parsed.signals.ubicacion && (
-              <span className="inline-flex items-center rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
-                📍 {parsed.signals.ubicacion}
+              <span className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
+                <MapPin className="h-3 w-3" strokeWidth={2.5} /> {parsed.signals.ubicacion}
               </span>
             )}
             {parsed.signals.tags?.map(t => (
-              <span key={t} className="inline-flex items-center rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
-                🏷️ {t}
+              <span key={t} className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
+                <Tag className="h-3 w-3" strokeWidth={2.5} /> {t}
               </span>
             ))}
           </div>

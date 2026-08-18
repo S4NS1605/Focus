@@ -51,6 +51,16 @@ function getRandom(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/**
+ * Las sugerencias del fallback final ("no entendí eso"). Se comparan más abajo
+ * para saber si una mitad de una pregunta compuesta cayó en ese fallback —
+ * antes esa comprobación buscaba una de las frases al azar del propio
+ * fallback ('Mmm, creo que no te copié'), lo cual solo detectaba el caso 1 de
+ * cada 3 veces según cuál variante hubiera tocado. Comparar contra esta lista
+ * fija es determinista sin importar qué texto haya salido.
+ */
+const SUGERENCIAS_FALLBACK = ['¿Cuánto he gastado?', 'Dame un resumen'];
+
 export interface DeteccionMovimiento {
   /**
    * Lo que el parser entendió de la frase completa, se haya podido proponer o
@@ -169,9 +179,9 @@ export const detectarMovimiento = (
         const avgMonth = pastSum / pastMonths;
 
         if (newTotal > avgMonth * 1.2) {
-          alertText = `\n\n⚠️ **Alerta Proactiva:** Con este gasto llegarás a **$${newTotal.toLocaleString('es-CO')}** en ${intent.category} este mes. ¡Eso es un 20% más de tu promedio mensual habitual ($${Math.round(avgMonth).toLocaleString('es-CO')})! Trata de frenar aquí.`;
+          alertText = `\n\n**Alerta:** con este gasto llegarás a **$${newTotal.toLocaleString('es-CO')}** en ${intent.category} este mes — un 20% más de tu promedio mensual habitual ($${Math.round(avgMonth).toLocaleString('es-CO')}).`;
         } else if (newTotal > avgMonth * 0.9) {
-          alertText = `\n\n💡 **Ojo ahí:** Con este gasto ya estás rozando tu promedio habitual en ${intent.category}. Cuidado con lo que quede del mes.`;
+          alertText = `\n\n**Ojo ahí:** con este gasto ya estás rozando tu promedio habitual en ${intent.category}.`;
         }
       }
     }
@@ -213,8 +223,14 @@ export function responderAsesor(
       const r1 = responderAsesor(p1, transacciones, cajitas, cajitasBalances, categorias, lexico, { ...context, _isRecursive: true });
       const r2 = responderAsesor(p2, transacciones, cajitas, cajitasBalances, categorias, lexico, { ...r1.newContext, _isRecursive: true });
       
-      // Solo combinamos si ninguna de las dos falló al fallback de chitchat
-      if (!r1.text.includes('No logré procesar') && !r2.text.includes('No logré procesar') && !r1.text.includes('Mmm, creo que no te copié')) {
+      // Solo combinamos si ninguna de las dos cayó en el fallback final —
+      // comparar las sugerencias es determinista; comparar el texto no lo
+      // era, porque el fallback elige una de tres frases al azar.
+      const cayoEnFallback = (r: AsesorResponse) =>
+        r.suggestions?.length === SUGERENCIAS_FALLBACK.length &&
+        r.suggestions.every((s, i) => s === SUGERENCIAS_FALLBACK[i]);
+
+      if (!cayoEnFallback(r1) && !cayoEnFallback(r2)) {
         // Si cualquiera de las dos mitades propuso un movimiento, ese `action`
         // tiene que sobrevivir a la combinación. Sin esto, "gasté 50 mil en
         // comida y 20 mil en transporte" mostraba los dos montos en el texto
@@ -298,22 +314,22 @@ export function responderAsesor(
     const ahorro = ingresos - gastos;
     const tasaAhorro = ingresos > 0 ? ((ahorro / ingresos) * 100).toFixed(1) : 0;
 
-    let text = `Aquí tienes tu radiografía financiera de este mes:\n\n`;
-    text += `💰 **Ingresos:** $${ingresos.toLocaleString('es-CO')}\n`;
-    text += `💸 **Gastos:** $${gastos.toLocaleString('es-CO')}\n`;
-    
+    let text = `Tu resumen de este mes:\n\n`;
+    text += `**Ingresos:** $${ingresos.toLocaleString('es-CO')}\n`;
+    text += `**Gastos:** $${gastos.toLocaleString('es-CO')}\n`;
+
     if (ahorro > 0) {
-      text += `📈 **Balance:** +$${ahorro.toLocaleString('es-CO')} (¡Ahorrando el ${tasaAhorro}%!)\n\n`;
+      text += `**Balance:** +$${ahorro.toLocaleString('es-CO')} (ahorrando el ${tasaAhorro}%)\n\n`;
       if (Number(tasaAhorro) > 20) {
-        text += '🤖 **Mi Análisis:** ¡Estás volando! Ahorrar más del 20% es el sueño de cualquier financiero. Sigue así y vas a construir un colchón muy sólido.';
+        text += 'Ahorrar más del 20% es una tasa muy sólida. Sigue así y vas a construir un colchón fuerte.';
       } else {
-        text += '🤖 **Mi Análisis:** Vas por buen camino, estás en verde. Intenta no subir los gastos de aquí a fin de mes para mantener ese ahorro.';
+        text += 'Vas bien, en verde. Intenta no subir los gastos de aquí a fin de mes para mantener ese ahorro.';
       }
     } else if (ahorro === 0 && ingresos === 0) {
-      text += `\n🤖 **Mi Análisis:** Este mes no has registrado movimientos todavía. ¡Anímate a registrar tus primeros gastos o ingresos para darte un buen diagnóstico!`;
+      text += `\nEste mes no has registrado movimientos todavía. Registra tus primeros gastos o ingresos para darte un diagnóstico real.`;
     } else {
-      text += `📉 **Balance:** -$${Math.abs(ahorro).toLocaleString('es-CO')}\n\n`;
-      text += '🤖 **Mi Análisis:** ¡Alerta roja! 🚨 Estás gastando más de lo que ha entrado este mes. Toca apretarse el cinturón o revisar si te faltó registrar algún ingreso.';
+      text += `**Balance:** -$${Math.abs(ahorro).toLocaleString('es-CO')}\n\n`;
+      text += 'Estás gastando más de lo que ha entrado este mes. Toca apretarse el cinturón o revisar si te faltó registrar algún ingreso.';
     }
 
     // Top Category
@@ -339,12 +355,12 @@ export function responderAsesor(
       const ultimoDia = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
       const proyeccion = burnRate * ultimoDia;
       
-      text += `\n\n🔮 **Proyección a fin de mes:** Al ritmo que llevas ($${Math.round(burnRate).toLocaleString('es-CO')} diarios), terminarás gastando unos **$${Math.round(proyeccion).toLocaleString('es-CO')}** en total este mes. `;
-      
+      text += `\n\n**Proyección a fin de mes:** al ritmo que llevas ($${Math.round(burnRate).toLocaleString('es-CO')} diarios), terminarás gastando unos **$${Math.round(proyeccion).toLocaleString('es-CO')}** en total este mes. `;
+
       if (proyeccion > ingresos && ingresos > 0) {
-        text += `¡Ojo! Eso es más de lo que ha ingresado.`;
+        text += `Eso es más de lo que ha ingresado.`;
       } else if (ingresos > 0) {
-        text += `¡Súper! Parece que te sobrará dinero.`;
+        text += `Parece que te sobrará dinero.`;
       }
     }
 
@@ -371,7 +387,7 @@ export function responderAsesor(
     let resp = `Actualmente tienes **$${totalCuentas.toLocaleString('es-CO')}** disponibles en tus cuentas principales, y **$${totalAhorro.toLocaleString('es-CO')}** en tus ahorros o bolsillos.`;
     
     if (totalCuentas > 1000000 && totalAhorro < 100000) {
-      resp += `\n\n🤖 **Mi Consejo:** Veo que tienes bastante dinero líquido en tus cuentas y poco en tus cajitas de ahorro. Te sugiero mover un porcentaje a una "Cajita" para separarlo de tu plata de uso diario. ¡Te ayudará a no gastártelo sin querer!`;
+      resp += `\n\n**Consejo:** tienes bastante dinero líquido en tus cuentas y poco en tus cajitas de ahorro. Considera mover un porcentaje a una "Cajita" para separarlo de tu plata de uso diario.`;
     }
 
     return { 
@@ -388,9 +404,9 @@ export function responderAsesor(
     let text = `Acá entre nos, el 4x1000 (o GMF) te quita $4 por cada $1.000 que muevas de tus cuentas financieras hacia afuera.\n\n`;
     
     if (bajoMonto.length > 0) {
-      text += `¡Pero buenas noticias! Detecté que marcaste **${bajoMonto[0].nombre}** como Depósito de Bajo Monto. Recuerda que la DIAN te da una exención de hasta 65 UVT (aprox $3 millones de pesos al mes) en retiros de esa cuenta antes de cobrarte un solo peso de 4x1000.\n\nYo internamente llevo esa cuenta por ti. Si veo que te vas a pasar del límite en el mes, te lo advertiré.`;
+      text += `Marcaste **${bajoMonto[0].nombre}** como Depósito de Bajo Monto: la DIAN te da una exención de hasta 65 UVT (aprox $3 millones de pesos al mes) en retiros de esa cuenta antes de cobrarte un solo peso de 4x1000.\n\nLlevo esa cuenta por ti — si veo que te vas a pasar del límite en el mes, te lo advierto.`;
     } else {
-      text += `💡 **Un truco de oro:** Si tienes una cuenta como Nequi o Daviplata (Depósitos de Bajo Monto), ¡tienes hasta ~3 millones de pesos al mes libres de este impuesto sin importar cuál sea tu cuenta principal exenta!\n\nAsegúrate de ir a 'Configuración > Editar Cajita' y marcarla como 'Depósito de Bajo Monto' para que yo te calcule exactamente cuánto cupo te queda sin pagar impuestos.`;
+      text += `**Un truco útil:** si tienes una cuenta como Nequi o Daviplata (Depósitos de Bajo Monto), tienes hasta ~3 millones de pesos al mes libres de este impuesto sin importar cuál sea tu cuenta principal exenta.\n\nVe a 'Configuración > Editar Cajita' y márcala como 'Depósito de Bajo Monto' para que te calcule exactamente cuánto cupo te queda sin pagar impuestos.`;
     }
 
     return { 
@@ -488,23 +504,23 @@ export function responderAsesor(
 
     const insights = [];
     
-    insights.push(`🗓️ **Tu Día Más Caro:** Históricamente, el día de la semana en el que más dinero gastas es el **${dayName}**. Intenta dejar la tarjeta en casa ese día la próxima semana para probarte a ti mismo.`);
-    
+    insights.push(`**Tu día más caro:** históricamente, el día de la semana en el que más dinero gastas es el **${dayName}**. Considera dejar la tarjeta en casa ese día.`);
+
     if (anomaly) {
-      insights.push(`🚨 **Gasto Inusual:** Noté que el ${anomaly.occurredOn} gastaste **$${anomaly.amountCop.toLocaleString('es-CO')}** en "${anomaly.description}". Eso fue muchísimo más alto que tu promedio normal por compra ($${Math.round(avg).toLocaleString('es-CO')}). ¡Fue un golpe fuerte!`);
+      insights.push(`**Gasto inusual:** el ${anomaly.occurredOn} gastaste **$${anomaly.amountCop.toLocaleString('es-CO')}** en "${anomaly.description}" — muy por encima de tu promedio normal por compra ($${Math.round(avg).toLocaleString('es-CO')}).`);
     }
 
     if (topFreq && topFreq[1] > 3) {
-      insights.push(`🐜 **Frecuencia Adictiva:** Ojo acá, has pagado por "${topFreq[0]}" un total de **${topFreq[1]} veces**. ¡Ese es tu gasto hormiga más constante y silencioso!`);
+      insights.push(`**Frecuencia constante:** has pagado por "${topFreq[0]}" un total de **${topFreq[1]} veces**. Ese es tu gasto hormiga más silencioso.`);
     }
-    
+
     if (top2Freq && top2Freq[1] > 2) {
-      insights.push(`☕ **Otro Gasto Frecuente:** "${top2Freq[0]}" se repite mucho en tu historial (lo has pagado ${top2Freq[1]} veces). Si puedes recortarlo a la mitad, verás cómo crece tu ahorro.`);
+      insights.push(`**Otro gasto frecuente:** "${top2Freq[0]}" se repite mucho en tu historial (lo has pagado ${top2Freq[1]} veces). Si lo recortas a la mitad, verás crecer tu ahorro.`);
     }
 
     const intros = [
-      '¡Claro! Me sumergí en tus datos y encontré esto interesante:',
-      'Mira este patrón oculto en tus finanzas:',
+      'Me metí en tus datos y encontré esto:',
+      'Mira este patrón en tus finanzas:',
       'Analizando tu historial de gastos, hay algo que me llamó la atención:',
       'Aquí tienes un dato curioso sobre cómo manejas tu dinero:'
     ];
@@ -659,25 +675,25 @@ export function responderAsesor(
     
     let drilldown = '';
     if (topContacto && topContacto[1] > 0 && topContacto[0] !== 'Sin descripción' && !isMeaningfulDescription) {
-      drilldown = `\n\n🔍 **Dato curioso:** De esos $${total.toLocaleString('es-CO')}, la mayor parte se fue en **"${topContacto[0]}"** ($${topContacto[1].toLocaleString('es-CO')}).`;
+      drilldown = `\n\nDe esos $${total.toLocaleString('es-CO')}, la mayor parte se fue en **"${topContacto[0]}"** ($${topContacto[1].toLocaleString('es-CO')}).`;
     }
 
-    // Comparativa mes pasado (Magic AI feel)
+    // Comparativa con el mes pasado a la misma fecha.
     let tendencia = '';
     if (tipo === 'gasto' && filterDate === null && !norm.includes('año')) {
       const lastMonth = new Date();
       lastMonth.setMonth(lastMonth.getMonth() - 1);
       const lmKey = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
-      
+
       const lastMonthTotal = transacciones
         .filter(t => t.occurredOn.startsWith(lmKey) && t.kind === 'gasto' && (asunto === 'total' || t.category === asunto || (isMeaningfulDescription && normalizarNombre(t.description).includes(normalizarNombre(intent.description)))))
         .reduce((sum, t) => sum + t.amountCop, 0);
-        
+
       if (lastMonthTotal > 0) {
         const diff = total - lastMonthTotal;
-        tendencia = diff > 0 
-          ? `(Por cierto, van ⚠️ **$${Math.abs(diff).toLocaleString('es-CO')} más** que el mes pasado a esta misma fecha).`
-          : `(Lo bueno es que van ✅ **$${Math.abs(diff).toLocaleString('es-CO')} menos** que el mes pasado a esta fecha).`;
+        tendencia = diff > 0
+          ? `(Van **$${Math.abs(diff).toLocaleString('es-CO')} más** que el mes pasado a esta misma fecha).`
+          : `(Van **$${Math.abs(diff).toLocaleString('es-CO')} menos** que el mes pasado a esta fecha).`;
       }
     }
 
@@ -713,8 +729,8 @@ export function responderAsesor(
     {
       regex: /(jaja|jeje|jiji|lol|lmao|xdd)/i,
       responses: [
-        '¡Jaja! 😄 Siempre es bueno mantener el humor, sobre todo cuando hablamos de plata.',
-        'Me alegra que te diviertas. ¡Las finanzas no tienen por qué ser aburridas!'
+        'Siempre es bueno mantener el humor, sobre todo cuando hablamos de plata.',
+        'Me alegra que te diviertas. Las finanzas no tienen por qué ser aburridas.'
       ]
     },
     {
@@ -734,15 +750,15 @@ export function responderAsesor(
     {
       regex: /te (amo|quiero)/i,
       responses: [
-        '¡Yo también aprecio que confíes en mí para cuidar tus finanzas! 💜',
-        '¡Aww! Yo solo quiero ver crecer tus ahorros. 💰'
+        'Aprecio que confíes en mí para cuidar tus finanzas.',
+        'Yo solo quiero ver crecer tus ahorros.'
       ]
     },
     {
       regex: /chao|adios|hasta luego|nos vemos/i,
       responses: [
-        '¡Hasta pronto! Aquí estaré guardando tus finanzas bajo llave.',
-        '¡Nos vemos! Recuerda pensar dos veces antes de ese "gasto hormiga". 😉'
+        'Hasta pronto. Aquí estaré guardando tus finanzas bajo llave.',
+        'Nos vemos. Piensa dos veces antes de ese "gasto hormiga".'
       ]
     },
     {
@@ -798,15 +814,15 @@ export function responderAsesor(
     {
       regex: /robo|estafa|atraco|carisimo|muy caro/i,
       responses: [
-        '¡Uy, qué dolor de bolsillo! A veces toca aprender a la mala. ¡Registremos esto y tratemos de recuperarnos ahorrando en otras cosas esta semana!',
-        'Eso suena terrible. 🤕 Cuando pagamos más de la cuenta da mucha rabia, pero míralo como una alerta para no volver a caer. ¿Lo anotamos de todas formas?'
+        'Qué dolor de bolsillo. A veces toca aprender a la mala — registremos esto y tratemos de recuperarnos ahorrando en otras cosas esta semana.',
+        'Eso suena terrible. Da rabia pagar más de la cuenta, pero míralo como una alerta para no volver a caer. ¿Lo anotamos de todas formas?'
       ]
     },
     {
       regex: /ganga|barato|promocion|descuento|ofertazo/i,
       responses: [
-        '¡Excelente! Aprovechar buenas ofertas es la base del ahorro inteligente. Ojalá todas las compras fueran así. ¡Dime el monto y lo anoto con gusto!',
-        '¡Eso sí que es una victoria financiera! 🎉 Cada peso que te ahorras en una promoción es un peso que puedes mandar a tu Cajita de ahorros.'
+        'Aprovechar buenas ofertas es la base del ahorro inteligente. Dime el monto y lo anoto.',
+        'Eso es una victoria financiera. Cada peso que te ahorras en una promoción es un peso que puedes mandar a tu Cajita de ahorros.'
       ]
     },
     {
@@ -856,14 +872,14 @@ export function responderAsesor(
     }
   }
 
-  // Fallback final más humano
-  return { 
+  // Fallback final
+  return {
     text: getRandom([
-      'Ups, me perdí un poco con eso último. 😅 Mi fuerte son los números, sumas y fechas. ¿Por qué no me preguntas por tu saldo, tu resumen del mes o directamente me dictas un gasto?',
-      'Ay, me corchaste. Sigo siendo una IA aprendiendo a conversar. Si me das instrucciones más directas como "Cuánto gasté en Rappi" o "Resumen de mis cuentas", ¡te ayudaré de inmediato!',
-      'Mmm, creo que no te copié bien. Recuerda que soy mejor para las cuentas claras. Prueba preguntarme montos, resúmenes o dime qué gastaste hoy para registrarlo.'
+      'No logré entender eso último. Mi fuerte son los números, sumas y fechas — pregúntame por tu saldo, tu resumen del mes, o dime directamente un gasto para registrarlo.',
+      'Sigo aprendiendo a conversar. Con instrucciones más directas, como "cuánto gasté en Rappi" o "resumen de mis cuentas", te ayudo de inmediato.',
+      'No estoy seguro de haber entendido bien. Soy mejor para las cuentas claras — prueba preguntarme montos, resúmenes, o dime qué gastaste hoy para registrarlo.'
     ]),
     newContext,
-    suggestions: ['¿Cuánto he gastado?', 'Dame un resumen']
+    suggestions: SUGERENCIAS_FALLBACK
   };
 }

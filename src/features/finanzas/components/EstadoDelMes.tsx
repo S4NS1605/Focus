@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, TrendingDown, TriangleAlert } from 'lucide-react';
+import { CheckCircle2, TrendingDown, TriangleAlert, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { MonthTotals } from '../lib/aggregate';
@@ -99,7 +99,7 @@ export const EstadoDelMes: React.FC<EstadoDelMesProps> = ({ totals, delMes, mes,
       {proyeccionActiva && (
         <div className="absolute top-0 right-0 bg-[var(--fin-surface)] rounded-bl-2xl px-3 py-1.5 border-b border-l border-[var(--fin-line)]">
           <p className="text-[10px] font-bold text-[var(--fin-ink-soft)] flex items-center gap-1.5">
-            <span>🔮 Vidente: </span>
+            <span className="flex items-center gap-1"><Sparkles className="h-3 w-3" strokeWidth={2.5} /> Vidente: </span>
             <span style={{ color: balanceProyectado >= 0 ? 'var(--fin-in)' : 'var(--fin-out)' }}>
               {balanceProyectado >= 0 ? 'Te sobrarán ' : 'Te faltarán '}
               {formatCop(Math.abs(balanceProyectado))}
