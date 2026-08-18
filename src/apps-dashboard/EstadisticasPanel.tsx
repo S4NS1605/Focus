@@ -135,7 +135,7 @@ const GraficaBarrasUnificada: React.FC<{
                   <div
                     className={`w-full rounded-t-sm transition-all duration-150 ${
                       destacado
-                        ? 'bg-sky-400 shadow-md shadow-sky-500/30 brightness-110'
+                        ? 'bg-sky-400'
                         : item.valor > 0
                         ? 'bg-sky-500/80 hover:bg-sky-400'
                         : 'bg-[var(--fin-soft)]/60 hover:bg-[var(--fin-soft)]'

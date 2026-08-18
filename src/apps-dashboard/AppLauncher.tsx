@@ -18,10 +18,9 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, tienePermisos, on
   return (
     <div className="min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] transition-colors duration-300 selection:bg-[var(--fin-primary)] selection:text-white flex flex-col font-sans">
       
-      {/* Premium Header */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--fin-line)] bg-[var(--fin-bg)]/80 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4 transition-colors">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
             <LayoutGrid className="h-5 w-5" />
           </div>
           <div>
@@ -53,25 +52,22 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, tienePermisos, on
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             
-            {/* Finanzas App Card */}
             <button
               onClick={() => onSelectApp('finanzas')}
-              className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-left shadow-sm transition-all duration-300 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/10 hover:-translate-y-1"
+              className="group flex h-full flex-col rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-left shadow-sm transition-colors hover:border-emerald-500/40"
             >
               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                 <PieChart className="h-6 w-6" />
               </div>
               <h3 className="mb-2 text-xl font-bold">Finanzas</h3>
               <p className="mb-6 flex-1 text-sm text-[var(--fin-ink-soft)]">
-                Gestiona tus movimientos, metas y cajitas con inteligencia.
+                Gestiona tus movimientos, metas y cajitas.
               </p>
-              
+
               <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
                 <span className="text-sm font-semibold">Abrir aplicación</span>
                 <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </div>
-              
-              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-emerald-500/5 blur-3xl transition-all group-hover:bg-emerald-500/10"></div>
             </button>
 
             {/* Tarjeta de Superadmin: admin siempre la ve; alguien con un rol
@@ -80,22 +76,20 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, tienePermisos, on
             {(rol === 'admin' || tienePermisos) && (
               <button
                 onClick={() => onSelectApp('superadmin')}
-                className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-left shadow-sm transition-all duration-300 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-1"
+                className="group flex h-full flex-col rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-left shadow-sm transition-colors hover:border-purple-500/40"
               >
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
                   <Shield className="h-6 w-6" />
                 </div>
                 <h3 className="mb-2 text-xl font-bold">Superadmin</h3>
                 <p className="mb-6 flex-1 text-sm text-[var(--fin-ink-soft)]">
-                  Panel de control maestro para gestionar usuarios, roles, IA y analítica del sistema.
+                  Gestiona usuarios, roles, IA y analítica del sistema.
                 </p>
-                
+
                 <div className="flex items-center justify-between text-purple-600 dark:text-purple-400">
                   <span className="text-sm font-semibold">Administrar</span>
                   <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </div>
-                
-                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-purple-500/5 blur-3xl transition-all group-hover:bg-purple-500/10"></div>
               </button>
             )}
 

@@ -27,6 +27,8 @@ import {
   MessageSquare,
   Bot,
   User,
+  Cog,
+  Sparkles,
 } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
@@ -236,7 +238,7 @@ const GraficaBarrasUnificada: React.FC<{
                   <div
                     className={`w-full rounded-t-sm transition-all duration-150 ${
                       destacado
-                        ? 'bg-sky-400 shadow-md shadow-sky-500/30 brightness-110'
+                        ? 'bg-sky-400'
                         : item.valor > 0
                         ? 'bg-sky-500/80 hover:bg-sky-400'
                         : 'bg-[var(--fin-soft)]/60 hover:bg-[var(--fin-soft)]'
@@ -782,8 +784,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-base font-bold tracking-tight">Centro de Mando Superadmin</h1>
-                <p className="text-[11px] text-[var(--fin-ink-soft)]">Administración total del ecosistema</p>
+                <h1 className="text-base font-bold tracking-tight">Superadmin</h1>
+                <p className="text-[11px] text-[var(--fin-ink-soft)]">Usuarios, roles y analítica del ecosistema</p>
               </div>
             </div>
           </div>
@@ -800,7 +802,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               onClick={() => setTabActiva('usuarios')}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                 tabActiva === 'usuarios'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  ? 'bg-purple-600 text-white'
                   : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
               }`}
             >
@@ -817,7 +819,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               onClick={() => setTabActiva('roles')}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                 tabActiva === 'roles'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  ? 'bg-purple-600 text-white'
                   : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
               }`}
             >
@@ -831,7 +833,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               onClick={() => setTabActiva('ia-tokens')}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                 tabActiva === 'ia-tokens'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  ? 'bg-purple-600 text-white'
                   : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
               }`}
             >
@@ -848,7 +850,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               onClick={() => setTabActiva('visitantes')}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                 tabActiva === 'visitantes'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  ? 'bg-purple-600 text-white'
                   : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
               }`}
             >
@@ -862,7 +864,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               onClick={() => setTabActiva('auditoria')}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                 tabActiva === 'auditoria'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  ? 'bg-purple-600 text-white'
                   : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
               }`}
             >
@@ -892,7 +894,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 {puede('crear_usuario') && (
                   <button
                     onClick={abrirCrear}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:-translate-y-0.5"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-purple-700"
                   >
                     <Plus className="h-4 w-4" />
                     Nuevo Usuario
@@ -1018,7 +1020,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
 
                 <button
                   onClick={abrirCrearRol}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:-translate-y-0.5"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-purple-700"
                 >
                   <Plus className="h-4 w-4" />
                   Nuevo Rol
@@ -1199,7 +1201,9 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                       </div>
                       <div className="h-3 w-full rounded-full bg-[var(--fin-soft)] overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-amber-500 transition-all duration-500"
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            metricasIA.porcentajeTokens >= 90 ? 'bg-red-500' : 'bg-purple-500'
+                          }`}
                           style={{ width: `${Math.min(metricasIA.porcentajeTokens, 100)}%` }}
                         />
                       </div>
@@ -1255,8 +1259,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                                   <td className="px-4 py-3 font-medium">
                                     <div className="flex items-center gap-1.5">
                                       <span className="text-[var(--fin-ink)]">{p.usuarioEmail}</span>
-                                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-purple-600 dark:text-purple-400 font-bold">
-                                        · Ver chat 💬
+                                      <span className="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-purple-600 dark:text-purple-400 font-bold">
+                                        · Ver chat <MessageSquare className="h-3 w-3" strokeWidth={2.5} />
                                       </span>
                                     </div>
                                   </td>
@@ -1271,11 +1275,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                                     <div className="flex items-center justify-end gap-2">
                                       {p.exito ? (
                                         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                          ✨ Exitoso
+                                          <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Exitoso
                                         </span>
                                       ) : (
                                         <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" title={p.motivo}>
-                                          ⚙️ Local
+                                          <Cog className="h-3 w-3" strokeWidth={2.5} /> Local
                                         </span>
                                       )}
                                       <button
@@ -1971,9 +1975,13 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   <p className="font-semibold text-[11px] text-purple-600 dark:text-purple-400 mb-1.5 flex items-center justify-between">
                     <span>Respuesta del Asesor IA</span>
                     {consultaDetalle.exito ? (
-                      <span className="text-[10px] text-emerald-600 font-bold">✨ Respuesta generada por LLM</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
+                        <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Respuesta generada por LLM
+                      </span>
                     ) : (
-                      <span className="text-[10px] text-amber-600 font-bold">⚙️ Motor Local ({consultaDetalle.motivo})</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 font-bold">
+                        <Cog className="h-3 w-3" strokeWidth={2.5} /> Motor Local ({consultaDetalle.motivo})
+                      </span>
                     )}
                   </p>
                   <div className="whitespace-pre-wrap text-[13px] leading-relaxed">

@@ -149,7 +149,7 @@ export const AppsRoot: React.FC = () => {
 
   // Banner de impersonación — se muestra encima de cualquier vista
   const bannerAdmin = adminBackup ? (
-    <div className="fixed bottom-0 left-0 right-0 z-[200] flex items-center justify-between gap-3 border-t border-amber-400/30 bg-amber-500 px-4 py-2.5 shadow-lg shadow-amber-900/20">
+    <div className="fixed bottom-0 left-0 right-0 z-[200] flex items-center justify-between gap-3 border-t border-amber-400/30 bg-amber-500 px-4 py-2.5 shadow-sm">
       <div className="flex items-center gap-2 text-white">
         <ShieldAlert className="h-4 w-4 shrink-0" />
         <p className="text-xs font-semibold">
