@@ -575,14 +575,20 @@ Reglas clave:
     // falló" devuelven lo mismo desde fuera y no hay forma de distinguirlos.
     const fallos: string[] = [];
 
-    // 1. Groq (Llama 3.3 70B - Ultra rápido)
+    // 1. Groq (rápido y sin costo en el plan gratuito).
+    //
+    // El identificador del modelo NO es estable: Groq retira modelos y entonces
+    // responde 404 model_not_found. Aquí vivía `llama-3.3-70b-versatile` hasta
+    // que lo dieron de baja, y el fallo pasó inadvertido porque no se miraba el
+    // error. Si vuelve a dar 404, contrasta con console.groq.com/docs/models
+    // antes de cambiarlo — el log ya dice el motivo exacto.
     if (groqKey) {
-      proveedor = 'Groq (Llama 3.3)';
+      proveedor = 'Groq (GPT-OSS 120B)';
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-120b',
           messages: [
             { role: 'system', content: systemPrompt },
             ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
