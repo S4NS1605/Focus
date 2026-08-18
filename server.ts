@@ -191,6 +191,23 @@ const exigirAdmin = async (
   return { userId: llamador.user.id, email: llamador.user.email ?? '' };
 };
 
+/**
+ * El id del que llama, si su sesión es de verdad.
+ *
+ * A diferencia de `exigirAdmin` no mira el rol: para hablar con el asesor basta
+ * con haber iniciado sesión. Lo que cierra es que la ruta quede abierta a
+ * cualquiera que sepa la URL — y detrás de esa ruta hay una llave de un modelo
+ * con cuota, así que sin esta comprobación se la gasta un extraño.
+ */
+const exigirUsuario = async (
+  cliente: ClienteAdmin,
+  token: string,
+): Promise<{ userId: string } | { status: number; error: string }> => {
+  const { data: llamador, error } = await cliente.auth.getUser(token);
+  if (error || !llamador.user) return { status: 401, error: 'Token inválido' };
+  return { userId: llamador.user.id };
+};
+
 /** Rol actual del objetivo y cuántos admins hay, para las guardas de bloqueo. */
 const contextoDe = async (cliente: ClienteAdmin, objetivoId: string) => {
   const { data: objetivo } = await cliente
@@ -510,6 +527,18 @@ app.post('/api/analizar-extracto', async (req, res) => {
 app.post('/api/asesor-ia', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  // Que la cabecera venga no dice nada: hay que comprobar que la sesión existe.
+  // Sin esto bastaba con mandar cualquier texto en `Authorization` para entrar,
+  // y detrás hay una llave de modelo con cuota que paga otro.
+  const cliente = clienteAdmin();
+  if (!cliente) {
+    return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+  }
+  const quienLlama = await exigirUsuario(cliente, token);
+  if ('status' in quienLlama) {
+    return res.status(quienLlama.status).json({ error: quienLlama.error });
+  }
 
   const { prompt, history, finanzasContext } = req.body ?? {};
   if (!prompt || typeof prompt !== 'string') {
