@@ -332,7 +332,10 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
   };
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5">
+    // Mismo criterio que CajitasView: total y formulario en columna angosta,
+    // las tarjetas de deudas en su propia grilla ancha.
+    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
           <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
@@ -469,20 +472,25 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
           </p>
         </div>
       ) : null}
+      </div>
 
-      {filas.map((fila) => (
-        <DeudaCard
-          key={fila.cajita.id}
-          cajita={fila.cajita}
-          saldoCop={fila.saldoCop}
-          movimientos={movimientos}
-          onFijarSaldo={onFijarSaldo}
-          onMovimiento={onMovimiento}
-          onEliminar={onEliminar}
-          cuentas={cuentas}
-          onAbonar={onAbonar}
-        />
-      ))}
+      {filas.length > 0 ? (
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {filas.map((fila) => (
+            <DeudaCard
+              key={fila.cajita.id}
+              cajita={fila.cajita}
+              saldoCop={fila.saldoCop}
+              movimientos={movimientos}
+              onFijarSaldo={onFijarSaldo}
+              onMovimiento={onMovimiento}
+              onEliminar={onEliminar}
+              cuentas={cuentas}
+              onAbonar={onAbonar}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };

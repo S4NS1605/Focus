@@ -235,7 +235,10 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
   const sinCuentas = vivas.length === 0;
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5">
+    // La nota y el estado vacío se quedan angostos; cada grupo de cuentas usa
+    // una grilla de 2 columnas en vez de una sola lista larga -- las filas
+    // traen un campo de saldo, así que no caben tan apretadas como en 3.
+    <div className="mx-auto flex max-w-5xl flex-col gap-5">
       {sinCuentas ? (
         <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-10 text-center">
           <Wallet className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]" strokeWidth={1.5} aria-hidden="true" />
@@ -261,7 +264,7 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
         return (
           <section key={grupo.titulo}>
             <h2 className="px-1 text-xs font-bold text-[var(--fin-ink-soft)]">{grupo.titulo}</h2>
-            <ul className="mt-2 flex flex-col gap-2">
+            <ul className="mt-2 grid grid-cols-1 items-start gap-2 lg:grid-cols-2">
               {delGrupo.map((cajita) => (
                 <FilaCajita
                   key={cajita.id}

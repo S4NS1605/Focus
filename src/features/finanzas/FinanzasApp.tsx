@@ -401,7 +401,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       {section === 'resumen' ? (
         // Mobile stacks; from `lg` the same blocks become a two-column dashboard
         // with the KPI row spanning the full width above them.
-        <div className="mx-auto flex max-w-6xl flex-col gap-5">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5">
           <div className="lg:hidden">{monthNav}</div>
 
           {/* "Resumen Ejecutivo" -- redundante con el título "Resumen" que ya
@@ -472,7 +472,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       ) : null}
 
       {section === 'movimientos' ? (
-        <div className="mx-auto flex max-w-3xl flex-col gap-5">
+        <div className="mx-auto flex max-w-4xl flex-col gap-5">
           {/* The month navigator disappears while a filter is on: it would be
               lying about what the list below shows, which is the whole ledger. */}
           {sinFiltro ? <div className="lg:hidden">{monthNav}</div> : null}
@@ -498,8 +498,11 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       ) : null}
 
       {section === 'ahorro' ? (
-        <div className="mx-auto flex max-w-3xl flex-col gap-5">
-          <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5">
+        // Sin max-w aquí -- CajitasView/MetasView ya deciden su propio ancho
+        // por dentro (ver el comentario en la sección 'configuracion' más
+        // abajo sobre por qué un max-w exterior anularía el suyo).
+        <div className="flex flex-col gap-5">
+          <div className="mx-auto grid w-full max-w-3xl grid-cols-2 gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5">
             {PESTANAS_AHORRO.map((pestana) => {
               const activa = pestanaAhorro === pestana.id;
               return (

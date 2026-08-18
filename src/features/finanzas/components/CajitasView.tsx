@@ -97,7 +97,13 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   };
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5">
+    // El total y el formulario de creación se quedan en una columna angosta
+    // -- son lectura/entrada de un solo dato, no ganan nada con más ancho.
+    // Las tarjetas de cajitas/cuentas sí: antes se apilaban una debajo de
+    // otra hasta el fondo de la pantalla aunque hubiera sitio de sobra a los
+    // lados, así que van en su propia grilla más ancha.
+    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       {/* Total across every live pocket */}
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
@@ -299,20 +305,25 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
           <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{esCuenta ? COPY.cuentas.vacioHint : COPY.cajitas.vacioHint}</p>
         </div>
       ) : null}
+      </div>
 
-      {resumenes.map((resumen) => (
-        <CajitaCard
-          key={resumen.cajita.id}
-          resumen={resumen}
-          movimientos={movimientos}
-          onFijarSaldo={onFijarSaldo}
-          onMovimiento={onMovimiento}
-          onEliminar={onEliminar}
-          destinos={destinos}
-          cuentasBancarias={cuentasBancarias}
-          onTransferir={onTransferir}
-        />
-      ))}
+      {resumenes.length > 0 ? (
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {resumenes.map((resumen) => (
+            <CajitaCard
+              key={resumen.cajita.id}
+              resumen={resumen}
+              movimientos={movimientos}
+              onFijarSaldo={onFijarSaldo}
+              onMovimiento={onMovimiento}
+              onEliminar={onEliminar}
+              destinos={destinos}
+              cuentasBancarias={cuentasBancarias}
+              onTransferir={onTransferir}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -75,7 +75,10 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
   };
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5">
+    // Mismo criterio que CajitasView: resumen/pendientes/formulario en
+    // columna angosta, la lista de recurrentes en su propia grilla ancha.
+    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
           <Repeat className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
@@ -263,8 +266,11 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
           El arriendo, Netflix, el gimnasio. La app te los recuerda cada mes y tú confirmas si de
           verdad pasaron — no los registra sola.
         </p>
-      ) : (
-        <ul className="flex flex-col gap-2">
+      ) : null}
+      </div>
+
+      {vivos.length > 0 ? (
+        <ul className="grid grid-cols-1 items-start gap-2 lg:grid-cols-2 xl:grid-cols-3">
           {vivos.map((r) => {
             const entrada = catalogo.de(r.categoria);
             return (
@@ -304,7 +310,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
             );
           })}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 };

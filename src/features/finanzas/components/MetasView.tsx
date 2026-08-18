@@ -92,7 +92,10 @@ export const MetasView: React.FC<MetasViewProps> = ({
   };
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5">
+    // Mismo criterio que CajitasView/DeudasView: formulario en columna
+    // angosta, tarjetas de metas en su propia grilla ancha.
+    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       {creando ? (
         <form onSubmit={crear} className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
           <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">{COPY.metas.nueva}</h2>
@@ -213,8 +216,11 @@ export const MetasView: React.FC<MetasViewProps> = ({
           <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{COPY.metas.vacioHint}</p>
         </div>
       ) : null}
+      </div>
 
-      {filas.map(({ meta, progreso }) => {
+      {filas.length > 0 ? (
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {filas.map(({ meta, progreso }) => {
         const cajita = meta.cajitaId ? cajitas.find((c) => c.id === meta.cajitaId) : undefined;
 
         return (
@@ -318,7 +324,9 @@ export const MetasView: React.FC<MetasViewProps> = ({
             ) : null}
           </section>
         );
-      })}
+          })}
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -100,7 +100,10 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
   };
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5">
+    // Mismo criterio que CajitasView: el resumen se queda angosto, la lista
+    // de contactos usa una grilla ancha en vez de una sola columna larga.
+    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+      <div className="mx-auto w-full max-w-3xl">
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
           <Users className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
@@ -129,8 +132,11 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
             pago por BRE-B, un extracto que subas.
           </p>
         </div>
-      ) : (
-        <ul className="flex flex-col gap-2">
+      ) : null}
+      </div>
+
+      {filas.length > 0 ? (
+        <ul className="grid grid-cols-1 items-start gap-2 lg:grid-cols-2 xl:grid-cols-3">
           {filas.map((fila) => (
             <li
               key={fila.clave}
@@ -215,7 +221,7 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
       {abierta !== null ? (
         <DetalleContacto
           nombre={abierta.nombre}
