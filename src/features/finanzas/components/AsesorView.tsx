@@ -65,6 +65,9 @@ interface AsesorViewProps {
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+/** Chips para arrancar una conversación vacía — el punto de entrada más usado. */
+const SUGERENCIAS_INICIALES = ['Dime mi resumen', '¿Cuánto puedo gastar?', 'Mis suscripciones', 'Sorpréndeme'];
+
 const renderMarkdownLine = (line: string) => {
   const parts = line.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, i) => {
@@ -111,10 +114,17 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
     };
   }, []);
 
-  const handleSend = async () => {
-    if (!input.trim() || pensando) return;
+  // `textoDirecto` deja que un chip de sugerencia envíe su propio texto sin
+  // pasar por el campo de escritura: `setInput` es asíncrono, así que
+  // `setInput(sug)` seguido de `handleSend()` vería el valor VIEJO de
+  // `input` por el cierre de la función — antes esto se resolvía con
+  // `setTimeout` adivinando cuánto tardaba React en re-renderizar, que es
+  // frágil (¿400ms? ¿y si el dispositivo es más lento?). Pasar el texto
+  // directo no depende de ningún tiempo de espera.
+  const handleSend = async (textoDirecto?: string) => {
+    const textoUsuario = (textoDirecto ?? input).trim();
+    if (!textoUsuario || pensando) return;
 
-    const textoUsuario = input.trim();
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
@@ -267,6 +277,48 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-5">
+        {/* Antes de que exista una conversación real (solo el saludo inicial),
+            un único globo de chat flotando en una pantalla ancha se ve como un
+            vacío negro con una frase perdida en la esquina — es justo lo que
+            se veía "muy feo". En vez de eso, un punto de partida real: el
+            saludo centrado como intro, no como burbuja, y chips que arrancan
+            la conversación con un clic en lugar de tener que pensar qué
+            escribir primero. */}
+        {messages.length === 1 ? (
+          <div className="mx-auto flex h-full max-w-lg flex-col items-center justify-center gap-5 text-center">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white shadow-lg shadow-fuchsia-500/25">
+              <BrainCircuit className="h-8 w-8" strokeWidth={2} />
+              <span
+                aria-hidden="true"
+                className={`absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full ring-4 ring-[var(--fin-bg)] ${
+                  conexion === 'en-linea'
+                    ? 'animate-pulse bg-emerald-500'
+                    : conexion === 'despertando'
+                      ? 'animate-pulse bg-amber-500'
+                      : 'bg-[var(--fin-ink-faint)]'
+                }`}
+              />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-[var(--fin-ink)]">Tu Asesor Financiero</h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-[var(--fin-ink-soft)]">
+                {messages[0].text}
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {SUGERENCIAS_INICIALES.map((sug) => (
+                <button
+                  key={sug}
+                  onClick={() => handleSend(sug)}
+                  disabled={pensando}
+                  className="rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3.5 py-1.5 text-[13px] font-semibold text-fuchsia-700 transition-colors hover:bg-fuchsia-100 disabled:opacity-50 dark:border-fuchsia-900/50 dark:bg-fuchsia-900/20 dark:text-fuchsia-300 dark:hover:bg-fuchsia-900/40"
+                >
+                  {sug}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
           {messages.map((msg) => (
             <div
@@ -327,21 +379,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
                     {msg.suggestions.map((sug, idx) => (
                       <button
                         key={idx}
-                        onClick={() => {
-                          setInput(sug);
-                          setTimeout(() => {
-                            const userMsg: Message = { id: nuevoId(), role: 'user', text: sug };
-                            setMessages((prev) => [...prev, userMsg]);
-                            setInput('');
-                            setTimeout(() => {
-                              const { text: respuesta, newContext, action, actions, suggestions } = responderAsesor(sug, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
-                              setContext(newContext);
-                              const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action, actions, suggestions };
-                              setMessages((prev) => [...prev, botMsg]);
-                            }, 400);
-                          }, 0);
-                        }}
-                        className="rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-[12px] font-medium text-fuchsia-700 transition-colors hover:bg-fuchsia-100 dark:border-fuchsia-900/50 dark:bg-fuchsia-900/20 dark:text-fuchsia-300 dark:hover:bg-fuchsia-900/40"
+                        onClick={() => handleSend(sug)}
+                        disabled={pensando}
+                        className="rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-[12px] font-medium text-fuchsia-700 transition-colors hover:bg-fuchsia-100 disabled:opacity-50 dark:border-fuchsia-900/50 dark:bg-fuchsia-900/20 dark:text-fuchsia-300 dark:hover:bg-fuchsia-900/40"
                       >
                         {sug}
                       </button>
@@ -368,6 +408,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
           )}
           <div ref={endRef} />
         </div>
+        )}
       </div>
 
       {/* Input */}
@@ -384,7 +425,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
           />
           <button
             type="button"
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim()}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-fuchsia-600 text-white shadow-sm transition-colors hover:bg-fuchsia-500 disabled:opacity-50 dark:bg-fuchsia-500 dark:hover:bg-fuchsia-400"
           >
