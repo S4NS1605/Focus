@@ -19,6 +19,13 @@ export interface CambiosUsuario {
   email?: string;
   password?: string;
   rol?: 'admin' | 'usuario';
+  /**
+   * A qué rol personalizado se asigna, o `null` para quitárselo. Eje
+   * independiente de `rol`: asignar uno nunca toca el admin/usuario clásico,
+   * así que motivoParaRechazar no necesita ninguna regla nueva para esto — un
+   * rol personalizado jamás puede dejar al sistema sin administradores.
+   */
+  rolPersonalizadoId?: string | null;
 }
 
 export interface ContextoEdicion {

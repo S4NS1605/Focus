@@ -58,6 +58,24 @@ describe('motivoParaRechazar', () => {
       motivoParaRechazar({ rol: 'admin' }, ctx({ objetivoRol: 'usuario', totalAdmins: 1 })),
     ).toBeNull();
   });
+
+  it('asignar un rol personalizado nunca activa las guardas de admin', () => {
+    // rolPersonalizadoId es un eje independiente de rol: no debe poder dejar
+    // al sistema sin administradores ni sacar a nadie del panel, ni siquiera
+    // al último admin que queda.
+    expect(
+      motivoParaRechazar(
+        { rolPersonalizadoId: 'rol-1' },
+        ctx({ editorId: 'admin-1', objetivoId: 'admin-1', objetivoRol: 'admin', totalAdmins: 1 }),
+      ),
+    ).toBeNull();
+  });
+
+  it('quitar un rol personalizado (null) tampoco activa ninguna guarda', () => {
+    expect(
+      motivoParaRechazar({ rolPersonalizadoId: null }, ctx({ objetivoRol: 'admin', totalAdmins: 1 })),
+    ).toBeNull();
+  });
 });
 
 describe('motivoParaNoBorrar', () => {

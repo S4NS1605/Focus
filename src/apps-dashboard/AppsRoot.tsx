@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSesion } from '../features/finanzas/data/useSesion';
 import { useTema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
+import { apiUrl } from '../lib/api';
 import { LoginPanel } from '../features/finanzas/components/LoginPanel';
 import { FinanzasApp } from '../features/finanzas/FinanzasApp';
 import { AppLauncher } from './AppLauncher';
@@ -31,6 +32,10 @@ export const AppsRoot: React.FC = () => {
     return null;
   });
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
+  // Los 7 permisos delegables que un rol personalizado puede tener marcados.
+  // Vacío para 'admin' -- ese caso ya se trata aparte con `rol === 'admin'`
+  // en cada punto de gating, así que esta lista nunca necesita listarlos.
+  const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
 
   // Admin impersonation banner
@@ -104,32 +109,39 @@ export const AppsRoot: React.FC = () => {
 
   useEffect(() => {
     if (sesion.estado.modo === 'autenticado') {
-      const fetchRol = async () => {
+      const fetchPermisos = async () => {
+        // El rol y los permisos vienen de /api/mis-permisos y de ningún otro
+        // lado.
+        //
+        // Antes esto leía `perfiles.rol` directo con el cliente de Supabase.
+        // Con roles personalizados eso ya no alcanza: un usuario con un rol
+        // personalizado necesita saber qué permisos tiene, y abrir RLS de
+        // lectura en `permisos_por_rol` a cualquier autenticado dejaría a
+        // cualquiera listar el catálogo entero de roles del sistema. El
+        // endpoint corre con el cliente de service-role y evita ese trueque.
+        //
+        // La API re-comprueba todo server-side antes de hacer nada
+        // privilegiado (`exigirPermiso` en cada endpoint), así que esto solo
+        // decide qué se muestra, nunca qué se permite de verdad.
         const cliente = obtenerSupabase();
-        if (cliente && sesion.estado.modo === 'autenticado') {
-          // The role comes from `perfiles` and nowhere else.
-          //
-          // A hard-coded list of admin addresses used to short-circuit this,
-          // which was two problems at once: the addresses shipped inside the
-          // public bundle for anyone to read, and the grant lived purely in
-          // client state, so editing it in devtools revealed the admin UI.
-          //
-          // This became safe to remove only once migration 0002 created the
-          // table — before that the query had nothing to read and the shortcut
-          // was the sole path to admin. The API re-checks the role server-side
-          // before doing anything privileged, so this only drives the UI.
-          const { data } = await cliente
-            .from('perfiles')
-            .select('rol')
-            .eq('id', sesion.estado.userId)
-            .single();
-          if (data?.rol === 'admin' || data?.rol === 'usuario') {
-            setRol(data.rol);
+        const session = cliente ? (await cliente.auth.getSession()).data.session : null;
+        if (session?.access_token) {
+          try {
+            const res = await fetch(apiUrl('/api/mis-permisos'), {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data?.rol === 'admin' || data?.rol === 'usuario') setRol(data.rol);
+              if (Array.isArray(data?.permisos)) setPermisos(data.permisos);
+            }
+          } catch {
+            // Sin red, se queda en el 'usuario' sin permisos por defecto.
           }
         }
         setLoadingRol(false);
       };
-      fetchRol();
+      fetchPermisos();
     } else {
       setLoadingRol(false);
     }
@@ -178,11 +190,19 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
-  if (activeApp === 'superadmin' && rol === 'admin') {
-    return <SuperadminPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
+  if (activeApp === 'superadmin' && (rol === 'admin' || permisos.length > 0)) {
+    return (
+      <SuperadminPanel
+        rol={rol}
+        permisos={permisos}
+        onBack={() => setActiveApp(null)}
+        tema={tema}
+        onCambiarTema={setTema}
+      />
+    );
   }
 
-  if (activeApp === 'estadisticas' && rol === 'admin') {
+  if (activeApp === 'estadisticas' && (rol === 'admin' || permisos.includes('ver_visitantes'))) {
     return <EstadisticasPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
   }
 
@@ -190,6 +210,7 @@ export const AppsRoot: React.FC = () => {
     <>
       <AppLauncher
         rol={rol}
+        tienePermisos={permisos.length > 0}
         onSelectApp={setActiveApp}
         tema={tema}
         onCambiarTema={setTema}

@@ -6,13 +6,15 @@ import type { AppId } from './AppsRoot';
 
 interface AppLauncherProps {
   rol: 'admin' | 'usuario';
+  /** Si tiene al menos un permiso de un rol personalizado, aunque no sea admin. */
+  tienePermisos: boolean;
   onSelectApp: (app: AppId) => void;
   tema: Tema;
   onCambiarTema: (tema: Tema) => void;
   onSalir: () => void;
 }
 
-export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, onSelectApp, tema, onCambiarTema, onSalir }) => {
+export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, tienePermisos, onSelectApp, tema, onCambiarTema, onSalir }) => {
   return (
     <div className="min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] transition-colors duration-300 selection:bg-[var(--fin-primary)] selection:text-white flex flex-col font-sans">
       
@@ -72,8 +74,10 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, onSelectApp, tema
               <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-emerald-500/5 blur-3xl transition-all group-hover:bg-emerald-500/10"></div>
             </button>
 
-            {/* Superadmin App Card (Only visible if admin) */}
-            {rol === 'admin' && (
+            {/* Tarjeta de Superadmin: admin siempre la ve; alguien con un rol
+                personalizado la ve si tiene al menos un permiso -- lo que
+                muestre adentro depende de cuáles, eso lo decide el panel. */}
+            {(rol === 'admin' || tienePermisos) && (
               <button
                 onClick={() => onSelectApp('superadmin')}
                 className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-left shadow-sm transition-all duration-300 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-1"

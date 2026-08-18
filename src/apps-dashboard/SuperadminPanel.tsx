@@ -37,6 +37,9 @@ import type { Visita } from './estadisticas';
 import { banderaDePais, diasHasta, nombreDePais, resumir } from './estadisticas';
 
 interface SuperadminPanelProps {
+  rol: 'admin' | 'usuario';
+  /** Los permisos del rol personalizado, si tiene uno. Vacío para 'admin'. */
+  permisos: string[];
   onBack: () => void;
   tema: Tema;
   onCambiarTema: (tema: Tema) => void;
@@ -47,6 +50,7 @@ interface Perfil {
   email: string;
   usuario: string | null;
   rol: 'admin' | 'usuario';
+  rol_personalizado_id: string | null;
   created_at: string;
 }
 
@@ -95,7 +99,20 @@ interface MetricasIAResponse {
   peticionesRecientes: PeticionIA[];
 }
 
-type TabSuperadmin = 'usuarios' | 'ia-tokens' | 'visitantes' | 'auditoria';
+type TabSuperadmin = 'usuarios' | 'roles' | 'ia-tokens' | 'visitantes' | 'auditoria';
+
+/** Un rol personalizado con sus permisos, tal como lo devuelve /api/roles. */
+interface RolPersonalizado {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  permisos: string[];
+}
+
+interface PermisoCatalogo {
+  clave: string;
+  descripcion: string;
+}
 
 const RANGOS = [
   { dias: 7, texto: '7 días' },
@@ -238,8 +255,23 @@ const GraficaBarrasUnificada: React.FC<{
   );
 };
 
-export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, onCambiarTema }) => {
-  const [tabActiva, setTabActiva] = useState<TabSuperadmin>('usuarios');
+export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos, onBack, tema, onCambiarTema }) => {
+  // 'admin' puede todo sin mirar `permisos` -- la misma garantía que
+  // exigirPermiso en el backend: el rol fijo nunca depende de una lista bien
+  // poblada. `puede` es la única función que el resto del componente debe
+  // usar para decidir qué mostrar; nadie compara `permisos.includes(...)` a
+  // mano para no repetir el `rol === 'admin' ||` en cada sitio.
+  const puede = useCallback((permiso: string) => rol === 'admin' || permisos.includes(permiso), [rol, permisos]);
+
+  const [tabActiva, setTabActiva] = useState<TabSuperadmin>(() => {
+    if (rol === 'admin' || permisos.includes('crear_usuario') || permisos.includes('editar_usuario') || permisos.includes('eliminar_usuario') || permisos.includes('impersonar_usuario')) {
+      return 'usuarios';
+    }
+    if (permisos.includes('ver_metricas_ia')) return 'ia-tokens';
+    if (permisos.includes('ver_visitantes')) return 'visitantes';
+    if (permisos.includes('ver_auditoria')) return 'auditoria';
+    return 'usuarios';
+  });
 
   // --- Usuarios State ---
   const [usuarios, setUsuarios] = useState<Perfil[]>([]);
@@ -256,10 +288,26 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   const [nuevoUsuario, setNuevoUsuario] = useState('');
   const [nuevaPassword, setNuevaPassword] = useState('');
   const [nuevoRol, setNuevoRol] = useState<'admin' | 'usuario'>('usuario');
+  // '' = sin rol personalizado. Solo importa cuando nuevoRol === 'usuario';
+  // si es 'admin' el selector queda deshabilitado, ya tiene todo.
+  const [nuevoRolPersonalizadoId, setNuevoRolPersonalizadoId] = useState<string>('');
 
   // Impersonation
   const [impersonando, setImpersonando] = useState<Perfil | null>(null);
   const [impersonacionCargando, setImpersonacionCargando] = useState(false);
+
+  // --- Roles personalizados State ---
+  const [roles, setRoles] = useState<RolPersonalizado[]>([]);
+  const [catalogoPermisos, setCatalogoPermisos] = useState<PermisoCatalogo[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [modalRolAbierto, setModalRolAbierto] = useState(false);
+  const [editandoRol, setEditandoRol] = useState<RolPersonalizado | null>(null);
+  const [borrandoRol, setBorrandoRol] = useState<RolPersonalizado | null>(null);
+  const [nombreRol, setNombreRol] = useState('');
+  const [descripcionRol, setDescripcionRol] = useState('');
+  const [permisosMarcados, setPermisosMarcados] = useState<Set<string>>(new Set());
+  const [rolSubmitting, setRolSubmitting] = useState(false);
+  const [rolFormError, setRolFormError] = useState<string | null>(null);
 
   // --- Auditoría State ---
   const [logsAuditoria, setLogsAuditoria] = useState<AuditLog[]>([]);
@@ -277,7 +325,10 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   // --- Consulta Detalle Modal ---
   const [consultaDetalle, setConsultaDetalle] = useState<PeticionIA | null>(null);
 
-  useBloqueoScroll(isModalOpen || borrando !== null || impersonando !== null || consultaDetalle !== null);
+  useBloqueoScroll(
+    isModalOpen || borrando !== null || impersonando !== null || consultaDetalle !== null ||
+    modalRolAbierto || borrandoRol !== null,
+  );
 
   const dias = useMemo(() => diasHasta(new Date(), rangoVisitantes), [rangoVisitantes]);
 
@@ -345,6 +396,26 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     }
   };
 
+  // 5. Cargar Roles personalizados
+  const fetchRoles = async () => {
+    setLoadingRoles(true);
+    try {
+      const token = await tokenSesion();
+      const res = await fetch(apiUrl('/api/roles'), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRoles(data.roles || []);
+        setCatalogoPermisos(data.catalogoPermisos || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
   // 4. Cargar Visitantes
   const fetchVisitas = useCallback(async () => {
     setLoadingVisitas(true);
@@ -368,14 +439,23 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   }, [dias]);
 
   useEffect(() => {
-    fetchUsuarios();
-  }, []);
+    // Bajo RLS, un rol personalizado sin ninguno de los 4 permisos de gestión
+    // de usuarios recibiría de todos modos su propia fila, no una lista
+    // vacía silenciosa -- pero no tiene sentido pedirla si no puede hacer
+    // nada con ella.
+    if (puede('crear_usuario') || puede('editar_usuario') || puede('eliminar_usuario') || puede('impersonar_usuario')) {
+      fetchUsuarios();
+    } else {
+      setLoadingUsuarios(false);
+    }
+  }, [puede]);
 
   useEffect(() => {
     if (tabActiva === 'ia-tokens') fetchMetricasIA();
     if (tabActiva === 'auditoria') fetchAuditoria();
     if (tabActiva === 'visitantes') fetchVisitas();
-  }, [tabActiva, fetchVisitas]);
+    if (tabActiva === 'roles' || (tabActiva === 'usuarios' && rol === 'admin')) fetchRoles();
+  }, [tabActiva, fetchVisitas, rol]);
 
   const abrirCrear = () => {
     setEditando(null);
@@ -383,6 +463,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     setNuevoUsuario('');
     setNuevaPassword('');
     setNuevoRol('usuario');
+    setNuevoRolPersonalizadoId('');
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -393,6 +474,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     setNuevoUsuario(perfil.usuario ?? '');
     setNuevaPassword('');
     setNuevoRol(perfil.rol);
+    setNuevoRolPersonalizadoId(perfil.rol_personalizado_id ?? '');
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -496,6 +578,12 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
           payload.password = nuevaPassword;
         }
         if (nuevoRol !== editando.rol) payload.rol = nuevoRol;
+        // '' en el selector significa "sin rol personalizado" -> null. Solo
+        // se manda si de verdad cambió, igual que los demás campos.
+        const rolPersonalizadoActual = editando.rol_personalizado_id ?? '';
+        if (nuevoRolPersonalizadoId !== rolPersonalizadoActual) {
+          payload.rolPersonalizadoId = nuevoRolPersonalizadoId === '' ? null : nuevoRolPersonalizadoId;
+        }
 
         if (Object.keys(payload).length === 1) {
           setIsModalOpen(false);
@@ -549,6 +637,99 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
       setFormError(err.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // --- Roles personalizados: crear / editar / eliminar ---
+
+  const abrirCrearRol = () => {
+    setEditandoRol(null);
+    setNombreRol('');
+    setDescripcionRol('');
+    setPermisosMarcados(new Set());
+    setRolFormError(null);
+    setModalRolAbierto(true);
+  };
+
+  const abrirEditarRol = (r: RolPersonalizado) => {
+    setEditandoRol(r);
+    setNombreRol(r.nombre);
+    setDescripcionRol(r.descripcion ?? '');
+    setPermisosMarcados(new Set(r.permisos));
+    setRolFormError(null);
+    setModalRolAbierto(true);
+  };
+
+  const alternarPermiso = (clave: string) => {
+    setPermisosMarcados((prev) => {
+      const siguiente = new Set(prev);
+      if (siguiente.has(clave)) siguiente.delete(clave);
+      else siguiente.add(clave);
+      return siguiente;
+    });
+  };
+
+  const handleGuardarRol = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (nombreRol.trim() === '') {
+      setRolFormError('El rol necesita un nombre.');
+      return;
+    }
+    setRolSubmitting(true);
+    setRolFormError(null);
+
+    try {
+      const token = await tokenSesion();
+      const permisos = Array.from(permisosMarcados);
+
+      if (!editandoRol) {
+        const res = await fetch(apiUrl('/api/crear-rol'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ nombre: nombreRol, descripcion: descripcionRol || null, permisos }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al crear el rol');
+      } else {
+        const res = await fetch(apiUrl('/api/editar-rol'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ id: editandoRol.id, nombre: nombreRol, descripcion: descripcionRol || null, permisos }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al editar el rol');
+      }
+
+      setModalRolAbierto(false);
+      fetchRoles();
+    } catch (err: any) {
+      setRolFormError(err.message);
+    } finally {
+      setRolSubmitting(false);
+    }
+  };
+
+  const handleEliminarRol = async () => {
+    if (!borrandoRol) return;
+    setRolSubmitting(true);
+    setRolFormError(null);
+
+    try {
+      const token = await tokenSesion();
+      const res = await fetch(apiUrl('/api/eliminar-rol'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: borrandoRol.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al eliminar el rol');
+
+      setBorrandoRol(null);
+      fetchRoles();
+    } catch (err: any) {
+      setRolFormError(err.message);
+    } finally {
+      setRolSubmitting(false);
     }
   };
 
@@ -610,58 +791,85 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
           <TemaToggle tema={tema} onCambiar={onCambiarTema} />
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs — cada una solo aparece si hay algo que ver dentro:
+            la seguridad real vive en exigirPermiso del backend, esto es solo
+            para no ofrecer una pestaña que va a devolver 403 en todo. */}
         <div className="mx-auto max-w-6xl mt-3 flex items-center gap-1.5 overflow-x-auto border-t border-[var(--fin-line)]/50 pt-2">
-          <button
-            onClick={() => setTabActiva('usuarios')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              tabActiva === 'usuarios'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            Usuarios ({usuarios.length})
-          </button>
+          {(puede('crear_usuario') || puede('editar_usuario') || puede('eliminar_usuario') || puede('impersonar_usuario')) && (
+            <button
+              onClick={() => setTabActiva('usuarios')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                tabActiva === 'usuarios'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              Usuarios ({usuarios.length})
+            </button>
+          )}
 
-          <button
-            onClick={() => setTabActiva('ia-tokens')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              tabActiva === 'ia-tokens'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
-            }`}
-          >
-            <Cpu className="h-4 w-4" />
-            IA & Tokens
-            {metricasIA?.hayIA && (
-              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            )}
-          </button>
+          {/* Gestionar el catálogo de roles no es un permiso delegable: si lo
+              fuera, alguien con 'editar_usuario' podría crearse un rol con
+              todo marcado y auto-asignárselo. Solo admin estricto. */}
+          {rol === 'admin' && (
+            <button
+              onClick={() => setTabActiva('roles')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                tabActiva === 'roles'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
+              }`}
+            >
+              <ShieldAlert className="h-4 w-4" />
+              Roles
+            </button>
+          )}
 
-          <button
-            onClick={() => setTabActiva('visitantes')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              tabActiva === 'visitantes'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
-            }`}
-          >
-            <BarChart3 className="h-4 w-4" />
-            Analítica de Tráfico
-          </button>
+          {puede('ver_metricas_ia') && (
+            <button
+              onClick={() => setTabActiva('ia-tokens')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                tabActiva === 'ia-tokens'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
+              }`}
+            >
+              <Cpu className="h-4 w-4" />
+              IA & Tokens
+              {metricasIA?.hayIA && (
+                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              )}
+            </button>
+          )}
 
-          <button
-            onClick={() => setTabActiva('auditoria')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-              tabActiva === 'auditoria'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
-            }`}
-          >
-            <History className="h-4 w-4" />
-            Auditoría
-          </button>
+          {puede('ver_visitantes') && (
+            <button
+              onClick={() => setTabActiva('visitantes')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                tabActiva === 'visitantes'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
+              }`}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analítica de Tráfico
+            </button>
+          )}
+
+          {puede('ver_auditoria') && (
+            <button
+              onClick={() => setTabActiva('auditoria')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                tabActiva === 'auditoria'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
+              }`}
+            >
+              <History className="h-4 w-4" />
+              Auditoría
+            </button>
+          )}
         </div>
       </header>
 
@@ -681,13 +889,15 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                   </p>
                 </div>
 
-                <button
-                  onClick={abrirCrear}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:-translate-y-0.5"
-                >
-                  <Plus className="h-4 w-4" />
-                  Nuevo Usuario
-                </button>
+                {puede('crear_usuario') && (
+                  <button
+                    onClick={abrirCrear}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:-translate-y-0.5"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nuevo Usuario
+                  </button>
+                )}
               </div>
 
               <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-sm overflow-hidden">
@@ -752,28 +962,34 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                             </td>
                             <td className="px-6 py-4 text-right">
                               <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  onClick={() => setImpersonando(u)}
-                                  title={`Ver finanzas como ${u.usuario || u.email}`}
-                                  className="flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 transition-colors"
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  <span>Asesorar</span>
-                                </button>
-                                <button
-                                  onClick={() => abrirEditar(u)}
-                                  title="Editar usuario"
-                                  className="rounded-lg p-1.5 text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] transition-colors"
-                                >
-                                  <Edit2 className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => setBorrando(u)}
-                                  title="Eliminar usuario"
-                                  className="rounded-lg p-1.5 text-[var(--fin-ink-soft)] hover:bg-red-500/10 hover:text-red-600 transition-colors"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
+                                {puede('impersonar_usuario') && (
+                                  <button
+                                    onClick={() => setImpersonando(u)}
+                                    title={`Ver finanzas como ${u.usuario || u.email}`}
+                                    className="flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 transition-colors"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                    <span>Asesorar</span>
+                                  </button>
+                                )}
+                                {puede('editar_usuario') && (
+                                  <button
+                                    onClick={() => abrirEditar(u)}
+                                    title="Editar usuario"
+                                    className="rounded-lg p-1.5 text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] transition-colors"
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                                {puede('eliminar_usuario') && (
+                                  <button
+                                    onClick={() => setBorrando(u)}
+                                    title="Eliminar usuario"
+                                    className="rounded-lg p-1.5 text-[var(--fin-ink-soft)] hover:bg-red-500/10 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -782,6 +998,90 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                     </table>
                   )}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB ROLES: ROLES PERSONALIZADOS */}
+          {/* ========================================================================= */}
+          {tabActiva === 'roles' && (
+            <div>
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-extrabold tracking-tight">Roles personalizados</h2>
+                  <p className="mt-1 text-xs text-[var(--fin-ink-soft)]">
+                    Crea roles con exactamente los permisos que necesitas — 'admin' se queda fijo, con acceso
+                    total, y no aparece aquí.
+                  </p>
+                </div>
+
+                <button
+                  onClick={abrirCrearRol}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:-translate-y-0.5"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nuevo Rol
+                </button>
+              </div>
+
+              <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-sm overflow-hidden">
+                {loadingRoles ? (
+                  <div className="flex h-64 items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-[var(--fin-ink-faint)]" />
+                  </div>
+                ) : roles.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-2 p-12 text-center">
+                    <ShieldAlert className="h-8 w-8 text-[var(--fin-ink-faint)]" />
+                    <p className="text-sm font-bold text-[var(--fin-ink-soft)]">Todavía no hay roles personalizados.</p>
+                    <p className="text-xs text-[var(--fin-ink-faint)]">
+                      Créa uno y asígnalo desde "Editar usuario" en la pestaña de Usuarios.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[var(--fin-line)]">
+                    {roles.map((r) => (
+                      <div key={r.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                        <div className="min-w-0">
+                          <p className="font-bold text-[var(--fin-ink)]">{r.nombre}</p>
+                          {r.descripcion && (
+                            <p className="mt-0.5 text-xs text-[var(--fin-ink-soft)]">{r.descripcion}</p>
+                          )}
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {r.permisos.length === 0 ? (
+                              <span className="text-[11px] text-[var(--fin-ink-faint)]">Sin permisos marcados</span>
+                            ) : (
+                              r.permisos.map((p) => (
+                                <span
+                                  key={p}
+                                  className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-500/20 dark:text-purple-300"
+                                >
+                                  {catalogoPermisos.find((c) => c.clave === p)?.descripcion || p}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5 self-end sm:self-auto">
+                          <button
+                            onClick={() => abrirEditarRol(r)}
+                            title="Editar rol"
+                            className="rounded-lg p-1.5 text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] transition-colors"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setBorrandoRol(r)}
+                            title="Eliminar rol"
+                            className="rounded-lg p-1.5 text-[var(--fin-ink-soft)] hover:bg-red-500/10 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1324,6 +1624,31 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                 </select>
               </div>
 
+              {/* Solo admin gestiona la asignación de roles personalizados
+                  (ver la pestaña Roles), y solo tiene sentido si el usuario no
+                  es ya Superadmin — 'admin' tiene acceso total de por sí. */}
+              {rol === 'admin' && editando && (
+                <div>
+                  <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Rol personalizado</label>
+                  <select
+                    value={nuevoRolPersonalizadoId}
+                    onChange={(e) => setNuevoRolPersonalizadoId(e.target.value)}
+                    disabled={nuevoRol === 'admin'}
+                    className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none disabled:opacity-50"
+                  >
+                    <option value="">Ninguno</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.id}>{r.nombre}</option>
+                    ))}
+                  </select>
+                  {nuevoRol === 'admin' && (
+                    <p className="mt-1 text-[11px] text-[var(--fin-ink-faint)]">
+                      Superadmin ya tiene acceso total; un rol personalizado no le añade nada.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {formError && (
                 <div className="rounded-xl bg-red-500/10 p-3 text-xs font-bold text-red-600 dark:text-red-400">
                   {formError}
@@ -1348,6 +1673,135 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: CREAR / EDITAR ROL PERSONALIZADO */}
+      {/* ========================================================================= */}
+      {modalRolAbierto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => !rolSubmitting && setModalRolAbierto(false)}
+          />
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-2xl z-10">
+            <div className="flex items-center justify-between border-b border-[var(--fin-line)] pb-4">
+              <h3 className="text-base font-bold text-[var(--fin-ink)]">
+                {editandoRol ? 'Editar Rol' : 'Nuevo Rol'}
+              </h3>
+              <button
+                onClick={() => setModalRolAbierto(false)}
+                className="rounded-xl p-2 text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarRol} className="mt-4 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Nombre</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Supervisor"
+                  value={nombreRol}
+                  onChange={(e) => setNombreRol(e.target.value)}
+                  className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Descripción (opcional)</label>
+                <textarea
+                  value={descripcionRol}
+                  onChange={(e) => setDescripcionRol(e.target.value)}
+                  rows={2}
+                  className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Permisos</label>
+                <div className="mt-1.5 space-y-1.5 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] p-3">
+                  {catalogoPermisos.map((p) => (
+                    <label key={p.clave} className="flex items-center gap-2.5 py-0.5 text-xs text-[var(--fin-ink)] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={permisosMarcados.has(p.clave)}
+                        onChange={() => alternarPermiso(p.clave)}
+                        className="h-4 w-4 rounded border-[var(--fin-line)] text-purple-600 focus:ring-purple-500"
+                      />
+                      {p.descripcion}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {rolFormError && (
+                <div className="rounded-xl bg-red-500/10 p-3 text-xs font-bold text-red-600 dark:text-red-400">
+                  {rolFormError}
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setModalRolAbierto(false)}
+                  disabled={rolSubmitting}
+                  className="rounded-xl border border-[var(--fin-line)] px-4 py-2 text-xs font-bold text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={rolSubmitting}
+                  className="flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-purple-700"
+                >
+                  {rolSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : editandoRol ? 'Guardar Cambios' : 'Crear'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: ELIMINAR ROL */}
+      {/* ========================================================================= */}
+      {borrandoRol && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setBorrandoRol(null)} />
+          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-2xl z-10">
+            <h3 className="text-base font-bold text-red-600">Eliminar Rol</h3>
+            <p className="mt-2 text-xs text-[var(--fin-ink-soft)] leading-relaxed">
+              ¿Eliminar el rol <span className="font-bold text-[var(--fin-ink)]">{borrandoRol.nombre}</span>?
+              Quien lo tenga asignado se queda sin ese rol — vuelve a comportarse como usuario normal, sin
+              ninguno de estos permisos.
+            </p>
+
+            {rolFormError && (
+              <div className="mt-3 rounded-xl bg-red-500/10 p-2.5 text-xs text-red-600">{rolFormError}</div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setBorrandoRol(null)}
+                disabled={rolSubmitting}
+                className="rounded-xl border border-[var(--fin-line)] px-4 py-2 text-xs font-bold text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEliminarRol}
+                disabled={rolSubmitting}
+                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
+              >
+                {rolSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Eliminar'}
+              </button>
+            </div>
           </div>
         </div>
       )}
