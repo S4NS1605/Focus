@@ -281,13 +281,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
                     : 'rounded-bl-sm border border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink)]'
                 }`}
               >
-                {msg.provider && (
-                  <div className="mb-1.5 flex items-center gap-1">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300">
-                      ✨ {msg.provider}
-                    </span>
-                  </div>
-                )}
                 {msg.text.split('\n').map((line, i) => (
                   <React.Fragment key={i}>
                     {renderMarkdownLine(line)}
