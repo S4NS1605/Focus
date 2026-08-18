@@ -77,9 +77,24 @@ export function responderAsesor(
       
       // Solo combinamos si ninguna de las dos falló al fallback de chitchat
       if (!r1.text.includes('No logré procesar') && !r2.text.includes('No logré procesar') && !r1.text.includes('Mmm, creo que no te copié')) {
+        // Si cualquiera de las dos mitades propuso un movimiento, ese `action`
+        // tiene que sobrevivir a la combinación. Sin esto, "gasté 50 mil en
+        // comida y 20 mil en transporte" mostraba los dos montos en el texto
+        // pero perdía los botones de confirmar — cada mitad los llevaba en su
+        // propia respuesta y aquí se armaba solo `text`, tirando el resto.
+        const accionesCombinadas = [
+          ...(r1.actions ?? (r1.action ? [r1.action] : [])),
+          ...(r2.actions ?? (r2.action ? [r2.action] : [])),
+        ];
+
         return {
           text: `${r1.text}\n\n**Por otro lado...**\n${r2.text}`,
-          newContext: { ...r2.newContext, _isRecursive: false }
+          newContext: { ...r2.newContext, _isRecursive: false },
+          ...(accionesCombinadas.length === 1
+            ? { action: accionesCombinadas[0] }
+            : accionesCombinadas.length > 1
+              ? { actions: accionesCombinadas }
+              : {}),
         };
       }
     }
@@ -534,7 +549,20 @@ export function responderAsesor(
       }
     }
 
-    const isMeaningfulDescription = intent.description && intent.description.length > 2 && !['este', 'mes', 'dia', 'ayer', 'hoy', 'cuanto', 'gastado', 'gaste', 'total', 'año', 'pasado', 'semana', 'busca', 'gastos'].includes(normalizarNombre(intent.description));
+    // `intent.description` es lo que le sobró al parser después de sacar el
+    // monto y la fecha — para "cuánto gasté ayer" eso es literalmente "Cuanto
+    // gaste", puro relleno de la pregunta. La lista de descarte comparaba la
+    // FRASE completa contra palabras sueltas, así que "cuanto gaste" nunca
+    // coincidía con nada y se trataba como si el usuario hubiera nombrado algo
+    // específico que buscar — filtrando todo el historial a cero, porque
+    // ningún movimiento real tiene "cuanto gaste" en su descripción. Ahora se
+    // descarta si CADA palabra de lo que quedó es puro relleno de pregunta.
+    const RELLENO_PREGUNTA = new Set(['este', 'esta', 'el', 'la', 'de', 'en', 'mes', 'dia', 'dias', 'ayer', 'hoy', 'cuanto', 'cuanta', 'gastado', 'gaste', 'gasto', 'total', 'año', 'anio', 'pasado', 'semana', 'busca', 'gastos']);
+    const isMeaningfulDescription = Boolean(
+      intent.description &&
+      intent.description.length > 2 &&
+      !normalizarNombre(intent.description).split(' ').every((palabra) => RELLENO_PREGUNTA.has(palabra)),
+    );
 
     if (intent.signals.categorySource !== 'default' || isMeaningfulDescription || fuzzyCat) {
       const catFinal = intent.signals.categorySource !== 'default' ? intent.category : (fuzzyCat || intent.category);
