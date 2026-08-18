@@ -23,6 +23,66 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // ----------------------------------------------------------------------
+// SEGURIDAD: Rate Limiter en Memoria para APIs
+// ----------------------------------------------------------------------
+const peticionesPorIp = new Map<string, { count: number; resetTime: number }>();
+
+const rateLimiter = (maxPeticiones = 120, ventanaMs = 60000) => (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const ahora = Date.now();
+  const registro = peticionesPorIp.get(ip);
+
+  if (!registro || ahora > registro.resetTime) {
+    peticionesPorIp.set(ip, { count: 1, resetTime: ahora + ventanaMs });
+    return next();
+  }
+
+  registro.count++;
+  if (registro.count > maxPeticiones) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Por favor espera un momento.' });
+  }
+
+  return next();
+};
+
+app.use('/api', rateLimiter(120, 60000));
+
+// ----------------------------------------------------------------------
+// AUDITORÍA: Registro de Actividad para Superadmin
+// ----------------------------------------------------------------------
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  adminEmail: string;
+  action: string;
+  targetUser?: string;
+  details?: string;
+}
+
+const auditLogs: AuditLog[] = [];
+
+const registrarAuditoria = (
+  adminEmail: string,
+  action: string,
+  targetUser?: string,
+  details?: string,
+) => {
+  auditLogs.unshift({
+    id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    timestamp: new Date().toISOString(),
+    adminEmail,
+    action,
+    targetUser,
+    details,
+  });
+  if (auditLogs.length > 500) auditLogs.pop();
+};
+
+// ----------------------------------------------------------------------
 // ENDPOINT: Crear Usuario (Superadmin)
 // ----------------------------------------------------------------------
 app.post('/api/crear-usuario', async (req, res) => {
@@ -84,6 +144,13 @@ app.post('/api/crear-usuario', async (req, res) => {
       if (updateError) throw updateError;
     }
 
+    registrarAuditoria(
+      adminUser.user.email ?? 'admin',
+      'Creó usuario',
+      email,
+      `Usuario: ${usuario || '-'}, Rol: ${rol || 'usuario'}`,
+    );
+
     return res.status(200).json({ success: true, user: newUser.user });
   } catch (error: any) {
     console.error('Error creando usuario:', error);
@@ -93,12 +160,6 @@ app.post('/api/crear-usuario', async (req, res) => {
 
 // ----------------------------------------------------------------------
 // Cliente admin + comprobación de que quien llama es administrador.
-//
-// Los tres endpoints de superadmin hacen exactamente lo mismo al entrar: armar
-// el cliente con la llave de servicio, verificar el JWT del que llama y mirar su
-// rol en `perfiles`. Repetirlo tres veces era invitar a que una copia se
-// quedara sin una de las comprobaciones. La llave de servicio se salta RLS, así
-// que este es justo el lugar donde el rol se revisa de verdad, no en el navegador.
 // ----------------------------------------------------------------------
 const clienteAdmin = () => {
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -112,11 +173,11 @@ const clienteAdmin = () => {
 
 type ClienteAdmin = NonNullable<ReturnType<typeof clienteAdmin>>;
 
-/** El id del que llama si es admin; si no, el estado y mensaje a devolver. */
+/** El id y correo del que llama si es admin; si no, el estado y mensaje a devolver. */
 const exigirAdmin = async (
   cliente: ClienteAdmin,
   token: string,
-): Promise<{ userId: string } | { status: number; error: string }> => {
+): Promise<{ userId: string; email: string } | { status: number; error: string }> => {
   const { data: llamador, error } = await cliente.auth.getUser(token);
   if (error || !llamador.user) return { status: 401, error: 'Token inválido' };
 
@@ -127,7 +188,7 @@ const exigirAdmin = async (
     .single();
 
   if (perfil?.rol !== 'admin') return { status: 403, error: 'No tienes permisos de administrador' };
-  return { userId: llamador.user.id };
+  return { userId: llamador.user.id, email: llamador.user.email ?? '' };
 };
 
 /** Rol actual del objetivo y cuántos admins hay, para las guardas de bloqueo. */
@@ -220,6 +281,13 @@ app.post('/api/editar-usuario', async (req, res) => {
       }
     }
 
+    registrarAuditoria(
+      acceso.email,
+      'Editó usuario',
+      cambios.email || userId,
+      Object.keys(cambios).join(', '),
+    );
+
     return res.status(200).json({ success: true });
   } catch (error: any) {
     console.error('Error editando usuario:', error);
@@ -264,6 +332,13 @@ app.post('/api/eliminar-usuario', async (req, res) => {
     const { error } = await cliente.auth.admin.deleteUser(userId);
     if (error) throw error;
 
+    registrarAuditoria(
+      acceso.email,
+      'Eliminó usuario',
+      userId,
+      `Rol: ${ctx.objetivoRol}`,
+    );
+
     return res.status(200).json({ success: true });
   } catch (error: any) {
     console.error('Error eliminando usuario:', error);
@@ -306,8 +381,6 @@ app.post('/api/impersonar-usuario', async (req, res) => {
     }
 
     // Generar magic link para obtener el token_hash.
-    // Nunca se abre esta URL en el navegador — solo extraemos el token_hash
-    // para que el frontend haga verifyOtp() como llamada API directa.
     const { data: linkData, error: linkError } = await cliente.auth.admin.generateLink({
       type: 'magiclink',
       email: userTarget.user.email!,
@@ -317,8 +390,6 @@ app.post('/api/impersonar-usuario', async (req, res) => {
       return res.status(500).json({ error: linkError?.message || 'No se pudo generar el token de acceso.' });
     }
 
-    // Supabase devuelve en properties.hashed_token el token_hash correcto para verifyOtp.
-    // Si no está disponible, lo extraemos del action_link como fallback.
     const tokenHash = linkData.properties.hashed_token
       || (() => {
           const u = new URL(linkData.properties.action_link);
@@ -328,6 +399,13 @@ app.post('/api/impersonar-usuario', async (req, res) => {
     if (!tokenHash) {
       return res.status(500).json({ error: 'No se pudo extraer el token del link generado.' });
     }
+
+    registrarAuditoria(
+      acceso.email,
+      'Inició sesión de asesoría (Impersonación)',
+      userTarget.user.email,
+      `ID: ${userId}`,
+    );
 
     return res.status(200).json({
       success: true,
@@ -339,6 +417,22 @@ app.post('/api/impersonar-usuario', async (req, res) => {
     console.error('Error impersonando usuario:', error);
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINT: Obtener Logs de Auditoría (Superadmin)
+// ----------------------------------------------------------------------
+app.get('/api/auditoria-logs', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configuración de Supabase' });
+
+  const acceso = await exigirAdmin(cliente, token);
+  if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+  return res.status(200).json({ success: true, logs: auditLogs });
 });
 
 // ----------------------------------------------------------------------
@@ -406,6 +500,193 @@ app.post('/api/analizar-extracto', async (req, res) => {
   }
 
   return res.status(200).json({ ok: true, resultado });
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINT: Asesor Financiero con Inteligencia Artificial (LLM)
+// Soporta OpenAI, Anthropic Claude, Google Gemini, Groq y DeepSeek.
+// Si no hay key configurada, responde { offline: true } para usar el motor local.
+// ----------------------------------------------------------------------
+app.post('/api/asesor-ia', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const { prompt, history, finanzasContext } = req.body ?? {};
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Falta el prompt del usuario' });
+  }
+
+  // Detectar proveedor de IA disponible
+  const groqKey = process.env.GROQ_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
+
+  if (!groqKey && !openaiKey && !geminiKey && !anthropicKey && !deepseekKey) {
+    return res.status(200).json({ offline: true });
+  }
+
+  const systemPrompt = `Eres un asesor financiero personal experto para Colombia dentro de la aplicación Focus Finanzas.
+Tu tono es empático, profesional, claro y directo.
+Tienes acceso al resumen financiero real del usuario:
+${finanzasContext ? JSON.stringify(finanzasContext, null, 2) : 'No hay datos financieros registrados aún.'}
+
+Reglas clave:
+1. Responde de forma concisa usando Markdown estructurado (negritas, viñetas).
+2. Si el usuario pregunta por sus gastos o ingresos, usa los datos del contexto financiero en Pesos Colombianos (COP).
+3. Da recomendaciones realistas y accionables (ahorro, CDT, recorte de gastos hormiga, presupuestos por categoría, manejo de deudas).
+4. No des recomendaciones de inversión de alto riesgo sin advertencias.
+5. Mantén las respuestas breves y directas al grano (máximo 2 a 4 párrafos).`;
+
+  try {
+    let respuestaTexto = '';
+    let proveedor = '';
+
+    // 1. Groq (Llama 3.3 70B - Ultra rápido)
+    if (groqKey) {
+      proveedor = 'Groq (Llama 3.3)';
+      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
+              role: m.role === 'bot' ? 'assistant' : 'user',
+              content: m.text || m.content || '',
+            })) : []),
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.6,
+          max_tokens: 600,
+        }),
+      });
+      if (groqRes.ok) {
+        const data = await groqRes.json();
+        respuestaTexto = data.choices?.[0]?.message?.content || '';
+      }
+    }
+
+    // 2. OpenAI (GPT-4o mini)
+    if (!respuestaTexto && openaiKey) {
+      proveedor = 'OpenAI (GPT-4o)';
+      const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
+              role: m.role === 'bot' ? 'assistant' : 'user',
+              content: m.text || m.content || '',
+            })) : []),
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.6,
+          max_tokens: 600,
+        }),
+      });
+      if (oaiRes.ok) {
+        const data = await oaiRes.json();
+        respuestaTexto = data.choices?.[0]?.message?.content || '';
+      }
+    }
+
+    // 3. Google Gemini (1.5 Flash)
+    if (!respuestaTexto && geminiKey) {
+      proveedor = 'Google Gemini';
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [
+            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
+              role: m.role === 'bot' ? 'model' : 'user',
+              parts: [{ text: m.text || m.content || '' }],
+            })) : []),
+            { role: 'user', parts: [{ text: prompt }] },
+          ],
+          generationConfig: { maxOutputTokens: 600, temperature: 0.6 },
+        }),
+      });
+      if (geminiRes.ok) {
+        const data = await geminiRes.json();
+        respuestaTexto = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      }
+    }
+
+    // 4. Anthropic Claude
+    if (!respuestaTexto && anthropicKey) {
+      proveedor = 'Claude 3.5';
+      const clRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          system: systemPrompt,
+          messages: [
+            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
+              role: m.role === 'bot' ? 'assistant' : 'user',
+              content: m.text || m.content || '',
+            })) : []),
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 600,
+        }),
+      });
+      if (clRes.ok) {
+        const data = await clRes.json();
+        respuestaTexto = data.content?.[0]?.text || '';
+      }
+    }
+
+    // 5. DeepSeek
+    if (!respuestaTexto && deepseekKey) {
+      proveedor = 'DeepSeek V3';
+      const dsRes = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${deepseekKey}` },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
+              role: m.role === 'bot' ? 'assistant' : 'user',
+              content: m.text || m.content || '',
+            })) : []),
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 600,
+        }),
+      });
+      if (dsRes.ok) {
+        const data = await dsRes.json();
+        respuestaTexto = data.choices?.[0]?.message?.content || '';
+      }
+    }
+
+    if (respuestaTexto) {
+      return res.status(200).json({
+        success: true,
+        text: respuestaTexto,
+        provider: proveedor,
+        offline: false,
+      });
+    }
+
+    return res.status(200).json({ offline: true });
+  } catch (error: any) {
+    console.error('Error en asesor IA:', error);
+    return res.status(200).json({ offline: true, error: error.message });
+  }
 });
 
 // ----------------------------------------------------------------------

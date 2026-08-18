@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertTriangle, Eye, LogIn } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertTriangle, Eye, LogIn, History } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
@@ -20,6 +20,15 @@ interface Perfil {
   created_at: string;
 }
 
+interface AuditLog {
+  id: string;
+  timestamp: string;
+  adminEmail: string;
+  action: string;
+  targetUser?: string;
+  details?: string;
+}
+
 export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, onCambiarTema }) => {
   const [usuarios, setUsuarios] = useState<Perfil[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +43,12 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   const [impersonando, setImpersonando] = useState<Perfil | null>(null);
   const [impersonacionCargando, setImpersonacionCargando] = useState(false);
 
-  useBloqueoScroll(isModalOpen || borrando !== null || impersonando !== null);
+  // Auditoría states
+  const [mostrarAuditoria, setMostrarAuditoria] = useState(false);
+  const [logsAuditoria, setLogsAuditoria] = useState<AuditLog[]>([]);
+  const [loadingAuditoria, setLoadingAuditoria] = useState(false);
+
+  useBloqueoScroll(isModalOpen || borrando !== null || impersonando !== null || mostrarAuditoria);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -155,6 +169,24 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
     return session.access_token;
   };
 
+  const fetchAuditoria = async () => {
+    setLoadingAuditoria(true);
+    try {
+      const token = await tokenSesion();
+      const res = await fetch(apiUrl('/api/auditoria-logs'), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLogsAuditoria(data.logs || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingAuditoria(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -269,13 +301,25 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
               </p>
             </div>
             
-            <button
-              onClick={abrirCrear}
-              className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:shadow-purple-500/40 hover:-translate-y-0.5"
-            >
-              <Plus className="h-4 w-4" />
-              Nuevo Usuario
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setMostrarAuditoria(true);
+                  fetchAuditoria();
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-2.5 text-sm font-bold text-[var(--fin-ink)] shadow-sm transition-all hover:bg-[var(--fin-soft)]"
+              >
+                <History className="h-4 w-4 text-purple-500" />
+                Auditoría
+              </button>
+              <button
+                onClick={abrirCrear}
+                className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:shadow-purple-500/40 hover:-translate-y-0.5"
+              >
+                <Plus className="h-4 w-4" />
+                Nuevo Usuario
+              </button>
+            </div>
           </div>
 
           <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-sm overflow-hidden">
@@ -639,6 +683,58 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE AUDITORÍA */}
+      {mostrarAuditoria && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMostrarAuditoria(false)} />
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-2xl z-10 flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-[var(--fin-line)] pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/20 text-purple-500 font-bold">
+                  <History className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--fin-ink)]">Registro de Auditoría</h3>
+                  <p className="text-xs text-[var(--fin-ink-soft)]">Trazabilidad de acciones de superadmin en tiempo real</p>
+                </div>
+              </div>
+              <button onClick={() => setMostrarAuditoria(false)} className="rounded-xl p-2 text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)]">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-3">
+              {loadingAuditoria ? (
+                <div className="flex h-40 items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+                </div>
+              ) : logsAuditoria.length === 0 ? (
+                <div className="flex h-40 flex-col items-center justify-center text-center text-xs text-[var(--fin-ink-faint)]">
+                  <History className="h-8 w-8 mb-2 opacity-40" />
+                  <p>Sin registros de auditoría aún en esta sesión de servidor.</p>
+                </div>
+              ) : (
+                logsAuditoria.map((log) => (
+                  <div key={log.id} className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-bg-soft)] p-3.5 text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-purple-600 dark:text-purple-400">{log.action}</span>
+                      <span className="text-[10px] text-[var(--fin-ink-faint)]">{new Date(log.timestamp).toLocaleTimeString('es-CO')}</span>
+                    </div>
+                    {log.targetUser && (
+                      <p className="text-[var(--fin-ink)] font-medium">Objetivo: <span className="font-bold">{log.targetUser}</span></p>
+                    )}
+                    {log.details && (
+                      <p className="text-[var(--fin-ink-soft)] text-[11px] mt-0.5">{log.details}</p>
+                    )}
+                    <p className="text-[10px] text-[var(--fin-ink-faint)] mt-1">Admin: {log.adminEmail}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

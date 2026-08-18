@@ -8,10 +8,16 @@ import type { ParsedTransaction } from '../lib/parseTransaction';
 import type { LexicoAprendido } from '../lib/aprendizaje';
 import type { CategoriaPersonal } from '../categorias';
 
+import { apiUrl } from '../../../lib/api';
+import { obtenerSupabase } from '../data/supabase';
+import { bogotaDate } from '../lib/localDate';
+import { ES_PASIVO } from '../data/modelos';
+
 interface Message {
   id: string;
   role: 'user' | 'bot';
   text: string;
+  provider?: string;
   action?: ParsedTransaction;
   actions?: ParsedTransaction[];
   suggestions?: string[];
@@ -48,26 +54,113 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
     },
   ]);
   const [input, setInput] = useState('');
+  const [pensando, setPensando] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, pensando]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || pensando) return;
 
-    const userMsg: Message = { id: nuevoId(), role: 'user', text: input.trim() };
+    const textoUsuario = input.trim();
+    const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
+    setPensando(true);
 
-    // Simulate thinking delay for better UX
-    setTimeout(() => {
-      const { text: respuesta, newContext, action, actions, suggestions } = responderAsesor(userMsg.text, transacciones, cajitas, cajitasBalances, categorias, lexico, context);
-      setContext(newContext);
-      const botMsg: Message = { id: nuevoId(), role: 'bot', text: respuesta, action, actions, suggestions };
-      setMessages((prev) => [...prev, botMsg]);
-    }, 400);
+    try {
+      // 1. Intentar llamar al Asesor con Inteligencia Artificial (LLM)
+      const cliente = obtenerSupabase();
+      const session = cliente ? (await cliente.auth.getSession()).data.session : null;
+
+      const mesActual = bogotaDate().slice(0, 7);
+      const txMes = transacciones.filter(t => t.occurredOn.startsWith(mesActual));
+      const gastosMes = txMes.filter(t => t.kind === 'gasto').reduce((acc, t) => acc + t.amountCop, 0);
+      const ingresosMes = txMes.filter(t => t.kind === 'ingreso').reduce((acc, t) => acc + t.amountCop, 0);
+
+      const finanzasContext = {
+        mes: mesActual,
+        gastosEsteMesCop: gastosMes,
+        ingresosEsteMesCop: ingresosMes,
+        balanceMesCop: ingresosMes - gastosMes,
+        cuentas: cajitas.filter(c => !c.archivedAt && !ES_PASIVO[c.tipo]).map(c => ({
+          nombre: c.nombre,
+          saldoCop: cajitasBalances[c.id] ?? 0,
+        })),
+        deudas: cajitas.filter(c => !c.archivedAt && ES_PASIVO[c.tipo]).map(c => ({
+          nombre: c.nombre,
+          deudaCop: cajitasBalances[c.id] ?? 0,
+        })),
+        topCategoriasGasto: Array.from(
+          txMes.filter(t => t.kind === 'gasto').reduce((map, t) => {
+            map.set(t.category, (map.get(t.category) || 0) + t.amountCop);
+            return map;
+          }, new Map<string, number>()).entries()
+        ).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([cat, total]) => ({ categoria: cat, totalCop: total })),
+      };
+
+      let respondidoPorLLM = false;
+
+      if (session?.access_token) {
+        try {
+          const res = await fetch(apiUrl('/api/asesor-ia'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              prompt: textoUsuario,
+              history: messages.slice(-5),
+              finanzasContext,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (!data.offline && data.text) {
+              const botMsg: Message = {
+                id: nuevoId(),
+                role: 'bot',
+                text: data.text,
+                provider: data.provider,
+              };
+              setMessages((prev) => [...prev, botMsg]);
+              respondidoPorLLM = true;
+            }
+          }
+        } catch {
+          // Si falla la red, el fallback offline toma el control
+        }
+      }
+
+      // 2. Si no hay LLM configurado o falló, usar el motor offline local
+      if (!respondidoPorLLM) {
+        const { text: respuesta, newContext, action, actions, suggestions } = responderAsesor(
+          textoUsuario,
+          transacciones,
+          cajitas,
+          cajitasBalances,
+          categorias,
+          lexico,
+          context
+        );
+        setContext(newContext);
+        const botMsg: Message = {
+          id: nuevoId(),
+          role: 'bot',
+          text: respuesta,
+          action,
+          actions,
+          suggestions,
+        };
+        setMessages((prev) => [...prev, botMsg]);
+      }
+    } finally {
+      setPensando(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -118,6 +211,13 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
                     : 'rounded-bl-sm border border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink)]'
                 }`}
               >
+                {msg.provider && (
+                  <div className="mb-1.5 flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-fuchsia-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300">
+                      ✨ {msg.provider}
+                    </span>
+                  </div>
+                )}
                 {msg.text.split('\n').map((line, i) => (
                   <React.Fragment key={i}>
                     {renderMarkdownLine(line)}
@@ -176,6 +276,21 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
               </div>
             </div>
           ))}
+          {pensando && (
+            <div className="flex items-end gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-400">
+                <Bot className="h-4 w-4 animate-pulse" strokeWidth={2.5} />
+              </div>
+              <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[13px] text-[var(--fin-ink-soft)]">
+                <span className="flex gap-1">
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-fuchsia-500" style={{ animationDelay: '0ms' }} />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-fuchsia-500" style={{ animationDelay: '150ms' }} />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-fuchsia-500" style={{ animationDelay: '300ms' }} />
+                </span>
+                <span>Analizando tus finanzas...</span>
+              </div>
+            </div>
+          )}
           <div ref={endRef} />
         </div>
       </div>

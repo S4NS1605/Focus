@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, X, Pencil, History, Plus } from 'lucide-react';
+import { AlertTriangle, X, Pencil, History, Plus, FileText } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forMonth, monthTotals } from './lib/aggregate';
@@ -7,6 +7,7 @@ import { bogotaDate, monthKey, shiftMonth } from './lib/localDate';
 import { nuevoId } from './lib/id';
 import { movimientoEnBlanco, parseTransaction } from './lib/parseTransaction';
 import type { ParsedTransaction } from './lib/parseTransaction';
+import { ReporteFinancieroModal } from './components/ReporteFinancieroModal';
 import { aprenderDe } from './lib/aprendizaje';
 import { useAlmacen } from './data/useAlmacen';
 import { useSesion } from './data/useSesion';
@@ -163,6 +164,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   const [analizando, setAnalizando] = useState<Transaction | null>(null);
   const [section, setSection] = useState<SectionId>('resumen');
   const [pestanaAhorro, setPestanaAhorro] = useState<PestanaAhorro>('cajitas');
+  const [mostrarReporte, setMostrarReporte] = useState(false);
 
   const today = bogotaDate();
   const thisMonth = monthKey(today);
@@ -396,6 +398,18 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         // with the KPI row spanning the full width above them.
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
           <div className="lg:hidden">{monthNav}</div>
+
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">Resumen Ejecutivo</span>
+            <button
+              type="button"
+              onClick={() => setMostrarReporte(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-1.5 text-xs font-bold text-[var(--fin-ink)] shadow-sm transition-all hover:bg-[var(--fin-soft)]"
+            >
+              <FileText className="h-3.5 w-3.5 text-blue-500" />
+              Generar Informe / PDF
+            </button>
+          </div>
 
           <PatrimonioCard
             cajitas={cajitas}
@@ -673,6 +687,15 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           onCancel={() => setEditando(null)}
         />
       ) : null}
+
+      <ReporteFinancieroModal
+        abierto={mostrarReporte}
+        onCerrar={() => setMostrarReporte(false)}
+        mes={month}
+        datos={almacen.datos}
+        cajitasBalances={cajitasBalances}
+        emailUsuario={cuenta?.email}
+      />
     </FinanzasShell>
     </CatalogoProvider>
   );

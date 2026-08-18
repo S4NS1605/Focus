@@ -9,6 +9,7 @@ import {
   pesoAproximado,
   resumirRespaldo,
 } from '../lib/respaldo';
+import { descargarExcel } from '../lib/exportarExcel';
 
 interface PanelRespaldoProps {
   datos: Instantanea;
@@ -85,6 +86,18 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({ datos, hoy, onRest
 
         <button
           type="button"
+          onClick={() => descargarExcel(datos, {}, hoy)}
+          className="mt-1 flex items-center justify-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-bold text-green-600 dark:text-green-400 hover:bg-green-500/20"
+        >
+          <Download className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+          Exportar a Excel (.xls)
+        </button>
+        <p className="text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
+          Incluye hojas separadas de movimientos formateados y saldos de cuentas para Excel y Google Sheets.
+        </p>
+
+        <button
+          type="button"
           onClick={() => descargar(aCsv(datos, nombreDeCuenta), `movimientos-${hoy}.csv`, 'text/csv')}
           className="mt-1 flex items-center justify-center gap-2 rounded-xl border border-[var(--fin-line)] px-4 py-3 text-sm font-bold text-[var(--fin-ink)]"
         >
@@ -92,7 +105,7 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({ datos, hoy, onRest
           Movimientos en CSV
         </button>
         <p className="text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
-          Para abrirlos en Excel o Google Sheets. Solo los movimientos, no las cuentas.
+          Para abrirlos en cualquier hoja de cálculo o importar en otro software contable.
         </p>
       </div>
 
