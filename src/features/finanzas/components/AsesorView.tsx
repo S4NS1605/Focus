@@ -23,6 +23,15 @@ interface Message {
   suggestions?: string[];
 }
 
+/**
+ * Si hay un modelo detrás del asesor o si contesta el motor local.
+ *
+ * `despertando` es un estado real, no un adorno: en el plan gratuito de Render el
+ * servicio se duerme y la primera petición tarda hasta ~40 s. Sin este estado esa
+ * espera parecía que la app se hubiera colgado.
+ */
+type EstadoConexion = 'despertando' | 'en-linea' | 'local';
+
 interface AsesorViewProps {
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
@@ -55,11 +64,30 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
   ]);
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
+  const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, pensando]);
+
+  // Se pregunta por el estado al abrir el chat. La petición despierta de paso el
+  // servicio, así que para cuando escribas el primer mensaje suele estar listo.
+  useEffect(() => {
+    let vigente = true;
+    fetch(apiUrl('/api/salud'))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (vigente) setConexion(d?.ia ? 'en-linea' : 'local');
+      })
+      .catch(() => {
+        // Sin servidor no hay IA, pero el motor local sigue respondiendo.
+        if (vigente) setConexion('local');
+      });
+    return () => {
+      vigente = false;
+    };
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || pensando) return;
@@ -129,6 +157,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
               };
               setMessages((prev) => [...prev, botMsg]);
               respondidoPorLLM = true;
+              setConexion('en-linea');
             }
           }
         } catch {
@@ -136,8 +165,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
         }
       }
 
-      // 2. Si no hay LLM configurado o falló, usar el motor offline local
+      // 2. Si no hay LLM configurado o falló, usar el motor offline local.
+      // El indicador baja a 'local' para que el encabezado diga la verdad: si
+      // estas respuestas las da el motor de reglas, no puede seguir anunciando
+      // que hay una IA en línea.
       if (!respondidoPorLLM) {
+        setConexion('local');
         const { text: respuesta, newContext, action, actions, suggestions } = responderAsesor(
           textoUsuario,
           transacciones,
@@ -177,9 +210,28 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-400">
           <BrainCircuit className="h-5 w-5" strokeWidth={2.5} />
         </div>
-        <div>
+        <div className="min-w-0">
           <h2 className="text-[15px] font-bold text-[var(--fin-ink)]">Tu Asesor Financiero</h2>
-          <p className="text-[13px] text-[var(--fin-ink-soft)]">100% Privado y Local</p>
+          {/* El estado se dice tal cual es: en línea con IA, despertando, o
+              respondiendo en local. Fingir "en línea" mientras contesta el motor
+              de reglas sería mentirle a quien pregunta. */}
+          <p className="flex items-center gap-1.5 text-[13px] text-[var(--fin-ink-soft)]">
+            <span
+              aria-hidden="true"
+              className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                conexion === 'en-linea'
+                  ? 'animate-pulse bg-emerald-500'
+                  : conexion === 'despertando'
+                    ? 'animate-pulse bg-amber-500'
+                    : 'bg-[var(--fin-ink-soft)]'
+              }`}
+            />
+            {conexion === 'en-linea'
+              ? 'En línea'
+              : conexion === 'despertando'
+                ? 'Conectando…'
+                : 'Sin conexión · modo local'}
+          </p>
         </div>
       </div>
 

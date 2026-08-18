@@ -524,6 +524,24 @@ app.post('/api/analizar-extracto', async (req, res) => {
 // Soporta OpenAI, Anthropic Claude, Google Gemini, Groq y DeepSeek.
 // Si no hay key configurada, responde { offline: true } para usar el motor local.
 // ----------------------------------------------------------------------
+/**
+ * Señal de vida del servicio, y si hay un modelo detrás.
+ *
+ * Sin autenticación a propósito: es lo que pinga el keep-alive para que el plan
+ * gratuito de Render no duerma el servicio, y no revela nada — solo dice si hay
+ * alguna llave configurada, nunca cuál ni su valor.
+ *
+ * No llama al modelo: mirar `process.env` cuesta cero y no gasta cuota, así que
+ * el chat puede consultarlo al abrirse sin penalización.
+ */
+app.get('/api/salud', (_req, res) => {
+  const hayIA = Boolean(
+    process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY ||
+    process.env.ANTHROPIC_API_KEY || process.env.DEEPSEEK_API_KEY,
+  );
+  return res.status(200).json({ ok: true, ia: hayIA });
+});
+
 app.post('/api/asesor-ia', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'No authorization header' });
