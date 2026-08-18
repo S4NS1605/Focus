@@ -38,11 +38,6 @@ const montar = (cajitas: Cajita[] = [caj()], movimientos: CajitaMovimiento[] = [
       transacciones={[]}
       onActualizar={onActualizar}
       onFijarSaldo={onFijarSaldo}
-      categorias={[]}
-      onCrearCategoria={vi.fn()}
-      onActualizarCategoria={vi.fn()}
-      onArchivarCategoria={vi.fn()}
-      onBorrarCategoria={vi.fn()}
     />,
   );
 
@@ -128,16 +123,6 @@ describe('ConfiguracionView', () => {
     montar([caj({ archivedAt: '2026-01-01T00:00:00.000Z' })], []);
 
     expect(screen.getByText('Todavía no tienes cuentas.')).toBeInTheDocument();
-  });
-
-  it('still offers the category editor when there are no accounts', () => {
-    // Having no accounts is the empty state of the balances block, not of the
-    // page. Returning early made the only place to edit categories unreachable
-    // until a pocket existed, which has nothing to do with categories.
-    montar([], []);
-
-    expect(screen.getByText('Categorías')).toBeInTheDocument();
-    expect(screen.getByText('Nueva')).toBeInTheDocument();
   });
 
   it('totals only what is held, never what is owed', () => {

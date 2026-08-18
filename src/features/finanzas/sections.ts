@@ -6,10 +6,12 @@ import {
   Landmark,
   CreditCard,
   FileText,
+  HardDriveDownload,
   MoreHorizontal,
   PiggyBank,
   ReceiptText,
   Settings2,
+  Tag,
   Target,
   TrendingUp,
   Users,
@@ -82,12 +84,17 @@ export const PESTANAS_AHORRO = [
 export type PestanaAhorro = typeof PESTANAS_AHORRO[number]['id'];
 
 /**
- * Las tres caras de Configuración en escritorio -- solo ahí: en el celular
- * esta sección sigue mostrando nada más que Ajustes, como siempre, y
- * Contactos/Tendencias se alcanzan por su propio botón en "Más".
+ * Las seis caras de Configuración en escritorio -- solo ahí: en el celular
+ * esta sección sigue mostrando nada más que Ajustes (saldos), como siempre.
+ * Categorías, 4x1000 y Respaldo vivían apiladas una debajo de otra dentro de
+ * ConfiguracionView; Contactos y Tendencias se alcanzan en el celular por su
+ * propio botón en "Más". Las cinco se separan en pestañas iguales aquí.
  */
 export const PESTANAS_CONFIGURACION = [
   { id: 'ajustes', icon: Settings2, label: 'Ajustes', color: 'text-stone-500 dark:text-stone-400' },
+  { id: 'categorias', icon: Tag, label: 'Categorías', color: 'text-amber-500 dark:text-amber-400' },
+  { id: 'gmf', icon: Landmark, label: '4x1000', color: 'text-rose-500 dark:text-rose-400' },
+  { id: 'respaldo', icon: HardDriveDownload, label: 'Respaldo', color: 'text-sky-500 dark:text-sky-400' },
   { id: 'contactos', icon: Users, label: 'Contactos', color: 'text-teal-500 dark:text-teal-400' },
   { id: 'tendencias', icon: TrendingUp, label: 'Tendencias', color: 'text-violet-500 dark:text-violet-400' },
 ] as const;

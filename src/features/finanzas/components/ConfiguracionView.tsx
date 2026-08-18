@@ -4,25 +4,21 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
-import { CategoriasEditor } from './CategoriasEditor';
-import type { CategoriasEditorProps } from './CategoriasEditor';
 import { idsPasivos, saldosPorCajita } from '../lib/cajitas';
 import { formatAmountInput, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 
+/**
+ * Solo saldos. Categorías, 4x1000 y Respaldo vivían apiladas debajo de esto
+ * en la misma vista; ahora cada una es su propia pestaña de Configuración
+ * (ver PESTANAS_CONFIGURACION en sections.ts) y FinanzasApp.tsx las monta
+ * por separado -- esta vista dejó de saber que existen.
+ */
 interface ConfiguracionViewProps {
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
   onActualizar: (cajita: Cajita) => void;
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
-  categorias: CategoriasEditorProps['categorias'];
-  onCrearCategoria: CategoriasEditorProps['onCrear'];
-  onActualizarCategoria: CategoriasEditorProps['onActualizar'];
-  onArchivarCategoria: CategoriasEditorProps['onArchivar'];
-  onBorrarCategoria: CategoriasEditorProps['onBorrar'];
-  /** Ya montado: esta vista solo decide dónde va, no de qué habla. */
-  panelGmf?: React.ReactNode;
-  panelRespaldo?: React.ReactNode;
 }
 
 /**
@@ -233,20 +229,9 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
   transacciones,
   onActualizar,
   onFijarSaldo,
-  categorias,
-  onCrearCategoria,
-  onActualizarCategoria,
-  onArchivarCategoria,
-  onBorrarCategoria,
-  panelGmf,
-  panelRespaldo,
 }) => {
   const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   const vivas = cajitas.filter((c) => c.archivedAt === null);
-
-  // Having no accounts is the empty state of the BALANCES block, not of the
-  // page: categories have nothing to do with accounts, and returning early here
-  // left the only place to edit them unreachable until a pocket existed.
   const sinCuentas = vivas.length === 0;
 
   return (
@@ -290,19 +275,6 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
           </section>
         );
       })}
-
-      {panelGmf}
-
-      {panelRespaldo}
-
-      <CategoriasEditor
-        categorias={categorias}
-        transacciones={transacciones}
-        onCrear={onCrearCategoria}
-        onActualizar={onActualizarCategoria}
-        onArchivar={onArchivarCategoria}
-        onBorrar={onBorrarCategoria}
-      />
 
       {sinCuentas ? null : (
       <p className="px-1 text-[11px] text-[var(--fin-ink-faint)]">

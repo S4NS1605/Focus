@@ -46,4 +46,14 @@ describe('PESTANAS_CONFIGURACION', () => {
       expect(ids).toContain(escondida);
     }
   });
+
+  it('separa también Categorías, 4x1000 y Respaldo -- vivían apiladas en una sola pantalla', () => {
+    const ids = PESTANAS_CONFIGURACION.map((p) => p.id);
+    expect(ids).toEqual(['ajustes', 'categorias', 'gmf', 'respaldo', 'contactos', 'tendencias']);
+  });
+
+  it('cada pestaña tiene un id único -- dos con el mismo id se pisarían al hacer clic', () => {
+    const ids = PESTANAS_CONFIGURACION.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });

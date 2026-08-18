@@ -33,6 +33,7 @@ import { contactoPorApodo, dudasDeUnion, partesDelLibro } from './lib/contactos'
 import { useMostrarAhorro } from './data/usePreferencias';
 import { DeudasView } from './components/DeudasView';
 import { ConfiguracionView } from './components/ConfiguracionView';
+import { CategoriasEditor } from './components/CategoriasEditor';
 import { PatrimonioCard } from './components/PatrimonioCard';
 import { EstadoDelMes } from './components/EstadoDelMes';
 import { DetalleMes } from './components/DetalleMes';
@@ -651,6 +652,36 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             />
           ) : pestanaConfiguracion === 'tendencias' ? (
             <TendenciasView transacciones={transacciones} mes={month} />
+          ) : pestanaConfiguracion === 'categorias' ? (
+            <CategoriasEditor
+              categorias={categorias}
+              transacciones={transacciones}
+              onCrear={(datos) => void almacen.crearCategoria(datos)}
+              onActualizar={(c) => void almacen.actualizarCategoria(c)}
+              onArchivar={(id) => void almacen.archivarCategoria(id)}
+              onBorrar={(id) => void almacen.borrarCategoria(id)}
+            />
+          ) : pestanaConfiguracion === 'gmf' ? (
+            <PanelGmf
+              transacciones={transacciones}
+              mes={month}
+              anioActual={Number(bogotaDate().slice(0, 4))}
+              cuentas={cuentasParaElegir}
+              uvt={gmf.uvt}
+              onCambiarUvt={gmf.setUvt}
+              cuentasGmf={gmf.cuentasGmf}
+              onCambiarCuentas={gmf.setCuentasGmf}
+              regimen={gmf.regimen}
+              onCambiarRegimen={gmf.setRegimen}
+              cuentaExentaId={gmf.cuentaExentaId}
+              onCambiarCuentaExenta={gmf.setCuentaExentaId}
+            />
+          ) : pestanaConfiguracion === 'respaldo' ? (
+            <PanelRespaldo
+              datos={almacen.datos}
+              hoy={today}
+              onRestaurar={(d) => void almacen.restaurar(d)}
+            />
           ) : (
             <ConfiguracionView
               cajitas={cajitas}
@@ -658,34 +689,6 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
               movimientos={cajitaMovimientos}
               onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
               onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
-              categorias={categorias}
-              onCrearCategoria={(datos) => void almacen.crearCategoria(datos)}
-              onActualizarCategoria={(c) => void almacen.actualizarCategoria(c)}
-              onArchivarCategoria={(id) => void almacen.archivarCategoria(id)}
-              onBorrarCategoria={(id) => void almacen.borrarCategoria(id)}
-              panelGmf={
-                <PanelGmf
-                  transacciones={transacciones}
-                  mes={month}
-                  anioActual={Number(bogotaDate().slice(0, 4))}
-                  cuentas={cuentasParaElegir}
-                  uvt={gmf.uvt}
-                  onCambiarUvt={gmf.setUvt}
-                  cuentasGmf={gmf.cuentasGmf}
-                  onCambiarCuentas={gmf.setCuentasGmf}
-                  regimen={gmf.regimen}
-                  onCambiarRegimen={gmf.setRegimen}
-                  cuentaExentaId={gmf.cuentaExentaId}
-                  onCambiarCuentaExenta={gmf.setCuentaExentaId}
-                />
-              }
-              panelRespaldo={
-                <PanelRespaldo
-                  datos={almacen.datos}
-                  hoy={today}
-                  onRestaurar={(d) => void almacen.restaurar(d)}
-                />
-              }
             />
           )}
         </div>

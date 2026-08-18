@@ -42,7 +42,13 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5">
+    // Tres tarjetas cortas apiladas en una sola columna angosta se veían bien
+    // en el celular, donde el ancho ya es el límite -- pero en un monitor de
+    // escritorio dejaban dos tercios de la pantalla en negro. La barra de
+    // meses (la más alta) ocupa su propia columna; las otras dos, más cortas,
+    // se apilan en la segunda -- así el ancho se usa de verdad en vez de
+    // solo estirar tarjetas pequeñas para que se vean más anchas.
+    <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-5 lg:grid-cols-2">
       {/* Six-month bars */}
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
@@ -97,6 +103,9 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
         </div>
       </section>
 
+      {/* Segunda columna en escritorio: las dos tarjetas cortas juntas, para
+          que no queden cada una sola estirada a lo ancho de media pantalla. */}
+      <div className="flex flex-col gap-5">
       {/* Averages */}
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
@@ -195,6 +204,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
           </ul>
         </section>
       ) : null}
+      </div>
     </div>
   );
 };
