@@ -842,7 +842,7 @@ app.post('/api/asesor-ia', async (req, res) => {
     return res.status(200).json({ offline: true });
   }
 
-  const systemPrompt = `Eres un asesor financiero personal experto para Colombia dentro de la aplicación Focus Finanzas.
+  const systemPrompt = `Eres un asesor financiero personal experto para Colombia dentro de la aplicación Finanzas.
 Tu tono es empático, profesional, claro y directo.
 Tienes acceso al resumen financiero real del usuario:
 ${finanzasContext ? JSON.stringify(finanzasContext, null, 2) : 'No hay datos financieros registrados aún.'}
