@@ -47,8 +47,8 @@ import { DictationInput } from './components/DictationInput';
 import { FinanzasShell } from './components/FinanzasShell';
 import { TemaToggle } from './components/TemaToggle';
 import { MetasView } from './components/MetasView';
-import { PESTANAS_AHORRO } from './sections';
-import type { PestanaAhorro, SectionId } from './sections';
+import { PESTANAS_AHORRO, PESTANAS_CONFIGURACION } from './sections';
+import type { PestanaAhorro, PestanaConfiguracion, SectionId } from './sections';
 import type { Tema } from './data/useTema';
 import { KpiRow } from './components/KpiRow';
 import { MonthNav } from './components/MonthNav';
@@ -164,6 +164,10 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   const [analizando, setAnalizando] = useState<Transaction | null>(null);
   const [section, setSection] = useState<SectionId>('resumen');
   const [pestanaAhorro, setPestanaAhorro] = useState<PestanaAhorro>('cajitas');
+  // Solo importa en escritorio -- en el celular la barra de pestañas está
+  // oculta y esto nunca cambia de 'ajustes', que es lo único que Configuración
+  // muestra ahí, igual que siempre.
+  const [pestanaConfiguracion, setPestanaConfiguracion] = useState<PestanaConfiguracion>('ajustes');
   const [mostrarReporte, setMostrarReporte] = useState(false);
 
   const today = bogotaDate();
@@ -606,41 +610,85 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       ) : null}
 
       {section === 'configuracion' ? (
-        <ConfiguracionView
-          cajitas={cajitas}
-          transacciones={transacciones}
-          movimientos={cajitaMovimientos}
-          onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
-          onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
-          categorias={categorias}
-          onCrearCategoria={(datos) => void almacen.crearCategoria(datos)}
-          onActualizarCategoria={(c) => void almacen.actualizarCategoria(c)}
-          onArchivarCategoria={(id) => void almacen.archivarCategoria(id)}
-          onBorrarCategoria={(id) => void almacen.borrarCategoria(id)}
-          panelGmf={
-            <PanelGmf
+        <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          {/* Solo en escritorio: en el celular esta sección siempre fue solo
+              Ajustes, y Contactos/Tendencias se alcanzan por su propio botón
+              en "Más" -- no tiene sentido esconder la pestaña detrás de otra
+              pestaña ahí. `pestanaConfiguracion` nunca cambia de 'ajustes' en
+              el celular porque esta barra, la única forma de cambiarlo, está
+              oculta. */}
+          <div className="hidden gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5 lg:grid lg:grid-cols-3">
+            {PESTANAS_CONFIGURACION.map((pestana) => {
+              const activa = pestanaConfiguracion === pestana.id;
+              return (
+                <button
+                  key={pestana.id}
+                  type="button"
+                  onClick={() => setPestanaConfiguracion(pestana.id)}
+                  aria-pressed={activa}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors ${
+                    activa ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]' : 'text-[var(--fin-ink-soft)]'
+                  }`}
+                >
+                  <pestana.icon className={`h-4 w-4 shrink-0 ${activa ? pestana.color : ''}`} aria-hidden="true" />
+                  {pestana.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {pestanaConfiguracion === 'contactos' ? (
+            <ContactosView
               transacciones={transacciones}
-              mes={month}
-              anioActual={Number(bogotaDate().slice(0, 4))}
-              cuentas={cuentasParaElegir}
-              uvt={gmf.uvt}
-              onCambiarUvt={gmf.setUvt}
-              cuentasGmf={gmf.cuentasGmf}
-              onCambiarCuentas={gmf.setCuentasGmf}
-              regimen={gmf.regimen}
-              onCambiarRegimen={gmf.setRegimen}
-              cuentaExentaId={gmf.cuentaExentaId}
-              onCambiarCuentaExenta={gmf.setCuentaExentaId}
+              contactos={almacen.datos.contactos}
+              onUnir={(a, b, nombre) => void almacen.unirContactos(a, b, nombre)}
+              onSeparar={(a, b, nombre) => void almacen.separarContactos(a, b, nombre)}
+              onRenombrar={(c) => void almacen.actualizarContacto(c)}
+              onDeshacer={(id) => void almacen.borrarContacto(id)}
+              onApodar={(clave, nombre, apodo, quitar) =>
+                void almacen.apodarParte(clave, nombre, apodo, quitar)
+              }
             />
-          }
-          panelRespaldo={
-            <PanelRespaldo
-              datos={almacen.datos}
-              hoy={today}
-              onRestaurar={(d) => void almacen.restaurar(d)}
+          ) : pestanaConfiguracion === 'tendencias' ? (
+            <TendenciasView transacciones={transacciones} mes={month} />
+          ) : (
+            <ConfiguracionView
+              cajitas={cajitas}
+              transacciones={transacciones}
+              movimientos={cajitaMovimientos}
+              onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
+              onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+              categorias={categorias}
+              onCrearCategoria={(datos) => void almacen.crearCategoria(datos)}
+              onActualizarCategoria={(c) => void almacen.actualizarCategoria(c)}
+              onArchivarCategoria={(id) => void almacen.archivarCategoria(id)}
+              onBorrarCategoria={(id) => void almacen.borrarCategoria(id)}
+              panelGmf={
+                <PanelGmf
+                  transacciones={transacciones}
+                  mes={month}
+                  anioActual={Number(bogotaDate().slice(0, 4))}
+                  cuentas={cuentasParaElegir}
+                  uvt={gmf.uvt}
+                  onCambiarUvt={gmf.setUvt}
+                  cuentasGmf={gmf.cuentasGmf}
+                  onCambiarCuentas={gmf.setCuentasGmf}
+                  regimen={gmf.regimen}
+                  onCambiarRegimen={gmf.setRegimen}
+                  cuentaExentaId={gmf.cuentaExentaId}
+                  onCambiarCuentaExenta={gmf.setCuentaExentaId}
+                />
+              }
+              panelRespaldo={
+                <PanelRespaldo
+                  datos={almacen.datos}
+                  hoy={today}
+                  onRestaurar={(d) => void almacen.restaurar(d)}
+                />
+              }
             />
-          }
-        />
+          )}
+        </div>
       ) : null}
 
       {section === 'analista' ? (

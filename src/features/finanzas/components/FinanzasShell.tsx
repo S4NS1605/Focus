@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ICONO_MAS, SECCIONES_BARRA, SECCIONES_MAS, SECTIONS, sectionLabel } from '../sections';
+import { ICONO_MAS, OCULTAS_EN_SIDEBAR_ESCRITORIO, SECCIONES_BARRA, SECCIONES_MAS, SECTIONS, sectionLabel } from '../sections';
 import type { SectionId } from '../sections';
 import { BrandMark } from './BrandMark';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
@@ -63,7 +63,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
         </div>
 
         <nav className="mt-8 flex flex-col gap-1" aria-label="Secciones">
-          {SECTIONS.map((item) => {
+          {SECTIONS.filter((item) => !OCULTAS_EN_SIDEBAR_ESCRITORIO.includes(item.id)).map((item) => {
             const active = item.id === section;
             return (
               <button

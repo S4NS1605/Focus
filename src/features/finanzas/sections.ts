@@ -57,6 +57,17 @@ export const SECCIONES_MAS: readonly SectionId[] = [
   'configuracion',
 ];
 
+/**
+ * El sidebar de escritorio esconde estas -- viven como pestañas dentro de
+ * Configuración en su lugar, para no crecer a 11 filas: con el texto agrandado
+ * de Windows (125-150%) eso se vuelve una barra lateral gigantesca.
+ *
+ * El celular no cambia: su barra inferior y la hoja "Más" ya resuelven el
+ * desbordamiento de otra forma, así que Contactos y Tendencias se quedan como
+ * sus propias entradas ahí, exactamente igual que hoy.
+ */
+export const OCULTAS_EN_SIDEBAR_ESCRITORIO: readonly SectionId[] = ['contactos', 'tendencias'];
+
 export type SectionId = typeof SECTIONS[number]['id'];
 
 export const sectionLabel = (section: SectionId): string =>
@@ -69,6 +80,19 @@ export const PESTANAS_AHORRO = [
 ] as const;
 
 export type PestanaAhorro = typeof PESTANAS_AHORRO[number]['id'];
+
+/**
+ * Las tres caras de Configuración en escritorio -- solo ahí: en el celular
+ * esta sección sigue mostrando nada más que Ajustes, como siempre, y
+ * Contactos/Tendencias se alcanzan por su propio botón en "Más".
+ */
+export const PESTANAS_CONFIGURACION = [
+  { id: 'ajustes', icon: Settings2, label: 'Ajustes', color: 'text-stone-500 dark:text-stone-400' },
+  { id: 'contactos', icon: Users, label: 'Contactos', color: 'text-teal-500 dark:text-teal-400' },
+  { id: 'tendencias', icon: TrendingUp, label: 'Tendencias', color: 'text-violet-500 dark:text-violet-400' },
+] as const;
+
+export type PestanaConfiguracion = typeof PESTANAS_CONFIGURACION[number]['id'];
 
 
 export const ICONO_MAS = MoreHorizontal;
