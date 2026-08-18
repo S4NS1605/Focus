@@ -223,6 +223,8 @@ export interface PeticionIA {
   duracionMs: number;
   exito: boolean;
   motivo?: string;
+  promptText?: string;
+  respuestaTexto?: string;
 }
 
 interface MetricasIAStore {
@@ -284,7 +286,7 @@ const registrarUsoIA = (peticion: Omit<PeticionIA, 'id' | 'timestamp'>) => {
   }
 
   metricasIA.peticionesRecientes.unshift(registro);
-  if (metricasIA.peticionesRecientes.length > 30) metricasIA.peticionesRecientes.pop();
+  if (metricasIA.peticionesRecientes.length > 50) metricasIA.peticionesRecientes.pop();
 };
 
 /** Rol actual del objetivo y cuántos admins hay, para las guardas de bloqueo. */
@@ -912,6 +914,8 @@ Reglas clave:
         totalTokens,
         duracionMs,
         exito: true,
+        promptText: prompt,
+        respuestaTexto,
       });
 
       return res.status(200).json({
@@ -933,6 +937,8 @@ Reglas clave:
       duracionMs,
       exito: false,
       motivo,
+      promptText: prompt,
+      respuestaTexto: `[Consulta respondida por el motor local heurístico: ${motivo}]`,
     });
 
     console.error(`[asesor] Ningún proveedor respondió — motivo: ${motivo}`);
@@ -949,6 +955,8 @@ Reglas clave:
       duracionMs,
       exito: false,
       motivo: error.message,
+      promptText: typeof prompt === 'string' ? prompt : undefined,
+      respuestaTexto: `[Error al procesar consulta: ${error.message}]`,
     });
 
     console.error('Error en asesor IA:', error);

@@ -24,6 +24,9 @@ import {
   Clock,
   CheckCircle2,
   RefreshCw,
+  MessageSquare,
+  Bot,
+  User,
 } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
@@ -68,6 +71,8 @@ interface PeticionIA {
   duracionMs: number;
   exito: boolean;
   motivo?: string;
+  promptText?: string;
+  respuestaTexto?: string;
 }
 
 interface MetricasIAResponse {
@@ -269,7 +274,10 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   const [visitas, setVisitas] = useState<Visita[]>([]);
   const [loadingVisitas, setLoadingVisitas] = useState(false);
 
-  useBloqueoScroll(isModalOpen || borrando !== null || impersonando !== null);
+  // --- Consulta Detalle Modal ---
+  const [consultaDetalle, setConsultaDetalle] = useState<PeticionIA | null>(null);
+
+  useBloqueoScroll(isModalOpen || borrando !== null || impersonando !== null || consultaDetalle !== null);
 
   const dias = useMemo(() => diasHasta(new Date(), rangoVisitantes), [rangoVisitantes]);
 
@@ -901,61 +909,96 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                     </div>
                   </div>
 
-                  {/* Tabla de Peticiones Recientes */}
-                  <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-sm">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--fin-ink-soft)] mb-4">
-                      Últimas Consultas Procesadas por la IA
-                    </h3>
-
-                    {metricasIA.peticionesRecientes.length === 0 ? (
-                      <p className="py-8 text-center text-xs text-[var(--fin-ink-faint)]">
-                        No hay consultas registradas aún en esta sesión de servidor.
-                      </p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-[var(--fin-soft)]/50 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
-                            <tr>
-                              <th className="px-4 py-3">Hora</th>
-                              <th className="px-4 py-3">Usuario</th>
-                              <th className="px-4 py-3">Proveedor / Modelo</th>
-                              <th className="px-4 py-3">Tokens</th>
-                              <th className="px-4 py-3">Tiempo</th>
-                              <th className="px-4 py-3 text-right">Resultado</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[var(--fin-line)]">
-                            {metricasIA.peticionesRecientes.map((p) => (
-                              <tr key={p.id} className="transition-colors hover:bg-[var(--fin-soft)]/30">
-                                <td className="px-4 py-3 text-[var(--fin-ink-soft)] tabular-nums">
-                                  {new Date(p.timestamp).toLocaleTimeString('es-CO')}
-                                </td>
-                                <td className="px-4 py-3 font-medium">{p.usuarioEmail}</td>
-                                <td className="px-4 py-3 text-[var(--fin-ink-soft)]">
-                                  {p.proveedor} ({p.modelo})
-                                </td>
-                                <td className="px-4 py-3 font-bold tabular-nums">
-                                  {p.totalTokens} <span className="text-[10px] font-normal text-[var(--fin-ink-faint)]">({p.promptTokens} in / {p.completionTokens} out)</span>
-                                </td>
-                                <td className="px-4 py-3 tabular-nums text-[var(--fin-ink-soft)]">{p.duracionMs} ms</td>
-                                <td className="px-4 py-3 text-right">
-                                  {p.exito ? (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                      ✨ Exitoso
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" title={p.motivo}>
-                                      ⚙️ Local ({p.motivo || 'fallback'})
-                                    </span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                    {/* Tabla de Peticiones Recientes */}
+                    <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                            Últimas Consultas Procesadas por la IA
+                          </h3>
+                          <p className="text-[10px] text-[var(--fin-ink-faint)] mt-0.5">
+                            Haz clic en cualquier consulta para ver el chat completo del usuario con el asesor
+                          </p>
+                        </div>
+                        <span className="rounded-lg bg-[var(--fin-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
+                          {metricasIA.peticionesRecientes.length} registradas
+                        </span>
                       </div>
-                    )}
-                  </div>
+
+                      {metricasIA.peticionesRecientes.length === 0 ? (
+                        <p className="py-8 text-center text-xs text-[var(--fin-ink-faint)]">
+                          No hay consultas registradas aún en esta sesión de servidor.
+                        </p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-[var(--fin-soft)]/50 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                              <tr>
+                                <th className="px-4 py-3">Hora</th>
+                                <th className="px-4 py-3">Usuario</th>
+                                <th className="px-4 py-3">Proveedor / Modelo</th>
+                                <th className="px-4 py-3">Tokens</th>
+                                <th className="px-4 py-3">Tiempo</th>
+                                <th className="px-4 py-3 text-right">Conversación</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--fin-line)]">
+                              {metricasIA.peticionesRecientes.map((p) => (
+                                <tr
+                                  key={p.id}
+                                  onClick={() => setConsultaDetalle(p)}
+                                  className="group cursor-pointer transition-colors hover:bg-purple-500/10"
+                                >
+                                  <td className="px-4 py-3 text-[var(--fin-ink-soft)] tabular-nums">
+                                    {new Date(p.timestamp).toLocaleTimeString('es-CO')}
+                                  </td>
+                                  <td className="px-4 py-3 font-medium">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[var(--fin-ink)]">{p.usuarioEmail}</span>
+                                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-purple-600 dark:text-purple-400 font-bold">
+                                        · Ver chat 💬
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-[var(--fin-ink-soft)]">
+                                    {p.proveedor} <span className="text-[10px] opacity-75">({p.modelo})</span>
+                                  </td>
+                                  <td className="px-4 py-3 font-bold tabular-nums">
+                                    {p.totalTokens} <span className="text-[10px] font-normal text-[var(--fin-ink-faint)]">({p.promptTokens} in / {p.completionTokens} out)</span>
+                                  </td>
+                                  <td className="px-4 py-3 tabular-nums text-[var(--fin-ink-soft)]">{p.duracionMs} ms</td>
+                                  <td className="px-4 py-3 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      {p.exito ? (
+                                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                          ✨ Exitoso
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" title={p.motivo}>
+                                          ⚙️ Local
+                                        </span>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setConsultaDetalle(p);
+                                        }}
+                                        className="flex items-center gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 transition-colors"
+                                        title="Ver historial del chat"
+                                      >
+                                        <MessageSquare className="h-3 w-3" />
+                                        <span>Chat</span>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
                 </>
               ) : null}
             </div>
@@ -1400,6 +1443,99 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                 ) : (
                   <><LogIn className="h-3.5 w-3.5" /> Entrar como {impersonando.usuario || impersonando.email}</>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: DETALLE DE CONVERSACIÓN / HISTORIAL DEL CHAT DE LA PERSONA */}
+      {/* ========================================================================= */}
+      {consultaDetalle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setConsultaDetalle(null)}
+          />
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-[var(--fin-line)] p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--fin-ink)]">Historial del Chat con el Asesor IA</h3>
+                  <p className="text-xs text-[var(--fin-ink-soft)]">
+                    Usuario: <span className="font-bold text-[var(--fin-ink)]">{consultaDetalle.usuarioEmail}</span> · {new Date(consultaDetalle.timestamp).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} ({new Date(consultaDetalle.timestamp).toLocaleDateString('es-CO')})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setConsultaDetalle(null)}
+                className="rounded-xl p-2 text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Metrics Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--fin-line)]/50 bg-[var(--fin-soft)]/50 px-5 py-2.5 text-xs text-[var(--fin-ink-soft)]">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[var(--fin-ink)]">{consultaDetalle.proveedor}</span>
+                <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                  {consultaDetalle.modelo}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 tabular-nums">
+                <span><strong>{consultaDetalle.totalTokens}</strong> tokens ({consultaDetalle.promptTokens} in / {consultaDetalle.completionTokens} out)</span>
+                <span>·</span>
+                <span><strong>{consultaDetalle.duracionMs}</strong> ms</span>
+              </div>
+            </div>
+
+            {/* Messages Scroll Area */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              {/* User Query */}
+              <div className="flex items-start gap-3 flex-row-reverse">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                  <User className="h-4 w-4" strokeWidth={2.5} />
+                </div>
+                <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-blue-600 text-white px-4 py-3 text-sm leading-relaxed shadow-sm">
+                  <p className="font-semibold text-[11px] opacity-75 mb-1">Pregunta / Mensaje del Usuario</p>
+                  <p className="whitespace-pre-wrap">{consultaDetalle.promptText || 'No se registró texto de entrada.'}</p>
+                </div>
+              </div>
+
+              {/* AI Response */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                  <Bot className="h-4 w-4" strokeWidth={2.5} />
+                </div>
+                <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink)] px-4 py-3 text-sm leading-relaxed shadow-sm">
+                  <p className="font-semibold text-[11px] text-purple-600 dark:text-purple-400 mb-1.5 flex items-center justify-between">
+                    <span>Respuesta del Asesor IA</span>
+                    {consultaDetalle.exito ? (
+                      <span className="text-[10px] text-emerald-600 font-bold">✨ Respuesta generada por LLM</span>
+                    ) : (
+                      <span className="text-[10px] text-amber-600 font-bold">⚙️ Motor Local ({consultaDetalle.motivo})</span>
+                    )}
+                  </p>
+                  <div className="whitespace-pre-wrap text-[13px] leading-relaxed">
+                    {consultaDetalle.respuestaTexto || (consultaDetalle.exito ? 'Respuesta procesada exitosamente.' : 'Sin respuesta registrada.')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end border-t border-[var(--fin-line)] bg-[var(--fin-bg-soft)] p-4">
+              <button
+                onClick={() => setConsultaDetalle(null)}
+                className="rounded-xl bg-[var(--fin-soft)] px-4 py-2 text-xs font-bold text-[var(--fin-ink)] hover:bg-[var(--fin-line)] transition-colors"
+              >
+                Cerrar
               </button>
             </div>
           </div>
