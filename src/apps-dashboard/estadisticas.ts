@@ -1,4 +1,4 @@
-import { fechaBogota } from '../lib/analitica';
+import { fechaBogota, horaBogota } from '../lib/analitica';
 
 /** Una fila cruda de `visitas`, tal como la devuelve Supabase. */
 export interface Visita {
@@ -21,25 +21,39 @@ export interface DiaResumen {
   visitantes: number;
 }
 
+export interface HoraResumen {
+  hora: number;
+  etiqueta: string;
+  vistas: number;
+}
+
 export interface Resumen {
   vistas: number;
-  /**
-   * Suma de los visitantes distintos de cada día, NO personas distintas del
-   * periodo.
-   *
-   * No es un atajo: la huella rota a medianoche justo para que nadie pueda ser
-   * seguido entre días, así que la misma persona el lunes y el martes son dos
-   * huellas y no hay forma —ni debe haberla— de saber que era la misma. El
-   * número honesto es "visitantes por día, sumados", y así se nombra en la
-   * pantalla.
-   */
   visitantes: number;
   porDia: DiaResumen[];
+  porHora: HoraResumen[];
   rutas: Conteo[];
   paises: Conteo[];
   dispositivos: Conteo[];
   referentes: Conteo[];
+  fuentes: Conteo[];
 }
+
+/** Clasifica un host referente en una categoría legible con icono. */
+export const clasificarFuente = (referente: string): { tipo: string; nombre: string; icono: string } => {
+  const ref = referente.toLowerCase();
+  if (ref === 'directo' || !ref) return { tipo: 'directo', nombre: 'Directo / Marcador', icono: '🌐' };
+  if (ref.includes('linkedin')) return { tipo: 'social', nombre: 'LinkedIn', icono: '💼' };
+  if (ref.includes('whatsapp') || ref.includes('wa.me')) return { tipo: 'social', nombre: 'WhatsApp', icono: '💬' };
+  if (ref.includes('instagram') || ref.includes('ig.me')) return { tipo: 'social', nombre: 'Instagram', icono: '📸' };
+  if (ref.includes('twitter') || ref.includes('x.com') || ref.includes('t.co')) return { tipo: 'social', nombre: 'Twitter / X', icono: '🐦' };
+  if (ref.includes('facebook') || ref.includes('fb.com')) return { tipo: 'social', nombre: 'Facebook', icono: '👥' };
+  if (ref.includes('github')) return { tipo: 'dev', nombre: 'GitHub', icono: '🐱' };
+  if (ref.includes('google')) return { tipo: 'search', nombre: 'Google Search', icono: '🔍' };
+  if (ref.includes('bing') || ref.includes('yahoo') || ref.includes('duckduckgo')) return { tipo: 'search', nombre: 'Buscador', icono: '🔎' };
+  if (ref.includes('vercel') || ref.includes('render')) return { tipo: 'dev', nombre: 'Hosting / Cloud', icono: '☁️' };
+  return { tipo: 'web', nombre: ref, icono: '🔗' };
+};
 
 /** Los últimos `n` días en Bogotá, del más viejo al más nuevo. */
 export const diasHasta = (hoy: Date, n: number): string[] => {
@@ -50,7 +64,7 @@ export const diasHasta = (hoy: Date, n: number): string[] => {
   return dias;
 };
 
-/** De más visto a menos. Empates por orden alfabético, para que no bailen. */
+/** De más visto a menos. Empates por orden alfabético. */
 const ordenar = (cuenta: Map<string, number>): Conteo[] =>
   [...cuenta.entries()]
     .map(([clave, n]) => ({ clave, n }))
@@ -60,14 +74,6 @@ const sumar = (cuenta: Map<string, number>, clave: string): void => {
   cuenta.set(clave, (cuenta.get(clave) ?? 0) + 1);
 };
 
-/**
- * Lo que el panel muestra, calculado desde las filas crudas.
- *
- * `dias` llega desde afuera y no se deduce de los datos a propósito: un día sin
- * una sola visita tiene que aparecer como cero en la gráfica. Si se dedujera de
- * las filas, los días vacíos desaparecerían y la línea mentiría diciendo que el
- * tráfico fue parejo.
- */
 export const resumir = (visitas: readonly Visita[], dias: readonly string[]): Resumen => {
   const enRango = new Set(dias);
 
@@ -75,12 +81,16 @@ export const resumir = (visitas: readonly Visita[], dias: readonly string[]): Re
   const paises = new Map<string, number>();
   const dispositivos = new Map<string, number>();
   const referentes = new Map<string, number>();
+  const fuentesMap = new Map<string, number>();
 
   const porDia = new Map<string, { vistas: number; visitantes: Set<string> }>();
   for (const dia of dias) porDia.set(dia, { vistas: 0, visitantes: new Set() });
 
+  const horasVistas = new Array(24).fill(0);
+
   for (const v of visitas) {
-    const dia = fechaBogota(new Date(v.creado_en));
+    const d = new Date(v.creado_en);
+    const dia = fechaBogota(d);
     if (!enRango.has(dia)) continue;
 
     const acumulado = porDia.get(dia);
@@ -88,12 +98,18 @@ export const resumir = (visitas: readonly Visita[], dias: readonly string[]): Re
     acumulado.vistas += 1;
     acumulado.visitantes.add(v.visitante);
 
+    const h = horaBogota(d);
+    horasVistas[h] += 1;
+
     sumar(rutas, v.ruta);
     sumar(paises, v.pais);
     sumar(dispositivos, v.dispositivo);
-    // "Directo" no es un dominio, es la ausencia de uno: alguien que escribió
-    // la dirección o la tenía guardada. Merece su fila igual.
-    sumar(referentes, v.referente ?? 'directo');
+    
+    const ref = v.referente ?? 'directo';
+    sumar(referentes, ref);
+
+    const infoFuente = clasificarFuente(ref);
+    sumar(fuentesMap, `${infoFuente.icono} ${infoFuente.nombre}`);
   }
 
   const serie = dias.map((fecha) => {
@@ -105,14 +121,24 @@ export const resumir = (visitas: readonly Visita[], dias: readonly string[]): Re
     };
   });
 
+  const totalVistas = serie.reduce((t, d) => t + d.vistas, 0);
+
+  const porHora: HoraResumen[] = horasVistas.map((vistas, hora) => ({
+    hora,
+    etiqueta: `${hora.toString().padStart(2, '0')}:00`,
+    vistas,
+  }));
+
   return {
-    vistas: serie.reduce((t, d) => t + d.vistas, 0),
+    vistas: totalVistas,
     visitantes: serie.reduce((t, d) => t + d.visitantes, 0),
     porDia: serie,
+    porHora,
     rutas: ordenar(rutas),
     paises: ordenar(paises),
     dispositivos: ordenar(dispositivos),
     referentes: ordenar(referentes),
+    fuentes: ordenar(fuentesMap),
   };
 };
 

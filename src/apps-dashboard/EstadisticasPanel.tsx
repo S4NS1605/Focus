@@ -31,46 +31,58 @@ const NOMBRE_DISPOSITIVO: Record<string, string> = {
   escritorio: 'Computador',
 };
 
-/** Una lista de "lo más X", con su barra proporcional al primero. */
+/** Una lista de "lo más X", con su barra proporcional y porcentaje. */
 const Tabla: React.FC<{
   titulo: string;
   icono: React.ReactNode;
   filas: Conteo[];
+  totalVistas: number;
   etiqueta?: (clave: string) => React.ReactNode;
   vacio: string;
-}> = ({ titulo, icono, filas, etiqueta, vacio }) => {
+}> = ({ titulo, icono, filas, totalVistas, etiqueta, vacio }) => {
   const tope = filas[0]?.n ?? 1;
 
   return (
     <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
-      <h3 className="mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
-        {icono}
-        {titulo}
+      <h3 className="mb-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+        <span className="flex items-center gap-2">
+          {icono}
+          {titulo}
+        </span>
+        <span className="text-[10px] font-semibold text-[var(--fin-ink-faint)] lowercase">{filas.length} registros</span>
       </h3>
 
       {filas.length === 0 ? (
         <p className="py-6 text-center text-sm text-[var(--fin-ink-faint)]">{vacio}</p>
       ) : (
         <ul className="flex flex-col gap-2.5">
-          {filas.slice(0, 8).map((fila) => (
-            <li key={fila.clave} className="relative">
-              {/* La barra va detrás del texto, no al lado: así el nombre largo
-                  se puede leer completo y la proporción se sigue viendo. */}
-              <div
-                className="absolute inset-y-0 left-0 rounded-lg bg-sky-500/10"
-                style={{ width: `${Math.max((fila.n / tope) * 100, 4)}%` }}
-                aria-hidden="true"
-              />
-              <div className="relative flex items-center justify-between gap-3 px-2.5 py-1.5">
-                <span className="truncate text-sm font-medium text-[var(--fin-ink)]">
-                  {etiqueta ? etiqueta(fila.clave) : fila.clave}
-                </span>
-                <span className="shrink-0 text-sm font-bold tabular-nums text-[var(--fin-ink-soft)]">
-                  {fila.n.toLocaleString('es-CO')}
-                </span>
-              </div>
-            </li>
-          ))}
+          {filas.slice(0, 8).map((fila) => {
+            const pct = totalVistas > 0 ? Math.round((fila.n / totalVistas) * 100) : 0;
+            return (
+              <li key={fila.clave} className="relative">
+                {/* La barra va detrás del texto, no al lado: así el nombre largo
+                    se puede leer completo y la proporción se sigue viendo. */}
+                <div
+                  className="absolute inset-y-0 left-0 rounded-lg bg-sky-500/10"
+                  style={{ width: `${Math.max((fila.n / tope) * 100, 4)}%` }}
+                  aria-hidden="true"
+                />
+                <div className="relative flex items-center justify-between gap-3 px-2.5 py-1.5">
+                  <span className="truncate text-sm font-medium text-[var(--fin-ink)]">
+                    {etiqueta ? etiqueta(fila.clave) : fila.clave}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="rounded-md bg-[var(--fin-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--fin-ink-soft)]">
+                      {pct}%
+                    </span>
+                    <span className="text-sm font-bold tabular-nums text-[var(--fin-ink)]">
+                      {fila.n.toLocaleString('es-CO')}
+                    </span>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -121,6 +133,7 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
 
   const resumen = useMemo(() => resumir(visitas, dias), [visitas, dias]);
   const topeDia = Math.max(...resumen.porDia.map((d) => d.vistas), 1);
+  const topeHora = Math.max(...resumen.porHora.map((h) => h.vistas), 1);
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[var(--fin-bg)] font-sans text-[var(--fin-ink)] transition-colors duration-300">
@@ -205,9 +218,6 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
                   <p className="mt-2 text-4xl font-extrabold tabular-nums tracking-tight">
                     {resumen.visitantes.toLocaleString('es-CO')}
                   </p>
-                  {/* Se nombra así porque es lo que es. Decir "visitantes
-                      únicos" sería mentir: quien vuelve mañana cuenta otra vez,
-                      y eso es a propósito. */}
                   <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
                     Quien vuelve otro día cuenta de nuevo: el identificador rota cada medianoche
                     para que nadie pueda ser seguido entre días.
@@ -215,9 +225,10 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
                 </div>
               </div>
 
+              {/* Gráfica Día a Día */}
               <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
                 <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
-                  Día a día
+                  Tráfico Día a Día
                 </h3>
 
                 {resumen.vistas === 0 ? (
@@ -238,30 +249,74 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
                 )}
               </div>
 
+              {/* Gráfica Horas Pico de Tráfico */}
+              <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                    ⏰ Horas Pico de Tráfico (Hora Colombia UTC-5)
+                  </h3>
+                  <span className="text-[10px] text-[var(--fin-ink-faint)]">Distribución 00:00 a 23:00</span>
+                </div>
+
+                {resumen.vistas === 0 ? (
+                  <p className="py-8 text-center text-sm text-[var(--fin-ink-faint)]">
+                    Sin visitas registradas.
+                  </p>
+                ) : (
+                  <div>
+                    <div className="flex h-28 items-end gap-1 sm:gap-2">
+                      {resumen.porHora.map((h) => (
+                        <div
+                          key={h.hora}
+                          title={`${h.etiqueta}: ${h.vistas} vistas`}
+                          className="group relative flex-1 flex flex-col items-center h-full justify-end"
+                        >
+                          <div
+                            className="w-full rounded-t bg-gradient-to-t from-sky-600 to-cyan-400 transition-all group-hover:from-sky-500 group-hover:to-cyan-300"
+                            style={{ height: `${Math.max((h.vistas / topeHora) * 100, h.vistas > 0 ? 8 : 2)}%` }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between text-[10px] font-semibold text-[var(--fin-ink-faint)] mt-2 px-1">
+                      <span>00:00</span>
+                      <span>06:00</span>
+                      <span>12:00 m.</span>
+                      <span>18:00</span>
+                      <span>23:00</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid gap-5 sm:grid-cols-2">
                 <Tabla
-                  titulo="Qué miran"
+                  titulo="Qué miran (Rutas)"
                   icono={<BarChart3 className="h-3.5 w-3.5" />}
                   filas={resumen.rutas}
+                  totalVistas={resumen.vistas}
                   vacio="Nada todavía."
                 />
                 <Tabla
-                  titulo="De dónde son"
+                  titulo="De dónde son (Países)"
                   icono={<Globe className="h-3.5 w-3.5" />}
                   filas={resumen.paises}
+                  totalVistas={resumen.vistas}
                   etiqueta={(c) => `${banderaDePais(c)}  ${nombreDePais(c)}`}
                   vacio="Nada todavía."
                 />
                 <Tabla
-                  titulo="Por dónde llegaron"
+                  titulo="Fuentes de Tráfico"
                   icono={<Link2 className="h-3.5 w-3.5" />}
-                  filas={resumen.referentes}
+                  filas={resumen.fuentes}
+                  totalVistas={resumen.vistas}
                   vacio="Nada todavía."
                 />
                 <Tabla
-                  titulo="Desde qué"
+                  titulo="Dispositivos"
                   icono={<Monitor className="h-3.5 w-3.5" />}
                   filas={resumen.dispositivos}
+                  totalVistas={resumen.vistas}
                   etiqueta={(c) => (
                     <span className="flex items-center gap-2">
                       {ICONO_DISPOSITIVO[c]}

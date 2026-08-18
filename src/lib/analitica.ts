@@ -113,6 +113,16 @@ export const fechaBogota = (ahora: Date): string =>
     day: '2-digit',
   }).format(ahora);
 
+/** Hora del día en Bogotá, 0..23. */
+export const horaBogota = (ahora: Date): number => {
+  const str = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Bogota',
+    hour: 'numeric',
+    hour12: false,
+  }).format(ahora);
+  return Number(str) % 24;
+};
+
 /** Largo del hash guardado. 32 hex = 128 bits: de sobra para no chocar. */
 const LARGO_HUELLA = 32;
 

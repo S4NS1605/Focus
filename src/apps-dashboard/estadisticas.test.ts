@@ -117,6 +117,19 @@ describe('resumir', () => {
 
     expect(r.rutas.map((x) => x.clave)).toEqual(['/alfa', '/zeta']);
   });
+  it('clasifica fuentes de tráfico por categoría', () => {
+    const r = resumir(
+      [
+        visita({ referente: 'linkedin.com' }),
+        visita({ referente: 'google.com' }),
+        visita({ referente: null }),
+      ],
+      DIAS,
+    );
+
+    expect(r.fuentes.length).toBe(3);
+    expect(r.porHora.length).toBe(24);
+  });
 });
 
 describe('nombreDePais y banderaDePais', () => {

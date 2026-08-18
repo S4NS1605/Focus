@@ -202,10 +202,89 @@ const exigirAdmin = async (
 const exigirUsuario = async (
   cliente: ClienteAdmin,
   token: string,
-): Promise<{ userId: string } | { status: number; error: string }> => {
+): Promise<{ userId: string; email: string } | { status: number; error: string }> => {
   const { data: llamador, error } = await cliente.auth.getUser(token);
   if (error || !llamador.user) return { status: 401, error: 'Token inválido' };
-  return { userId: llamador.user.id };
+  return { userId: llamador.user.id, email: llamador.user.email ?? '' };
+};
+
+// ----------------------------------------------------------------------
+// TELEMETRÍA: Consumo de Tokens y Métricas de IA
+// ----------------------------------------------------------------------
+export interface PeticionIA {
+  id: string;
+  timestamp: string;
+  usuarioEmail: string;
+  proveedor: string;
+  modelo: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  duracionMs: number;
+  exito: boolean;
+  motivo?: string;
+}
+
+interface MetricasIAStore {
+  fechaActual: string;
+  tokensHoy: number;
+  llamadasHoy: number;
+  llamadasExitosasHoy: number;
+  llamadasFallbackHoy: number;
+  latenciasMs: number[];
+  peticionesRecientes: PeticionIA[];
+}
+
+const fechaBogotaHoy = (): string =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
+const metricasIA: MetricasIAStore = {
+  fechaActual: fechaBogotaHoy(),
+  tokensHoy: 0,
+  llamadasHoy: 0,
+  llamadasExitosasHoy: 0,
+  llamadasFallbackHoy: 0,
+  latenciasMs: [],
+  peticionesRecientes: [],
+};
+
+const asegurarDiaActualMetricas = () => {
+  const hoy = fechaBogotaHoy();
+  if (metricasIA.fechaActual !== hoy) {
+    metricasIA.fechaActual = hoy;
+    metricasIA.tokensHoy = 0;
+    metricasIA.llamadasHoy = 0;
+    metricasIA.llamadasExitosasHoy = 0;
+    metricasIA.llamadasFallbackHoy = 0;
+    metricasIA.latenciasMs = [];
+  }
+};
+
+const registrarUsoIA = (peticion: Omit<PeticionIA, 'id' | 'timestamp'>) => {
+  asegurarDiaActualMetricas();
+  const registro: PeticionIA = {
+    id: `req-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    timestamp: new Date().toISOString(),
+    ...peticion,
+  };
+
+  metricasIA.llamadasHoy += 1;
+  if (peticion.exito) {
+    metricasIA.llamadasExitosasHoy += 1;
+    metricasIA.tokensHoy += peticion.totalTokens;
+    metricasIA.latenciasMs.push(peticion.duracionMs);
+    if (metricasIA.latenciasMs.length > 50) metricasIA.latenciasMs.shift();
+  } else {
+    metricasIA.llamadasFallbackHoy += 1;
+  }
+
+  metricasIA.peticionesRecientes.unshift(registro);
+  if (metricasIA.peticionesRecientes.length > 30) metricasIA.peticionesRecientes.pop();
 };
 
 /** Rol actual del objetivo y cuántos admins hay, para las guardas de bloqueo. */
@@ -453,6 +532,90 @@ app.get('/api/auditoria-logs', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
+// ENDPOINT: Métricas de IA y Consumo de Tokens (Superadmin)
+// ----------------------------------------------------------------------
+app.get('/api/metricas-ia', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configuración de Supabase' });
+
+  const acceso = await exigirAdmin(cliente, token);
+  if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+  asegurarDiaActualMetricas();
+
+  const groqKey = Boolean(process.env.GROQ_API_KEY);
+  const openaiKey = Boolean(process.env.OPENAI_API_KEY);
+  const geminiKey = Boolean(process.env.GEMINI_API_KEY);
+  const anthropicKey = Boolean(process.env.ANTHROPIC_API_KEY);
+  const deepseekKey = Boolean(process.env.DEEPSEEK_API_KEY);
+
+  let proveedorPrincipal = 'Ninguno (Modo Local)';
+  let modeloPrincipal = 'Motor de Reglas Heurístico';
+  let limiteDiarioTokens = 0;
+  let limiteDiarioLlamadas = 0;
+
+  if (groqKey) {
+    proveedorPrincipal = 'Groq Cloud';
+    modeloPrincipal = 'openai/gpt-oss-120b';
+    limiteDiarioTokens = 500000;
+    limiteDiarioLlamadas = 14400;
+  } else if (openaiKey) {
+    proveedorPrincipal = 'OpenAI';
+    modeloPrincipal = 'gpt-4o-mini';
+    limiteDiarioTokens = 200000;
+    limiteDiarioLlamadas = 5000;
+  } else if (geminiKey) {
+    proveedorPrincipal = 'Google Gemini';
+    modeloPrincipal = 'gemini-1.5-flash';
+    limiteDiarioTokens = 1000000;
+    limiteDiarioLlamadas = 1500;
+  } else if (anthropicKey) {
+    proveedorPrincipal = 'Anthropic';
+    modeloPrincipal = 'claude-3-5-sonnet';
+    limiteDiarioTokens = 100000;
+    limiteDiarioLlamadas = 1000;
+  } else if (deepseekKey) {
+    proveedorPrincipal = 'DeepSeek';
+    modeloPrincipal = 'deepseek-chat';
+    limiteDiarioTokens = 500000;
+    limiteDiarioLlamadas = 10000;
+  }
+
+  const latenciaPromedio = metricasIA.latenciasMs.length > 0
+    ? Math.round(metricasIA.latenciasMs.reduce((a, b) => a + b, 0) / metricasIA.latenciasMs.length)
+    : 0;
+
+  const tokensRestantes = limiteDiarioTokens > 0 ? Math.max(0, limiteDiarioTokens - metricasIA.tokensHoy) : 0;
+  const llamadasRestantes = limiteDiarioLlamadas > 0 ? Math.max(0, limiteDiarioLlamadas - metricasIA.llamadasHoy) : 0;
+  const porcentajeTokens = limiteDiarioTokens > 0 ? Number(((metricasIA.tokensHoy / limiteDiarioTokens) * 100).toFixed(2)) : 0;
+  const porcentajeLlamadas = limiteDiarioLlamadas > 0 ? Number(((metricasIA.llamadasHoy / limiteDiarioLlamadas) * 100).toFixed(2)) : 0;
+
+  return res.status(200).json({
+    success: true,
+    fecha: metricasIA.fechaActual,
+    proveedor: proveedorPrincipal,
+    modelo: modeloPrincipal,
+    hayIA: Boolean(groqKey || openaiKey || geminiKey || anthropicKey || deepseekKey),
+    tokensHoy: metricasIA.tokensHoy,
+    tokensRestantes,
+    limiteDiarioTokens,
+    porcentajeTokens,
+    llamadasHoy: metricasIA.llamadasHoy,
+    llamadasExitosas: metricasIA.llamadasExitosasHoy,
+    llamadasFallback: metricasIA.llamadasFallbackHoy,
+    llamadasRestantes,
+    limiteDiarioLlamadas,
+    porcentajeLlamadas,
+    latenciaPromedioMs: latenciaPromedio,
+    costoEstimadoCop: 0,
+    peticionesRecientes: metricasIA.peticionesRecientes,
+  });
+});
+
+// ----------------------------------------------------------------------
 // ENDPOINT: Analizar Extracto Bancario
 // ----------------------------------------------------------------------
 const MAX_BYTES_PDF = 4 * 1024 * 1024; // 4MB
@@ -586,22 +749,19 @@ Reglas clave:
 4. No des recomendaciones de inversión de alto riesgo sin advertencias.
 5. Mantén las respuestas breves y directas al grano (máximo 2 a 4 párrafos).`;
 
+  const inicio = Date.now();
   try {
     let respuestaTexto = '';
     let proveedor = '';
+    let modelo = 'desconocido';
     // Por qué no contestó cada proveedor. Sin esto, "no hay llave" y "la llave
     // falló" devuelven lo mismo desde fuera y no hay forma de distinguirlos.
     const fallos: string[] = [];
 
     // 1. Groq (rápido y sin costo en el plan gratuito).
-    //
-    // El identificador del modelo NO es estable: Groq retira modelos y entonces
-    // responde 404 model_not_found. Aquí vivía `llama-3.3-70b-versatile` hasta
-    // que lo dieron de baja, y el fallo pasó inadvertido porque no se miraba el
-    // error. Si vuelve a dar 404, contrasta con console.groq.com/docs/models
-    // antes de cambiarlo — el log ya dice el motivo exacto.
     if (groqKey) {
       proveedor = 'Groq (GPT-OSS 120B)';
+      modelo = 'openai/gpt-oss-120b';
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
@@ -623,8 +783,6 @@ Reglas clave:
         const data = await groqRes.json();
         respuestaTexto = data.choices?.[0]?.message?.content || '';
       } else {
-        // Groq responde 400 cuando el modelo fue retirado y 401 con llave mala.
-        // Antes esto se perdía en silencio y parecía "no hay IA configurada".
         const detalle = await groqRes.text().catch(() => '');
         console.error(`[asesor] Groq ${groqRes.status}: ${detalle.slice(0, 400)}`);
         fallos.push(`groq:${groqRes.status}`);
@@ -634,6 +792,7 @@ Reglas clave:
     // 2. OpenAI (GPT-4o mini)
     if (!respuestaTexto && openaiKey) {
       proveedor = 'OpenAI (GPT-4o)';
+      modelo = 'gpt-4o-mini';
       const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
@@ -660,6 +819,7 @@ Reglas clave:
     // 3. Google Gemini (1.5 Flash)
     if (!respuestaTexto && geminiKey) {
       proveedor = 'Google Gemini';
+      modelo = 'gemini-1.5-flash';
       const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -684,6 +844,7 @@ Reglas clave:
     // 4. Anthropic Claude
     if (!respuestaTexto && anthropicKey) {
       proveedor = 'Claude 3.5';
+      modelo = 'claude-3-5-sonnet-20241022';
       const clRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -713,6 +874,7 @@ Reglas clave:
     // 5. DeepSeek
     if (!respuestaTexto && deepseekKey) {
       proveedor = 'DeepSeek V3';
+      modelo = 'deepseek-chat';
       const dsRes = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${deepseekKey}` },
@@ -735,7 +897,23 @@ Reglas clave:
       }
     }
 
+    const duracionMs = Date.now() - inicio;
+    const promptTokens = Math.ceil(((prompt?.length || 0) + JSON.stringify(finanzasContext || {}).length + systemPrompt.length) / 3.8);
+    const completionTokens = Math.ceil((respuestaTexto?.length || 0) / 3.8);
+    const totalTokens = promptTokens + completionTokens;
+
     if (respuestaTexto) {
+      registrarUsoIA({
+        usuarioEmail: quienLlama.email || 'usuario',
+        proveedor,
+        modelo,
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        duracionMs,
+        exito: true,
+      });
+
       return res.status(200).json({
         success: true,
         text: respuestaTexto,
@@ -744,13 +922,35 @@ Reglas clave:
       });
     }
 
-    // `motivo` separa dos casos que antes se veían idénticos desde el cliente:
-    // que no haya ninguna llave configurada, o que la haya y el proveedor la
-    // rechazara. Sin esto no se puede diagnosticar sin entrar al servidor.
     const motivo = fallos.length > 0 ? fallos.join(',') : 'sin-llave-configurada';
+    registrarUsoIA({
+      usuarioEmail: quienLlama.email || 'usuario',
+      proveedor: proveedor || 'Ninguno',
+      modelo: modelo || 'local',
+      promptTokens,
+      completionTokens: 0,
+      totalTokens: promptTokens,
+      duracionMs,
+      exito: false,
+      motivo,
+    });
+
     console.error(`[asesor] Ningún proveedor respondió — motivo: ${motivo}`);
     return res.status(200).json({ offline: true, motivo });
   } catch (error: any) {
+    const duracionMs = Date.now() - inicio;
+    registrarUsoIA({
+      usuarioEmail: quienLlama.email || 'usuario',
+      proveedor: 'Error',
+      modelo: 'error',
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      duracionMs,
+      exito: false,
+      motivo: error.message,
+    });
+
     console.error('Error en asesor IA:', error);
     return res.status(200).json({ offline: true, error: error.message });
   }
