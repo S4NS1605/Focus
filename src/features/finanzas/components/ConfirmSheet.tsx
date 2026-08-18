@@ -1,12 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, X, ArrowDownCircle, ArrowUpCircle, Ear, CheckCircle2 } from 'lucide-react';
 import { tint } from '../types';
-import type { CategoriaClave } from '../types';
+import type { CategoriaClave, Transaction } from '../types';
 import type { TxKind } from '../types';
 import { COPY } from '../copy';
-import { formatAmountInput, parseAmountInput } from '../lib/formatCop';
+import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
 import type { ParsedTransaction } from '../lib/parseTransaction';
+import { analizarAnomalias } from '../lib/senalesAvanzadas';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { useCatalogo } from '../catalogoContexto';
 
@@ -43,6 +44,12 @@ interface ConfirmSheetProps {
   fechaInicial?: string;
   /** Tope del selector: no se puede fechar un movimiento en el futuro. */
   fechaMax?: string;
+  /**
+   * El libro completo, para avisar si el monto se sale de lo usual en esta
+   * categoría. Opcional porque es puramente informativo — sin esto el
+   * formulario sigue funcionando igual, solo no muestra el aviso.
+   */
+  transacciones?: readonly Transaction[];
 }
 
 /**
@@ -60,6 +67,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   cuentaInicial = null,
   fechaInicial,
   fechaMax,
+  transacciones,
 }) => {
   const editando = modo === 'editar';
   const [amountText, setAmountText] = useState(() => formatAmountInput(parsed.amount));
@@ -80,6 +88,18 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   const amountWeak = !editando && parsed.signals.amountSource === 'none';
   const kindWeak = !editando && parsed.signals.kindSource === 'default';
   const amountCop = parseAmountInput(amountText);
+
+  // Se recalcula con el monto y la categoría EN PANTALLA, no los que trajo el
+  // parser: si la persona corrige cualquiera de los dos antes de guardar, el
+  // aviso tiene que reflejar lo que de verdad se va a guardar. Solo al crear —
+  // al editar un movimiento ya guardado no tiene sentido advertir sobre algo
+  // que la persona ya vivió y confirmó una vez.
+  const anomalia = useMemo(
+    () => (!editando && transacciones && amountCop && amountCop > 0
+      ? analizarAnomalias(transacciones, category, amountCop)
+      : null),
+    [editando, transacciones, category, amountCop],
+  );
 
   useBloqueoScroll(true);
   const catalogo = useCatalogo();
@@ -178,6 +198,11 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           {amountWeak ? (
             <p className="mt-1.5 text-[11px] font-semibold text-[var(--fin-warn)]">
               {COPY.confirm.amountMissing}
+            </p>
+          ) : anomalia?.esAnomalía ? (
+            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--fin-warn)]">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />
+              Fuera de lo usual — sueles gastar {formatCop(anomalia.promedio)} en esta categoría.
             </p>
           ) : null}
         </div>

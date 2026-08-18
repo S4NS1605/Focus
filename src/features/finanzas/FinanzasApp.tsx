@@ -662,6 +662,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         <ConfirmSheet
           parsed={pending}
           cuentas={cuentasParaElegir}
+          transacciones={transacciones}
           onSave={handleSave}
           onCancel={() => setPending(null)}
         />
