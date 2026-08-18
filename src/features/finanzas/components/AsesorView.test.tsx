@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AsesorView, etiquetaConexion } from './AsesorView';
 import { LEXICO_VACIO } from '../lib/aprendizaje';
+import * as supabaseData from '../data/supabase';
 
 // 15:00 UTC = 10 a. m. en Bogotá (dentro del horario); 06:00 UTC = 1 a. m. (fuera).
 const enHorario = new Date('2026-08-18T15:00:00Z');
@@ -62,6 +63,71 @@ describe('AsesorView — estado de conexión', () => {
     render(<AsesorView {...props} />);
     await waitFor(() => expect(screen.getByText(/modo local/)).toBeTruthy());
     expect(screen.queryByText('En línea')).toBeNull();
+  });
+});
+
+describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
+  // Simula una sesión real: sin esto, handleSend nunca intenta llamar al LLM
+  // y cae directo al motor local (que ya se prueba aparte en asesorBot.test.ts).
+  const sesionFalsa = {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'tok-123' } } }),
+    },
+  };
+
+  const fetchPorRuta = (respuestaAsesor: unknown) =>
+    vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/salud')) {
+        return Promise.resolve({ ok: true, json: async () => ({ ok: true, ia: true }) });
+      }
+      if (String(url).includes('/api/asesor-ia')) {
+        return Promise.resolve({ ok: true, json: async () => respuestaAsesor });
+      }
+      return Promise.resolve({ ok: false, json: async () => ({}) });
+    });
+
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(sesionFalsa as any);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('muestra el botón de confirmar cuando lo dictado sí describe un gasto real', async () => {
+    vi.stubGlobal(
+      'fetch',
+      fetchPorRuta({ offline: false, text: 'Listo, registrado.', provider: 'Groq (GPT-OSS 120B)' }),
+    );
+    render(<AsesorView {...props} onCrearTransaccion={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
+
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    fireEvent.change(input, { target: { value: 'me compre un pancito, me costo 2500' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(screen.getByText(/sí, registrar gasto/i)).toBeTruthy());
+  });
+
+  it('NO muestra botón de confirmar si el modelo responde pero no había ningún monto que registrar', async () => {
+    // Este es exactamente el caso que se vio en producción: el modelo puede
+    // "sonar" como si hubiera anotado algo, pero si parseTransaction no
+    // encuentra un monto real dictado, no hay nada que confirmar.
+    vi.stubGlobal(
+      'fetch',
+      fetchPorRuta({ offline: false, text: '¡Funcionando al 100%! Listo para ayudarte.', provider: 'Groq (GPT-OSS 120B)' }),
+    );
+    render(<AsesorView {...props} onCrearTransaccion={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
+
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    fireEvent.change(input, { target: { value: 'como estas?' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(screen.getByText('¡Funcionando al 100%! Listo para ayudarte.')).toBeTruthy());
+    expect(screen.queryByText(/sí, registrar/i)).toBeNull();
   });
 });
 

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, BrainCircuit } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
-import { responderAsesor, type AsesorContext } from '../lib/asesorBot';
+import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 
 import type { LexicoAprendido } from '../lib/aprendizaje';
@@ -171,11 +171,23 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
           if (res.ok) {
             const data = await res.json();
             if (!data.offline && data.text) {
+              // El modelo redacta la respuesta, pero nunca decide qué se
+              // guarda: se le pasa lo que la persona dictó por la MISMA
+              // puerta que usa el motor local (detectarMovimiento), que corre
+              // parseTransaction de forma determinista. Si el modelo se
+              // inventa un monto que no dijiste, no hay botón de confirmar —
+              // solo aparece cuando el parser, no el LLM, confirma que hay un
+              // movimiento real ahí.
+              const deteccion = detectarMovimiento(textoUsuario, transacciones, cajitas, categorias, lexico, context);
+              setContext(deteccion.newContext);
+
               const botMsg: Message = {
                 id: nuevoId(),
                 role: 'bot',
                 text: data.text,
                 provider: data.provider,
+                action: deteccion.propuesta?.action,
+                actions: deteccion.propuesta?.actions,
               };
               setMessages((prev) => [...prev, botMsg]);
               respondidoPorLLM = true;

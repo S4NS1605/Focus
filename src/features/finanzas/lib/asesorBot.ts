@@ -51,6 +51,144 @@ function getRandom(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+export interface DeteccionMovimiento {
+  /**
+   * Lo que el parser entendió de la frase completa, se haya podido proponer o
+   * no. El resto del enrutador de `responderAsesor` lo sigue necesitando
+   * (fecha, categoría, descripción) incluso cuando esto no resultó ser un
+   * movimiento que registrar.
+   */
+  intent: ParsedTransaction;
+  newContext: AsesorContext;
+  /**
+   * Listo para devolver tal cual si la frase describe uno o varios
+   * movimientos con monto real. `null` si es una pregunta, si falta el
+   * monto, o si el monto es demasiado débil para fiarse (ej. "cien" suelto
+   * sin "pesos"/"dólares" al lado, que casi siempre es otra cosa).
+   */
+  propuesta: { text: string; action?: ParsedTransaction; actions?: ParsedTransaction[] } | null;
+}
+
+/**
+ * Si lo dictado describe uno o varios movimientos reales, listos para
+ * proponer con confirmación.
+ *
+ * Esta es la ÚNICA puerta por la que un movimiento entra al libro desde el
+ * asesor, la use el motor de reglas local (aquí abajo, en `responderAsesor`)
+ * o el modelo en línea (desde `AsesorView`, después de que el LLM ya
+ * contestó en prosa). El LLM puede redactar lo que quiera; lo que decide el
+ * monto, la categoría y si hay algo que guardar es siempre `parseTransaction`
+ * — determinista, local, el mismo camino para los dos casos. Así una
+ * respuesta bonita del modelo nunca puede "inventar" un registro que el
+ * parser no confirme de forma independiente.
+ */
+export const detectarMovimiento = (
+  texto: string,
+  transacciones: readonly Transaction[],
+  cajitas: readonly Cajita[],
+  categorias: readonly CategoriaPersonal[],
+  lexico: LexicoAprendido,
+  context: AsesorContext,
+): DeteccionMovimiento => {
+  const norm = normalizarNombre(texto);
+  const newContext = { ...context };
+
+  const cuentasParaElegir = cajitas
+    .filter((c) => c.archivedAt === null && c.tipo === 'cuenta')
+    .map((c) => ({ id: c.id, nombre: c.nombre, esBajoMonto: false }));
+
+  const isQuestion = norm.includes('cuanto') || norm.includes('cual') || norm.includes('?') || norm.includes('total') || norm.includes('dime');
+
+  // Multi-Transaction NLP Router (ej. "gaste 50 en comida, 20 en transporte y 100 en cine")
+  if (!isQuestion && !context._isRecursive) {
+    const separadores = / y |,| e | luego /;
+    const parts = norm.split(separadores).map(p => p.trim()).filter(p => p.length > 4);
+    const partsWithNumbers = parts.filter(p => /\d/.test(p));
+
+    if (partsWithNumbers.length > 1) {
+      const allActions: ParsedTransaction[] = [];
+      let combinedText = "¡Guau, a la velocidad de la luz! Detecté varias transacciones de una sola pasada:\n\n";
+
+      let lastKind = 'gasto'; // Default propagation
+      for (const part of partsWithNumbers) {
+        const partToParse = (part.includes('gaste') || part.includes('pague') || part.includes('me pagaron')) ? part : (lastKind === 'ingreso' ? 'me pagaron ' : 'gaste ') + part;
+
+        const subIntent = parseTransaction(partToParse, cuentasParaElegir, categorias, lexico, transacciones);
+        if (subIntent && subIntent.amount && subIntent.amount > 0) {
+          lastKind = subIntent.kind;
+
+          if ((subIntent.category === 'otros' || !subIntent.category) && context.ultimoAsunto) {
+            subIntent.category = context.ultimoAsunto;
+          }
+
+          allActions.push(subIntent);
+          combinedText += `• Un ${subIntent.kind} de **$${subIntent.amount.toLocaleString('es-CO')}** en **${subIntent.category}**.\n`;
+        }
+      }
+
+      if (allActions.length > 1) {
+        newContext.ultimoAsunto = allActions[allActions.length - 1].category;
+        return {
+          intent: allActions[allActions.length - 1],
+          newContext,
+          propuesta: {
+            text: combinedText + "\nRevisa los botones abajo y dale clic a cada uno para registrarlos.",
+            actions: allActions,
+          },
+        };
+      }
+    }
+  }
+
+  // Single Transaction
+  const intent = parseTransaction(texto, cuentasParaElegir, categorias, lexico, transacciones);
+
+  if (intent.amount && intent.amount > 0 && intent.category === 'otros' && context.ultimoAsunto) {
+    intent.category = context.ultimoAsunto;
+    intent.description = intent.description || `Adición a ${context.ultimoAsunto}`;
+  }
+
+  const isWeakAmount = intent.amount !== null && intent.amount < 100 && intent.signals.amountSource === 'words' && !norm.includes('peso') && !norm.includes('dolar') && !norm.includes('euro');
+
+  if (!isQuestion && intent.amount && intent.amount > 0 && !isWeakAmount) {
+    newContext.ultimoAsunto = intent.category;
+
+    let alertText = "";
+    if (intent.kind === 'gasto' && intent.category !== 'otros') {
+      const currentMonth = new Date().toISOString().substring(0, 7);
+      const totalMonthCategory = transacciones
+        .filter(t => t.kind === 'gasto' && t.category === intent.category && t.occurredOn.startsWith(currentMonth))
+        .reduce((sum, t) => sum + t.amountCop, 0);
+
+      const newTotal = totalMonthCategory + intent.amount;
+
+      const pastTxs = transacciones.filter(t => t.kind === 'gasto' && t.category === intent.category && !t.occurredOn.startsWith(currentMonth));
+      if (pastTxs.length > 2) {
+        const pastMonths = new Set(pastTxs.map(t => t.occurredOn.substring(0, 7))).size || 1;
+        const pastSum = pastTxs.reduce((sum, t) => sum + t.amountCop, 0);
+        const avgMonth = pastSum / pastMonths;
+
+        if (newTotal > avgMonth * 1.2) {
+          alertText = `\n\n⚠️ **Alerta Proactiva:** Con este gasto llegarás a **$${newTotal.toLocaleString('es-CO')}** en ${intent.category} este mes. ¡Eso es un 20% más de tu promedio mensual habitual ($${Math.round(avgMonth).toLocaleString('es-CO')})! Trata de frenar aquí.`;
+        } else if (newTotal > avgMonth * 0.9) {
+          alertText = `\n\n💡 **Ojo ahí:** Con este gasto ya estás rozando tu promedio habitual en ${intent.category}. Cuidado con lo que quede del mes.`;
+        }
+      }
+    }
+
+    return {
+      intent,
+      newContext,
+      propuesta: {
+        text: `Veo que mencionas un ${intent.kind} de **$${intent.amount.toLocaleString('es-CO')}** en **${intent.category}**. ¿Quieres que lo registre de una vez en tus finanzas?${alertText}`,
+        action: intent,
+      },
+    };
+  }
+
+  return { intent, newContext, propuesta: null };
+};
+
 export function responderAsesor(
   texto: string,
   transacciones: readonly Transaction[],
@@ -383,103 +521,16 @@ export function responderAsesor(
     };
   }
 
-  // 4. Analizar intención usando ParseTransaction
-  const cuentasParaElegir = cajitas
-    .filter((c) => c.archivedAt === null && c.tipo === 'cuenta')
-    .map((c) => ({ id: c.id, nombre: c.nombre, esBajoMonto: false }));
-
+  // 4. Analizar intención usando ParseTransaction (extraído a detectarMovimiento,
+  // que es la misma puerta que usa AsesorView cuando responde el LLM).
   const isQuestion = norm.includes('cuanto') || norm.includes('cual') || norm.includes('?') || norm.includes('total') || norm.includes('dime');
-  
-  // 4.1 Multi-Transaction NLP Router (ej. "gaste 50 en comida, 20 en transporte y 100 en cine")
-  if (!isQuestion && !context._isRecursive) {
-    const separadores = / y |,| e | luego /;
-    const parts = norm.split(separadores).map(p => p.trim()).filter(p => p.length > 4);
-    
-    // Solo si detectamos que realmente hay multiples partes con numeros (amounts)
-    const partsWithNumbers = parts.filter(p => /\d/.test(p));
-    
-    if (partsWithNumbers.length > 1) {
-      const allActions: ParsedTransaction[] = [];
-      let combinedText = "¡Guau, a la velocidad de la luz! Detecté varias transacciones de una sola pasada:\n\n";
-      
-      let lastKind = 'gasto'; // Default propagation
-      for (const part of partsWithNumbers) {
-        // Try to propagate verbs to context-less chunks ("gaste 50 en x, 20 en y")
-        const partToParse = (part.includes('gaste') || part.includes('pague') || part.includes('me pagaron')) ? part : (lastKind === 'ingreso' ? 'me pagaron ' : 'gaste ') + part;
-        
-        const subIntent = parseTransaction(partToParse, cuentasParaElegir, categorias, lexico, transacciones);
-        if (subIntent && subIntent.amount && subIntent.amount > 0) {
-          lastKind = subIntent.kind;
-          
-          // Memoria profunda: Si no encontró categoria, y la anterior parte sí tenía, heredamos o usamos el ultimoAsunto
-          if ((subIntent.category === 'otros' || !subIntent.category) && context.ultimoAsunto) {
-             subIntent.category = context.ultimoAsunto;
-          }
-          
-          allActions.push(subIntent);
-          combinedText += `• Un ${subIntent.kind} de **$${subIntent.amount.toLocaleString('es-CO')}** en **${subIntent.category}**.\n`;
-        }
-      }
 
-      if (allActions.length > 1) {
-        // Save the last category for deep context memory
-        newContext.ultimoAsunto = allActions[allActions.length - 1].category;
-        
-        return {
-          text: combinedText + "\nRevisa los botones abajo y dale clic a cada uno para registrarlos.",
-          newContext,
-          actions: allActions
-        };
-      }
-    }
-  }
+  const deteccion = detectarMovimiento(texto, transacciones, cajitas, categorias, lexico, context);
+  const intent = deteccion.intent;
+  Object.assign(newContext, deteccion.newContext);
 
-  // 4.2 Single Transaction
-  const intent = parseTransaction(texto, cuentasParaElegir, categorias, lexico, transacciones);
-  
-  // Deep memory context for single transactions
-  if (intent.amount && intent.amount > 0 && intent.category === 'otros' && context.ultimoAsunto) {
-    // Ej: "Agregale 10 mil más" (el Asesor recuerda que hablabas de Rappi)
-    intent.category = context.ultimoAsunto;
-    intent.description = intent.description || `Adición a ${context.ultimoAsunto}`;
-  }
-  
-  const isWeakAmount = intent.amount !== null && intent.amount < 100 && intent.signals.amountSource === 'words' && !norm.includes('peso') && !norm.includes('dolar') && !norm.includes('euro');
-  
-  if (!isQuestion && intent.amount && intent.amount > 0 && !isWeakAmount) {
-    newContext.ultimoAsunto = intent.category;
-    
-    // Proactive Budget Alert!
-    let alertText = "";
-    if (intent.kind === 'gasto' && intent.category !== 'otros') {
-      const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
-      const totalMonthCategory = transacciones
-        .filter(t => t.kind === 'gasto' && t.category === intent.category && t.occurredOn.startsWith(currentMonth))
-        .reduce((sum, t) => sum + t.amountCop, 0);
-        
-      const newTotal = totalMonthCategory + intent.amount;
-      
-      // Calculate historical average for this category
-      const pastTxs = transacciones.filter(t => t.kind === 'gasto' && t.category === intent.category && !t.occurredOn.startsWith(currentMonth));
-      if (pastTxs.length > 2) {
-         // Get unique months in past
-         const pastMonths = new Set(pastTxs.map(t => t.occurredOn.substring(0, 7))).size || 1;
-         const pastSum = pastTxs.reduce((sum, t) => sum + t.amountCop, 0);
-         const avgMonth = pastSum / pastMonths;
-         
-         if (newTotal > avgMonth * 1.2) {
-           alertText = `\n\n⚠️ **Alerta Proactiva:** Con este gasto llegarás a **$${newTotal.toLocaleString('es-CO')}** en ${intent.category} este mes. ¡Eso es un 20% más de tu promedio mensual habitual ($${Math.round(avgMonth).toLocaleString('es-CO')})! Trata de frenar aquí.`;
-         } else if (newTotal > avgMonth * 0.9) {
-           alertText = `\n\n💡 **Ojo ahí:** Con este gasto ya estás rozando tu promedio habitual en ${intent.category}. Cuidado con lo que quede del mes.`;
-         }
-      }
-    }
-
-    return {
-      text: `Veo que mencionas un ${intent.kind} de **$${intent.amount.toLocaleString('es-CO')}** en **${intent.category}**. ¿Quieres que lo registre de una vez en tus finanzas?${alertText}`,
-      newContext,
-      action: intent
-    };
+  if (deteccion.propuesta) {
+    return { ...deteccion.propuesta, newContext };
   }
 
   // 4.3 Missing amount fallback
