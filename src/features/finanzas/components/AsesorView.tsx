@@ -185,7 +185,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({ transacciones, cajitas, 
         <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-bg)] p-1.5 shadow-sm focus-within:border-fuchsia-500/50 focus-within:ring-2 focus-within:ring-fuchsia-500/20">
           <input
             type="text"
-            className="min-w-0 flex-1 bg-transparent px-3 py-2 text-[15px] text-[var(--fin-ink)] border-none shadow-none !outline-none focus:!border-transparent focus:!outline-none focus:!ring-0 focus-visible:!outline-none placeholder:text-[var(--fin-ink-faint)]"
+            className="min-w-0 flex-1 bg-transparent px-3 py-2 text-base text-[var(--fin-ink)] border-none shadow-none !outline-none focus:!border-transparent focus:!outline-none focus:!ring-0 focus-visible:!outline-none placeholder:text-[var(--fin-ink-faint)]"
             placeholder="Pregúntale a tu asesor..."
             value={input}
             onChange={(e) => setInput(e.target.value)}

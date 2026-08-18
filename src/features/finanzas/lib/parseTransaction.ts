@@ -680,10 +680,9 @@ export const parseTransaction = (
     const merchant = MERCHANTS[token.norm];
     if (merchant) {
       addCategoryScore(merchant, 'merchant', 80);
-    }
-    if (token.norm.length > 4) {
+    } else if (token.norm.length > 5) {
       const similar = buscarSimilar(token.norm, Object.keys(MERCHANTS), 2);
-      if (similar && similar.length > 3) {
+      if (similar && Math.abs(similar.length - token.norm.length) <= 1 && similar.length > 4) {
         addCategoryScore(MERCHANTS[similar], 'merchant', 70);
       }
     }
@@ -696,10 +695,9 @@ export const parseTransaction = (
     const keyword = lookupWithStem(CATEGORY_KEYWORDS, token.norm);
     if (keyword) {
       addCategoryScore(keyword, 'keyword', 50);
-    }
-    if (token.norm.length > 4) {
+    } else if (token.norm.length > 5) {
       const similar = buscarSimilar(token.norm, Object.keys(CATEGORY_KEYWORDS), 2);
-      if (similar && similar.length > 3) {
+      if (similar && Math.abs(similar.length - token.norm.length) <= 1 && similar.length > 4) {
         const keywordSimilar = lookupWithStem(CATEGORY_KEYWORDS, similar);
         if (keywordSimilar) {
           addCategoryScore(keywordSimilar, 'keyword', 40);
@@ -721,25 +719,25 @@ export const parseTransaction = (
   } else if (categorySource === 'default' && kind === 'gasto') {
     // Zero-Shot Heuristic Fallback
     const textNorm = raw.toLowerCase();
-    if (/(burger|pizza|sushi|taco|asadero|restaurante|empanada|panaderia|helado|almuerzo|comida|cena|desayuno|kfc|corrientazo)/.test(textNorm)) {
+    if (/\b(burger|pizza|sushi|taco|asadero|restaurante|empanada|panaderia|helado|almuerzo|comida|cena|desayuno|kfc|corrientazo)\b/.test(textNorm)) {
       category = 'comida';
       categorySource = 'keyword';
-    } else if (/(uber|taxi|didi|cabify|bus|transmilenio|metro|gasolina|peaje|parqueadero|pasaje)/.test(textNorm)) {
+    } else if (/\b(uber|taxi|didi|cabify|bus|transmilenio|metro|gasolina|peaje|parqueadero|pasaje)\b/.test(textNorm)) {
       category = 'transporte';
       categorySource = 'keyword';
-    } else if (/(teca|bar|pub|club|cine|pelicula|concierto|boleta|netflix|spotify|suscripcion)/.test(textNorm)) {
+    } else if (/\b(discoteca|bar|pub|club|cine|pelicula|concierto|boleta|netflix|spotify|suscripcion)\b/.test(textNorm)) {
       category = 'ocio';
       categorySource = 'keyword';
-    } else if (/(medico|pastilla|farmacia|drogueria|hospital|clinica|eps|cita|salud)/.test(textNorm)) {
+    } else if (/\b(medico|pastilla|farmacia|drogueria|hospital|clinica|eps|cita|salud)\b/.test(textNorm)) {
       category = 'salud';
       categorySource = 'keyword';
-    } else if (/(ropa|zapato|camisa|pantalon|chaqueta|zapatilla|falda|vestido|outfit)/.test(textNorm)) {
+    } else if (/\b(ropa|zapato|camisa|pantalon|chaqueta|zapatilla|falda|vestido|outfit)\b/.test(textNorm)) {
       category = 'compras';
       categorySource = 'keyword';
-    } else if (/(mercado|supermercado|exito|carulla|jumbo|tienda|fruver|carniceria|viveres)/.test(textNorm)) {
+    } else if (/\b(mercado|supermercado|exito|carulla|jumbo|tienda|fruver|carniceria|viveres)\b/.test(textNorm)) {
       category = 'mercado';
       categorySource = 'keyword';
-    } else if (/(luz|agua|gas|internet|celular|plan|factura|recibo|arriendo)/.test(textNorm)) {
+    } else if (/\b(luz|agua|gas|internet|celular|plan|factura|recibo|arriendo)\b/.test(textNorm)) {
       category = 'hogar';
       categorySource = 'keyword';
     }

@@ -41,11 +41,13 @@ export const PatrimonioCard: React.FC<PatrimonioCardProps> = ({
   const encabezado = mostrarAhorro ? total.totalCop : total.cuentasCop;
 
   // Cuánto de lo que hay en cuentas es plata en la mano y cuánto está en el
-  // banco. Se suma también el id viejo de Efectivo por si algún dato quedó sin
-  // migrar; en un proyecto ya migrado ese sumando es cero.
-  const efectivoCop =
-    saldoDeCajita(movimientos, ID_EFECTIVO, transacciones) +
-    saldoDeCajita(movimientos, ID_EFECTIVO_VIEJO, transacciones);
+  // banco. Se busca por id conocido o por nombre para soportar cuentas con UUID único por usuario.
+  const cuentaEfectivoObj = cajitas.find(
+    (c) => c.id === ID_EFECTIVO || c.id === ID_EFECTIVO_VIEJO || c.nombre.toLowerCase() === 'efectivo',
+  );
+  const efectivoCop = cuentaEfectivoObj
+    ? saldoDeCajita(movimientos, cuentaEfectivoObj.id, transacciones)
+    : 0;
   const cuentasBancariasCop = total.cuentasCop - efectivoCop;
   // El desglose solo aparece cuando hay efectivo que distinguir. Sin él, separar
   // "Efectivo $0" y repetir el resto sería ruido, no información.

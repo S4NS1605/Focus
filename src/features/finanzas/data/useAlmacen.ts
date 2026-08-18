@@ -208,15 +208,16 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
 
         // Cash is seeded rather than shipped as a synthetic entry, so it behaves
         // like every other account: it holds a balance, appears in Configuración,
-        // and can be renamed or archived. Keyed by a fixed id, so this runs at
-        // most once — and an archived one is never resurrected.
-        if (!cargado.cajitas.some((c) => c.id === ID_EFECTIVO)) {
-          const efectivo = cuentaEfectivo(new Date().toISOString());
+        // and can be renamed or archived. Keyed uniquely per user so multiple accounts
+        // do not collide on the primary key in Postgres.
+        if (!cargado.cajitas.some((c) => c.id === ID_EFECTIVO || c.id === ID_EFECTIVO_VIEJO || c.nombre.toLowerCase() === 'efectivo')) {
+          const efectivo = cuentaEfectivo(new Date().toISOString(), nuevoId('caj'));
           cargado.cajitas = [...cargado.cajitas, efectivo];
-          // Se espera el guardado en vez de dispararlo y olvidarlo. Tragarse
-          // este error fue lo que dejó la cuenta existiendo solo en pantalla:
-          // se veía en el selector, y cada movimiento que la usaba fallaba.
-          await repo.guardarCajita(efectivo);
+          try {
+            await repo.guardarCajita(efectivo);
+          } catch (e) {
+            console.warn('No se pudo persistir la cuenta de efectivo inicial:', e);
+          }
         }
 
         setDatos(cargado);

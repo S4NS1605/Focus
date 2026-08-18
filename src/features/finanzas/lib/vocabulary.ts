@@ -89,7 +89,7 @@ export const MERCHANTS: Record<string, Category> = {
   davivienda: 'transferencia', bbva: 'transferencia', lulo: 'transferencia',
   nubank: 'transferencia', dale: 'transferencia', uala: 'transferencia',
   cajero: 'transferencia', corresponsal: 'transferencia', cuota: 'otros',
-  intereses: 'otros', dmf: 'otros', rtf: 'otros',
+  dmf: 'otros', rtf: 'otros',
   
   // Servicios y Hogar
   claro: 'servicios', movistar: 'servicios', tigo: 'servicios', etb: 'servicios',
@@ -97,7 +97,7 @@ export const MERCHANTS: Record<string, Category> = {
   epm: 'servicios', codensa: 'servicios', vanti: 'servicios', enel: 'servicios',
   emcali: 'servicios', triplea: 'servicios', acueducto: 'servicios',
   gas: 'servicios', luz: 'servicios', agua: 'servicios', internet: 'servicios',
-  admin: 'hogar', administracion: 'hogar', arriendo: 'hogar',
+  admin: 'hogar', administracion: 'hogar', arriendo: 'servicios',
   homecenter: 'hogar', easy: 'hogar',
   
   // Salud y Cuidado Personal
@@ -106,20 +106,18 @@ export const MERCHANTS: Record<string, Category> = {
   smartfit: 'salud', bodytech: 'salud', actionfitness: 'salud',
   sanitas: 'salud', sura: 'salud', compensar: 'salud',
   eps: 'salud', prepagada: 'salud', medico: 'salud', odontologo: 'salud',
-  barberia: 'salud', peluqueria: 'salud', uñas: 'salud',
+  barberia: 'salud', peluqueria: 'salud', unas: 'salud',
   
   // Entretenimiento, Ropa y Salidas
   netflix: 'entretenimiento', spotify: 'entretenimiento', hbo: 'entretenimiento',
   disney: 'entretenimiento', youtube: 'entretenimiento', steam: 'entretenimiento',
   apple: 'entretenimiento', playstore: 'entretenimiento', primevideo: 'entretenimiento',
-  cine: 'entretenimiento', cinecolombia: 'entretenimiento', cinemark: 'entretenimiento', procinal: 'entretenimiento',
-  concierto: 'entretenimiento', rumba: 'entretenimiento', bar: 'entretenimiento',
+  cinecolombia: 'entretenimiento', cinemark: 'entretenimiento', procinal: 'entretenimiento',
   zara: 'ropa', hmm: 'ropa', bershka: 'ropa', stradivarius: 'ropa',
-  falabella: 'ropa', tenis: 'ropa', zapatos: 'ropa', arturocalle: 'ropa',
+  falabella: 'ropa', arturocalle: 'ropa',
   koaj: 'ropa', pullandbear: 'ropa', gef: 'ropa', puntohblanco: 'ropa',
   
   // Educación
-  universidad: 'educacion', colegio: 'educacion', curso: 'educacion',
   platzi: 'educacion', udemy: 'educacion', domestika: 'educacion',
   
   // Otras tiendas

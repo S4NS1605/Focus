@@ -137,8 +137,8 @@ export const ID_EFECTIVO = '00000000-0000-4000-8000-0000000000ef';
  */
 export const ID_EFECTIVO_VIEJO = 'efectivo';
 
-export const cuentaEfectivo = (createdAt: string): Cajita => ({
-  id: ID_EFECTIVO,
+export const cuentaEfectivo = (createdAt: string, id: string = ID_EFECTIVO): Cajita => ({
+  id,
   nombre: 'Efectivo',
   icon: 'Wallet',
   tipo: 'cuenta',
