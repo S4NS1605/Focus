@@ -611,14 +611,20 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       ) : null}
 
       {section === 'configuracion' ? (
-        <div className="mx-auto flex max-w-3xl flex-col gap-5">
+        // Sin max-w aquí a propósito: ese límite vivía en ESTE contenedor y
+        // envolvía tanto la barra de pestañas como el contenido de abajo, así
+        // que por más que TendenciasView pidiera más ancho por su cuenta,
+        // nunca podía superar al de su padre -- un max-w anidado jamás gana
+        // al de afuera. Ahora la barra conserva su propio ancho cómodo de
+        // fila de botones, y cada pestaña decide el suyo sin que nada la frene.
+        <div className="flex flex-col gap-5">
           {/* Solo en escritorio: en el celular esta sección siempre fue solo
               Ajustes, y Contactos/Tendencias se alcanzan por su propio botón
               en "Más" -- no tiene sentido esconder la pestaña detrás de otra
               pestaña ahí. `pestanaConfiguracion` nunca cambia de 'ajustes' en
               el celular porque esta barra, la única forma de cambiarlo, está
               oculta. */}
-          <div className="hidden gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5 lg:grid lg:grid-cols-3">
+          <div className="mx-auto hidden w-full max-w-3xl gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5 lg:grid lg:grid-cols-3">
             {PESTANAS_CONFIGURACION.map((pestana) => {
               const activa = pestanaConfiguracion === pestana.id;
               return (
