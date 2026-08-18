@@ -571,6 +571,9 @@ Reglas clave:
   try {
     let respuestaTexto = '';
     let proveedor = '';
+    // Por qué no contestó cada proveedor. Sin esto, "no hay llave" y "la llave
+    // falló" devuelven lo mismo desde fuera y no hay forma de distinguirlos.
+    const fallos: string[] = [];
 
     // 1. Groq (Llama 3.3 70B - Ultra rápido)
     if (groqKey) {
@@ -595,6 +598,12 @@ Reglas clave:
       if (groqRes.ok) {
         const data = await groqRes.json();
         respuestaTexto = data.choices?.[0]?.message?.content || '';
+      } else {
+        // Groq responde 400 cuando el modelo fue retirado y 401 con llave mala.
+        // Antes esto se perdía en silencio y parecía "no hay IA configurada".
+        const detalle = await groqRes.text().catch(() => '');
+        console.error(`[asesor] Groq ${groqRes.status}: ${detalle.slice(0, 400)}`);
+        fallos.push(`groq:${groqRes.status}`);
       }
     }
 
@@ -711,7 +720,12 @@ Reglas clave:
       });
     }
 
-    return res.status(200).json({ offline: true });
+    // `motivo` separa dos casos que antes se veían idénticos desde el cliente:
+    // que no haya ninguna llave configurada, o que la haya y el proveedor la
+    // rechazara. Sin esto no se puede diagnosticar sin entrar al servidor.
+    const motivo = fallos.length > 0 ? fallos.join(',') : 'sin-llave-configurada';
+    console.error(`[asesor] Ningún proveedor respondió — motivo: ${motivo}`);
+    return res.status(200).json({ offline: true, motivo });
   } catch (error: any) {
     console.error('Error en asesor IA:', error);
     return res.status(200).json({ offline: true, error: error.message });
