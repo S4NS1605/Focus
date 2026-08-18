@@ -18,6 +18,38 @@ export const bogotaDate = (now: Date = new Date()): string => {
   return `${get('year')}-${get('month')}-${get('day')}`;
 };
 
+const HORA = new Intl.DateTimeFormat('en-US', {
+  timeZone: BOGOTA,
+  hour: '2-digit',
+  hour12: false,
+});
+
+/** Hora del día en Bogotá, 0..23. */
+export const bogotaHora = (now: Date = new Date()): number => {
+  const valor = HORA.formatToParts(now).find((p) => p.type === 'hour')?.value ?? '0';
+  // En hour12:false la medianoche sale como '24' en algunos entornos.
+  return Number(valor) % 24;
+};
+
+/** Desde qué hora, y hasta cuál, se mantiene despierto el servidor del asesor. */
+export const ASESOR_DESDE = 7;
+export const ASESOR_HASTA = 21;
+
+/**
+ * Si el asesor está dentro de su horario de servicio.
+ *
+ * El servidor vive en el plan gratuito de Render, que duerme por inactividad. Un
+ * ping programado lo mantiene despierto solo de día, porque tenerlo 24/7 se
+ * comería casi toda la cuota mensual. Fuera de ese rango no está caído: está
+ * descansando, y la interfaz lo dice con esas palabras.
+ *
+ * El límite superior es inclusivo: a las 9 p.m. en punto todavía es horario.
+ */
+export const asesorEnHorario = (now: Date = new Date()): boolean => {
+  const h = bogotaHora(now);
+  return h >= ASESOR_DESDE && h <= ASESOR_HASTA;
+};
+
 const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const MONTHS_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 

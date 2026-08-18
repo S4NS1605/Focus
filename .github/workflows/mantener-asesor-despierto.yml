@@ -1,0 +1,57 @@
+# Mantiene despierto el servicio de la API (Render, plan gratuito).
+#
+# Render duerme el servicio tras ~15 min sin tráfico y despertarlo tarda ~40 s,
+# tiempo en el que el asesor cae al motor local. Este ping lo evita.
+#
+# SOLO DE DÍA, a propósito: el plan gratuito da 750 h al mes y un mes tiene ~730,
+# así que tenerlo despierto 24/7 se comería la cuota entera con este único
+# servicio. De 7 a. m. a 9 p. m. son ~420 h/mes, que deja margen de sobra. Fuera
+# de ese rango la app no miente: el encabezado del chat dice "Descansando".
+#
+# Colombia es UTC-5 todo el año (no hay horario de verano), así que la conversión
+# es fija: 7 a. m. COT = 12:00 UTC, y 9 p. m. COT = 02:00 UTC del día siguiente.
+name: Mantener asesor despierto
+
+on:
+  schedule:
+    # 12:00–23:59 UTC  ->  7 a. m. – 6:59 p. m. COT
+    # 00:00–02:59 UTC  ->  7 p. m. – 9:59 p. m. COT
+    - cron: '*/10 12-23,0-2 * * *'
+  # Permite dispararlo a mano desde la pestaña Actions para comprobar que sirve.
+  workflow_dispatch:
+
+# Si un ping se retrasa y se solapa con el siguiente, no tiene sentido acumular.
+concurrency:
+  group: mantener-asesor-despierto
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    # Un ping no puede colgar el runner: si Render no contesta en 2 min, algo va
+    # mal y es mejor fallar visiblemente que dejar el job corriendo.
+    timeout-minutes: 3
+    steps:
+      - name: Despertar la API
+        run: |
+          # --max-time cubre el arranque en frío (~40 s) con holgura.
+          # Se consulta /api/salud porque no exige sesión y no gasta cuota del
+          # modelo: solo mira si hay alguna llave configurada.
+          codigo=$(curl -s -o /tmp/salud.json -w '%{http_code}' \
+            --max-time 90 --retry 2 --retry-delay 5 \
+            https://focus-62nt.onrender.com/api/salud)
+
+          echo "HTTP ${codigo}"
+          cat /tmp/salud.json || true
+          echo
+
+          if [ "${codigo}" != "200" ]; then
+            echo "::error::La API respondió ${codigo} en vez de 200"
+            exit 1
+          fi
+
+          # Que responda 200 no basta: si se quedó sin llave, el asesor estaría
+          # contestando con el motor local sin que nadie se entere.
+          if ! grep -q '"ia":true' /tmp/salud.json; then
+            echo "::warning::La API está viva pero sin modelo configurado (ia:false)"
+          fi

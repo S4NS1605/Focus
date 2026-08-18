@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
+  asesorEnHorario,
   bogotaDate,
+  bogotaHora,
   dayLabel,
   monthKey,
   monthKeyLabel,
@@ -93,5 +95,31 @@ describe('monthLabel / monthKey', () => {
 
   it('keys by year and month', () => {
     expect(monthKey('2026-07-29')).toBe('2026-07');
+  });
+});
+
+describe('asesorEnHorario', () => {
+  // Colombia es UTC-5 fijo, sin horario de verano.
+  it('7 a. m. en Bogotá ya es horario (límite inferior incluido)', () => {
+    expect(asesorEnHorario(new Date('2026-08-18T12:00:00Z'))).toBe(true);
+  });
+
+  it('9 p. m. todavía es horario (límite superior incluido)', () => {
+    expect(asesorEnHorario(new Date('2026-08-19T02:00:00Z'))).toBe(true);
+  });
+
+  it('6:59 a. m. aún no', () => {
+    expect(asesorEnHorario(new Date('2026-08-18T11:59:00Z'))).toBe(false);
+  });
+
+  it('10 p. m. ya no', () => {
+    expect(asesorEnHorario(new Date('2026-08-19T03:00:00Z'))).toBe(false);
+  });
+
+  it('la medianoche de Bogotá cuenta como fuera de horario', () => {
+    // Caso de borde real: hour12:false devuelve '24' en algunos entornos y sin
+    // el módulo 24 la medianoche se leería como hora 24 y rompería la comparación.
+    expect(bogotaHora(new Date('2026-08-19T05:00:00Z'))).toBe(0);
+    expect(asesorEnHorario(new Date('2026-08-19T05:00:00Z'))).toBe(false);
   });
 });
