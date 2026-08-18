@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Tesseract from 'tesseract.js';
 
 export const useImageOCR = (onSuccess: (text: string) => void) => {
   const [isScanning, setIsScanning] = useState(false);
@@ -12,6 +11,13 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
     setError(null);
 
     try {
+      // Import dinámico a propósito: Tesseract pesa varios MB entre el motor
+      // wasm y el modelo de español, y la mayoría de quienes abren el
+      // dictado nunca escanean un recibo. Con import estático ese peso
+      // entraba al bundle principal y lo cargaba todo el mundo, lo usara o
+      // no — ahora solo se descarga la primera vez que alguien de verdad
+      // toca "escanear".
+      const { default: Tesseract } = await import('tesseract.js');
       const result = await Tesseract.recognize(file, 'spa', {
         logger: m => {
           if (m.status === 'recognizing text') {
