@@ -267,7 +267,11 @@ const asegurarDiaActualMetricas = () => {
   }
 };
 
-const registrarUsoIA = (peticion: Omit<PeticionIA, 'id' | 'timestamp'>) => {
+const registrarUsoIA = (
+  peticion: Omit<PeticionIA, 'id' | 'timestamp'>,
+  cliente?: ClienteAdmin | null,
+  userId?: string,
+) => {
   asegurarDiaActualMetricas();
   const registro: PeticionIA = {
     id: `req-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -287,6 +291,37 @@ const registrarUsoIA = (peticion: Omit<PeticionIA, 'id' | 'timestamp'>) => {
 
   metricasIA.peticionesRecientes.unshift(registro);
   if (metricasIA.peticionesRecientes.length > 50) metricasIA.peticionesRecientes.pop();
+
+  // Persistencia en Supabase: si la tabla existe, el historial sobrevive a cualquier reinicio del servidor
+  if (cliente) {
+    void cliente
+      .from('telemetria_ia')
+      .insert({
+        id: registro.id,
+        usuario_id: userId || null,
+        usuario_email: registro.usuarioEmail,
+        proveedor: registro.proveedor,
+        modelo: registro.modelo,
+        prompt_tokens: registro.promptTokens,
+        completion_tokens: registro.completionTokens,
+        total_tokens: registro.totalTokens,
+        duracion_ms: registro.duracionMs,
+        exito: registro.exito,
+        motivo: registro.motivo || null,
+        prompt_texto: registro.promptText || null,
+        respuesta_texto: registro.respuestaTexto || null,
+        creado_en: registro.timestamp,
+      })
+      .then(({ error }) => {
+        if (error) {
+          // Si la tabla aún no se ha creado en Supabase, no rompe nada (continúa con memoria local)
+          console.warn('[telemetria_ia] Aviso al persistir en Supabase:', error.message);
+        }
+      })
+      .catch((err) => {
+        console.warn('[telemetria_ia] Error de red al persistir en Supabase:', err);
+      });
+  }
 };
 
 /** Rol actual del objetivo y cuántos admins hay, para las guardas de bloqueo. */
@@ -586,14 +621,82 @@ app.get('/api/metricas-ia', async (req, res) => {
     limiteDiarioLlamadas = 10000;
   }
 
-  const latenciaPromedio = metricasIA.latenciasMs.length > 0
-    ? Math.round(metricasIA.latenciasMs.reduce((a, b) => a + b, 0) / metricasIA.latenciasMs.length)
+  let tokensHoy = metricasIA.tokensHoy;
+  let llamadasHoy = metricasIA.llamadasHoy;
+  let llamadasExitosasHoy = metricasIA.llamadasExitosasHoy;
+  let llamadasFallbackHoy = metricasIA.llamadasFallbackHoy;
+  let latenciasMs = metricasIA.latenciasMs;
+  let peticionesRecientes = metricasIA.peticionesRecientes;
+
+  // Cargar datos persistentes de Supabase si existen
+  try {
+    const inicioHoyIso = `${metricasIA.fechaActual}T00:00:00-05:00`;
+    const { data: filasHoy, error: errHoy } = await cliente
+      .from('telemetria_ia')
+      .select('*')
+      .gte('creado_en', inicioHoyIso)
+      .order('creado_en', { ascending: false })
+      .limit(200);
+
+    if (!errHoy && filasHoy && filasHoy.length > 0) {
+      llamadasHoy = filasHoy.length;
+      llamadasExitosasHoy = filasHoy.filter((f) => f.exito).length;
+      llamadasFallbackHoy = filasHoy.filter((f) => !f.exito).length;
+      tokensHoy = filasHoy.filter((f) => f.exito).reduce((acc, f) => acc + (f.total_tokens || 0), 0);
+      latenciasMs = filasHoy.filter((f) => f.exito && f.duracion_ms).map((f) => f.duracion_ms);
+      peticionesRecientes = filasHoy.slice(0, 50).map((f) => ({
+        id: f.id,
+        timestamp: f.creado_en,
+        usuarioEmail: f.usuario_email,
+        proveedor: f.proveedor,
+        modelo: f.modelo,
+        promptTokens: f.prompt_tokens,
+        completionTokens: f.completion_tokens,
+        totalTokens: f.total_tokens,
+        duracionMs: f.duracion_ms,
+        exito: f.exito,
+        motivo: f.motivo || undefined,
+        promptText: f.prompt_texto || undefined,
+        respuestaTexto: f.respuesta_texto || undefined,
+      }));
+    } else if (!errHoy && filasHoy && filasHoy.length === 0) {
+      // Si hoy aún no hay consultas, traer las más recientes para mantener el historial visible
+      const { data: ultimas, error: errUltimas } = await cliente
+        .from('telemetria_ia')
+        .select('*')
+        .order('creado_en', { ascending: false })
+        .limit(50);
+
+      if (!errUltimas && ultimas && ultimas.length > 0) {
+        peticionesRecientes = ultimas.map((f) => ({
+          id: f.id,
+          timestamp: f.creado_en,
+          usuarioEmail: f.usuario_email,
+          proveedor: f.proveedor,
+          modelo: f.modelo,
+          promptTokens: f.prompt_tokens,
+          completionTokens: f.completion_tokens,
+          totalTokens: f.total_tokens,
+          duracionMs: f.duracion_ms,
+          exito: f.exito,
+          motivo: f.motivo || undefined,
+          promptText: f.prompt_texto || undefined,
+          respuestaTexto: f.respuesta_texto || undefined,
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('[metricas-ia] Usando memoria local por error de consulta:', err);
+  }
+
+  const latenciaPromedio = latenciasMs.length > 0
+    ? Math.round(latenciasMs.reduce((a, b) => a + b, 0) / latenciasMs.length)
     : 0;
 
-  const tokensRestantes = limiteDiarioTokens > 0 ? Math.max(0, limiteDiarioTokens - metricasIA.tokensHoy) : 0;
-  const llamadasRestantes = limiteDiarioLlamadas > 0 ? Math.max(0, limiteDiarioLlamadas - metricasIA.llamadasHoy) : 0;
-  const porcentajeTokens = limiteDiarioTokens > 0 ? Number(((metricasIA.tokensHoy / limiteDiarioTokens) * 100).toFixed(2)) : 0;
-  const porcentajeLlamadas = limiteDiarioLlamadas > 0 ? Number(((metricasIA.llamadasHoy / limiteDiarioLlamadas) * 100).toFixed(2)) : 0;
+  const tokensRestantes = limiteDiarioTokens > 0 ? Math.max(0, limiteDiarioTokens - tokensHoy) : 0;
+  const llamadasRestantes = limiteDiarioLlamadas > 0 ? Math.max(0, limiteDiarioLlamadas - llamadasHoy) : 0;
+  const porcentajeTokens = limiteDiarioTokens > 0 ? Number(((tokensHoy / limiteDiarioTokens) * 100).toFixed(2)) : 0;
+  const porcentajeLlamadas = limiteDiarioLlamadas > 0 ? Number(((llamadasHoy / limiteDiarioLlamadas) * 100).toFixed(2)) : 0;
 
   return res.status(200).json({
     success: true,
@@ -601,19 +704,19 @@ app.get('/api/metricas-ia', async (req, res) => {
     proveedor: proveedorPrincipal,
     modelo: modeloPrincipal,
     hayIA: Boolean(groqKey || openaiKey || geminiKey || anthropicKey || deepseekKey),
-    tokensHoy: metricasIA.tokensHoy,
+    tokensHoy,
     tokensRestantes,
     limiteDiarioTokens,
     porcentajeTokens,
-    llamadasHoy: metricasIA.llamadasHoy,
-    llamadasExitosas: metricasIA.llamadasExitosasHoy,
-    llamadasFallback: metricasIA.llamadasFallbackHoy,
+    llamadasHoy,
+    llamadasExitosas: llamadasExitosasHoy,
+    llamadasFallback: llamadasFallbackHoy,
     llamadasRestantes,
     limiteDiarioLlamadas,
     porcentajeLlamadas,
     latenciaPromedioMs: latenciaPromedio,
     costoEstimadoCop: 0,
-    peticionesRecientes: metricasIA.peticionesRecientes,
+    peticionesRecientes,
   });
 });
 
@@ -905,18 +1008,22 @@ Reglas clave:
     const totalTokens = promptTokens + completionTokens;
 
     if (respuestaTexto) {
-      registrarUsoIA({
-        usuarioEmail: quienLlama.email || 'usuario',
-        proveedor,
-        modelo,
-        promptTokens,
-        completionTokens,
-        totalTokens,
-        duracionMs,
-        exito: true,
-        promptText: prompt,
-        respuestaTexto,
-      });
+      registrarUsoIA(
+        {
+          usuarioEmail: quienLlama.email || 'usuario',
+          proveedor,
+          modelo,
+          promptTokens,
+          completionTokens,
+          totalTokens,
+          duracionMs,
+          exito: true,
+          promptText: prompt,
+          respuestaTexto,
+        },
+        cliente,
+        quienLlama.userId,
+      );
 
       return res.status(200).json({
         success: true,
@@ -927,37 +1034,45 @@ Reglas clave:
     }
 
     const motivo = fallos.length > 0 ? fallos.join(',') : 'sin-llave-configurada';
-    registrarUsoIA({
-      usuarioEmail: quienLlama.email || 'usuario',
-      proveedor: proveedor || 'Ninguno',
-      modelo: modelo || 'local',
-      promptTokens,
-      completionTokens: 0,
-      totalTokens: promptTokens,
-      duracionMs,
-      exito: false,
-      motivo,
-      promptText: prompt,
-      respuestaTexto: `[Consulta respondida por el motor local heurístico: ${motivo}]`,
-    });
+    registrarUsoIA(
+      {
+        usuarioEmail: quienLlama.email || 'usuario',
+        proveedor: proveedor || 'Ninguno',
+        modelo: modelo || 'local',
+        promptTokens,
+        completionTokens: 0,
+        totalTokens: promptTokens,
+        duracionMs,
+        exito: false,
+        motivo,
+        promptText: prompt,
+        respuestaTexto: `[Consulta respondida por el motor local heurístico: ${motivo}]`,
+      },
+      cliente,
+      quienLlama.userId,
+    );
 
     console.error(`[asesor] Ningún proveedor respondió — motivo: ${motivo}`);
     return res.status(200).json({ offline: true, motivo });
   } catch (error: any) {
     const duracionMs = Date.now() - inicio;
-    registrarUsoIA({
-      usuarioEmail: quienLlama.email || 'usuario',
-      proveedor: 'Error',
-      modelo: 'error',
-      promptTokens: 0,
-      completionTokens: 0,
-      totalTokens: 0,
-      duracionMs,
-      exito: false,
-      motivo: error.message,
-      promptText: typeof prompt === 'string' ? prompt : undefined,
-      respuestaTexto: `[Error al procesar consulta: ${error.message}]`,
-    });
+    registrarUsoIA(
+      {
+        usuarioEmail: quienLlama.email || 'usuario',
+        proveedor: 'Error',
+        modelo: 'error',
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        duracionMs,
+        exito: false,
+        motivo: error.message,
+        promptText: typeof prompt === 'string' ? prompt : undefined,
+        respuestaTexto: `[Error al procesar consulta: ${error.message}]`,
+      },
+      cliente,
+      quienLlama.userId,
+    );
 
     console.error('Error en asesor IA:', error);
     return res.status(200).json({ offline: true, error: error.message });
