@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, BarChart3, Globe, Link2, Loader2, Monitor, Smartphone, Tablet } from 'lucide-react';
+import { ArrowLeft, BarChart3, Clock, Globe, Link2, Loader2, Monitor, Smartphone, Tablet } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
@@ -31,6 +31,129 @@ const NOMBRE_DISPOSITIVO: Record<string, string> = {
   escritorio: 'Computador',
 };
 
+const formatearFechaCorta = (iso: string): string => {
+  const parts = iso.split('-');
+  if (parts.length < 3) return iso;
+  const mes = parseInt(parts[1], 10) - 1;
+  const dia = parseInt(parts[2], 10);
+  const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  return `${dia} ${meses[mes] || parts[1]}`;
+};
+
+interface BarraItem {
+  id: string;
+  etiqueta: string;
+  subetiqueta?: string;
+  valor: number;
+  secundario?: number;
+}
+
+/** Gráfica de barras interactiva unificada con visualización instantánea (0ms espera). */
+const GraficaBarrasUnificada: React.FC<{
+  titulo: string;
+  subtitulo?: string;
+  icono?: React.ReactNode;
+  items: BarraItem[];
+  vacio: string;
+  pieDeGrafica?: React.ReactNode;
+}> = ({ titulo, subtitulo, icono, items, vacio, pieDeGrafica }) => {
+  const [hovered, setHovered] = useState<BarraItem | null>(null);
+  const maxValor = Math.max(...items.map((i) => i.valor), 1);
+  const total = items.reduce((acc, i) => acc + i.valor, 0);
+
+  const pico = useMemo(() => {
+    if (total === 0) return null;
+    return items.reduce((max, i) => (i.valor > max.valor ? i : max), items[0]);
+  }, [items, total]);
+
+  const activo = hovered ?? pico;
+
+  return (
+    <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 sm:p-6 shadow-sm transition-colors">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            {icono}
+            <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+              {titulo}
+            </h3>
+          </div>
+          {subtitulo && <p className="text-[10px] text-[var(--fin-ink-faint)] mt-0.5">{subtitulo}</p>}
+        </div>
+
+        {/* Resumen instantáneo en vivo sin tener que esperar tooltips */}
+        {total > 0 && activo && (
+          <div className="flex items-center gap-2 rounded-xl bg-[var(--fin-soft)] px-3 py-1.5 transition-all self-start sm:self-auto">
+            <span className="text-[10px] font-semibold text-[var(--fin-ink-faint)] uppercase tracking-wider">
+              {hovered ? 'Seleccionado:' : 'Pico más alto:'}
+            </span>
+            <span className="text-xs font-bold text-[var(--fin-ink)]">
+              {activo.etiqueta}
+            </span>
+            <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[11px] font-extrabold text-sky-600 dark:text-sky-400 tabular-nums">
+              {activo.valor.toLocaleString('es-CO')} {activo.valor === 1 ? 'vista' : 'vistas'}
+            </span>
+            {activo.secundario !== undefined && activo.secundario > 0 && (
+              <span className="text-[10px] text-[var(--fin-ink-soft)] font-medium">
+                · {activo.secundario} {activo.secundario === 1 ? 'visitante' : 'visitantes'}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {total === 0 ? (
+        <p className="py-8 text-center text-sm text-[var(--fin-ink-faint)]">{vacio}</p>
+      ) : (
+        <div>
+          <div className="flex h-36 items-end gap-[3px] sm:gap-1.5 pt-7 pb-1">
+            {items.map((item) => {
+              const esHover = hovered?.id === item.id;
+              const esPico = !hovered && pico?.id === item.id && item.valor > 0;
+              const destacado = esHover || esPico;
+              const porcentaje = Math.max((item.valor / maxValor) * 100, item.valor > 0 ? 8 : 3);
+
+              return (
+                <div
+                  key={item.id}
+                  onMouseEnter={() => setHovered(item)}
+                  onMouseLeave={() => setHovered(null)}
+                  onClick={() => setHovered(item)}
+                  className="group relative flex-1 h-full flex flex-col justify-end items-center cursor-pointer select-none"
+                >
+                  {/* Tooltip flotante instantáneo (0ms de retraso) */}
+                  <div
+                    className={`pointer-events-none absolute -top-8 z-30 whitespace-nowrap rounded-lg bg-[var(--fin-ink)] px-2.5 py-1 text-[10px] font-bold text-[var(--fin-bg)] shadow-xl transition-all duration-150 ${
+                      esHover ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+                    }`}
+                  >
+                    {item.etiqueta}: {item.valor} vistas
+                    <div className="absolute left-1/2 -bottom-1 -translate-x-1/2 border-4 border-transparent border-t-[var(--fin-ink)]" />
+                  </div>
+
+                  {/* Barra única y consistente */}
+                  <div
+                    className={`w-full rounded-t-sm transition-all duration-150 ${
+                      destacado
+                        ? 'bg-sky-400 shadow-md shadow-sky-500/30 brightness-110'
+                        : item.valor > 0
+                        ? 'bg-sky-500/80 hover:bg-sky-400'
+                        : 'bg-[var(--fin-soft)]/60 hover:bg-[var(--fin-soft)]'
+                    }`}
+                    style={{ height: `${porcentaje}%` }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {pieDeGrafica}
+        </div>
+      )}
+    </div>
+  );
+};
+
 /** Una lista de "lo más X", con su barra proporcional y porcentaje. */
 const Tabla: React.FC<{
   titulo: string;
@@ -60,8 +183,6 @@ const Tabla: React.FC<{
             const pct = totalVistas > 0 ? Math.round((fila.n / totalVistas) * 100) : 0;
             return (
               <li key={fila.clave} className="relative">
-                {/* La barra va detrás del texto, no al lado: así el nombre largo
-                    se puede leer completo y la proporción se sigue viendo. */}
                 <div
                   className="absolute inset-y-0 left-0 rounded-lg bg-sky-500/10"
                   style={{ width: `${Math.max((fila.n / tope) * 100, 4)}%` }}
@@ -112,7 +233,6 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
       return;
     }
 
-    // Bogotá es UTC-5 todo el año, así que la medianoche local se escribe fija.
     const desde = `${dias[0]}T00:00:00-05:00`;
 
     const { data, error: fallo } = await cliente
@@ -132,8 +252,29 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
   }, [cargar]);
 
   const resumen = useMemo(() => resumir(visitas, dias), [visitas, dias]);
-  const topeDia = Math.max(...resumen.porDia.map((d) => d.vistas), 1);
-  const topeHora = Math.max(...resumen.porHora.map((h) => h.vistas), 1);
+
+  // Adaptadores para la gráfica unificada
+  const itemsDia: BarraItem[] = useMemo(
+    () =>
+      resumen.porDia.map((d) => ({
+        id: d.fecha,
+        etiqueta: formatearFechaCorta(d.fecha),
+        subetiqueta: d.fecha,
+        valor: d.vistas,
+        secundario: d.visitantes,
+      })),
+    [resumen.porDia],
+  );
+
+  const itemsHora: BarraItem[] = useMemo(
+    () =>
+      resumen.porHora.map((h) => ({
+        id: `h-${h.hora}`,
+        etiqueta: h.etiqueta,
+        valor: h.vistas,
+      })),
+    [resumen.porHora],
+  );
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[var(--fin-bg)] font-sans text-[var(--fin-ink)] transition-colors duration-300">
@@ -225,69 +366,32 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
                 </div>
               </div>
 
-              {/* Gráfica Día a Día */}
-              <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
-                <h3 className="mb-4 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
-                  Tráfico Día a Día
-                </h3>
+              {/* Gráfica Día a Día (Estilo Unificado) */}
+              <GraficaBarrasUnificada
+                titulo="Tráfico Día a Día"
+                subtitulo={`Últimos ${rango} días en horario local`}
+                icono={<BarChart3 className="h-3.5 w-3.5 text-sky-500" />}
+                items={itemsDia}
+                vacio="Todavía no hay visitas en este rango."
+              />
 
-                {resumen.vistas === 0 ? (
-                  <p className="py-8 text-center text-sm text-[var(--fin-ink-faint)]">
-                    Todavía no hay visitas en este rango.
-                  </p>
-                ) : (
-                  <div className="flex h-32 items-end gap-[2px]">
-                    {resumen.porDia.map((d) => (
-                      <div
-                        key={d.fecha}
-                        title={`${d.fecha}: ${d.vistas} vistas`}
-                        className="flex-1 rounded-t bg-sky-500/70 transition-colors hover:bg-sky-500"
-                        style={{ height: `${Math.max((d.vistas / topeDia) * 100, 2)}%` }}
-                      />
-                    ))}
+              {/* Gráfica Horas Pico de Tráfico (Mismo Estilo Unificado) */}
+              <GraficaBarrasUnificada
+                titulo="Horas Pico de Tráfico"
+                subtitulo="Distribución horaria (Hora Colombia UTC-5)"
+                icono={<Clock className="h-3.5 w-3.5 text-sky-500" />}
+                items={itemsHora}
+                vacio="Sin visitas registradas."
+                pieDeGrafica={
+                  <div className="flex justify-between text-[10px] font-semibold text-[var(--fin-ink-faint)] mt-2.5 px-1">
+                    <span>00:00</span>
+                    <span>06:00</span>
+                    <span>12:00 m.</span>
+                    <span>18:00</span>
+                    <span>23:00</span>
                   </div>
-                )}
-              </div>
-
-              {/* Gráfica Horas Pico de Tráfico */}
-              <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
-                    ⏰ Horas Pico de Tráfico (Hora Colombia UTC-5)
-                  </h3>
-                  <span className="text-[10px] text-[var(--fin-ink-faint)]">Distribución 00:00 a 23:00</span>
-                </div>
-
-                {resumen.vistas === 0 ? (
-                  <p className="py-8 text-center text-sm text-[var(--fin-ink-faint)]">
-                    Sin visitas registradas.
-                  </p>
-                ) : (
-                  <div>
-                    <div className="flex h-28 items-end gap-1 sm:gap-2">
-                      {resumen.porHora.map((h) => (
-                        <div
-                          key={h.hora}
-                          title={`${h.etiqueta}: ${h.vistas} vistas`}
-                          className="group relative flex-1 flex flex-col items-center h-full justify-end"
-                        >
-                          <div
-                            className="w-full rounded-t bg-gradient-to-t from-sky-600 to-cyan-400 transition-all group-hover:from-sky-500 group-hover:to-cyan-300"
-                            style={{ height: `${Math.max((h.vistas / topeHora) * 100, h.vistas > 0 ? 8 : 2)}%` }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between text-[10px] font-semibold text-[var(--fin-ink-faint)] mt-2 px-1">
-                      <span>00:00</span>
-                      <span>06:00</span>
-                      <span>12:00 m.</span>
-                      <span>18:00</span>
-                      <span>23:00</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+                }
+              />
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <Tabla
