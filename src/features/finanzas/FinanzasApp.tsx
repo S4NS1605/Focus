@@ -51,6 +51,7 @@ import { MetasView } from './components/MetasView';
 import { FinanzasShell } from './components/FinanzasShell';
 import { InicioView } from './components/InicioView';
 import { DineroView } from './components/DineroView';
+import { DetalleCajita } from './components/DetalleCajita';
 import { MesView } from './components/MesView';
 import { AjustesView } from './components/AjustesView';
 import { HojaPanel } from './components/HojaPanel';
@@ -582,9 +583,28 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
               setPanelDineroCajitaId(null);
             }}
           >
-            {panelDinero === 'deuda' ? (
+            {/* Si hay un ID específico, mostrar detalle de una sola cajita */}
+            {panelDineroCajitaId !== null ? (
+              (() => {
+                const cajitaSeleccionada = cajitas.find((c) => c.id === panelDineroCajitaId);
+                return cajitaSeleccionada ? (
+                  <DetalleCajita
+                    cajita={cajitaSeleccionada}
+                    movimientos={cajitaMovimientos}
+                    transacciones={transacciones}
+                    onFijarSaldo={(cajitaId: string, saldo: number) => void almacen.fijarSaldo(cajitaId, saldo)}
+                    onEliminar={(id: string) => void almacen.borrarCajita(id)}
+                    onTransferir={(origenId, destinoId, montoCop) =>
+                      void almacen.transferirEntreCuentas({ origenId, destinoId, montoCop })
+                    }
+                    destinos={destinosDeTransferencia}
+                  />
+                ) : null;
+              })()
+            ) : /* Si no hay ID, mostrar lista de todas las cajitas del tipo */
+            panelDinero === 'deuda' ? (
               <DeudasView
-                cajitas={panelDineroCajitaId ? cajitas.filter((c) => c.id === panelDineroCajitaId) : cajitas}
+                cajitas={cajitas}
                 movimientos={cajitaMovimientos}
                 onCrear={(datos) => void almacen.crearCajita(datos)}
                 onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
@@ -598,7 +618,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             ) : (
               <CajitasView
                 tipo={panelDinero}
-                cajitas={panelDineroCajitaId ? cajitas.filter((c) => c.id === panelDineroCajitaId) : cajitas}
+                cajitas={cajitas}
                 transacciones={transacciones}
                 movimientos={cajitaMovimientos}
                 onCrear={(datos) => void almacen.crearCajita(datos)}
