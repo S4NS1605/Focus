@@ -385,6 +385,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   // las vistas de siempre, que se abren desde aquí. Así la pantalla nueva es
   // más limpia sin que se pierda nada de lo que la app sabía hacer.
   const [panelDinero, setPanelDinero] = useState<'cuenta' | 'cajita' | 'deuda' | null>(null);
+  const [panelDineroCajitaId, setPanelDineroCajitaId] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<Transaction | null>(null);
   const [guardado, setGuardado] = useState<Guardado | null>(null);
 
@@ -513,12 +514,16 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             cajitas={cajitas}
             movimientos={cajitaMovimientos}
             mostrarAhorro={mostrarAhorro}
-            onAbrir={(cajita) =>
+            onAbrir={(cajita) => {
+              setPanelDineroCajitaId(cajita.id);
               setPanelDinero(
                 ES_PASIVO[cajita.tipo] ? 'deuda' : cajita.tipo === 'cajita' ? 'cajita' : 'cuenta',
-              )
-            }
-            onCrear={() => setPanelDinero('cuenta')}
+              );
+            }}
+            onCrear={() => {
+              setPanelDineroCajitaId(null);
+              setPanelDinero('cuenta');
+            }}
           />
         ) : null}
 
@@ -563,17 +568,22 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
         {panelDinero !== null ? (
           <HojaPanel
             titulo={
-              panelDinero === 'deuda'
-                ? 'Tarjetas y deudas'
-                : panelDinero === 'cajita'
-                  ? 'Ahorros'
-                  : 'Cuentas'
+              panelDineroCajitaId !== null
+                ? cajitas.find((c) => c.id === panelDineroCajitaId)?.nombre ?? ''
+                : panelDinero === 'deuda'
+                  ? 'Tarjetas y deudas'
+                  : panelDinero === 'cajita'
+                    ? 'Ahorros'
+                    : 'Cuentas'
             }
-            onCerrar={() => setPanelDinero(null)}
+            onCerrar={() => {
+              setPanelDinero(null);
+              setPanelDineroCajitaId(null);
+            }}
           >
             {panelDinero === 'deuda' ? (
               <DeudasView
-                cajitas={cajitas}
+                cajitas={panelDineroCajitaId ? cajitas.filter((c) => c.id === panelDineroCajitaId) : cajitas}
                 movimientos={cajitaMovimientos}
                 onCrear={(datos) => void almacen.crearCajita(datos)}
                 onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
@@ -587,7 +597,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             ) : (
               <CajitasView
                 tipo={panelDinero}
-                cajitas={cajitas}
+                cajitas={panelDineroCajitaId ? cajitas.filter((c) => c.id === panelDineroCajitaId) : cajitas}
                 transacciones={transacciones}
                 movimientos={cajitaMovimientos}
                 onCrear={(datos) => void almacen.crearCajita(datos)}
