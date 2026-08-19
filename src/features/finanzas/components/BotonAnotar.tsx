@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mic, Plus, Search, Square } from 'lucide-react';
 import { useDictation } from '../hooks/useDictation';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface BotonAnotarProps {
   /** Se llama con lo que la persona dijo, ya transcrito. */
@@ -30,15 +31,22 @@ interface BotonAnotarProps {
  */
 export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, onBuscar }) => {
   const dictation = useDictation(onDictado);
+  const haptic = useHapticFeedback();
   const escuchando = dictation.status === 'listening';
 
   const alTocarMicrofono = () => {
+    haptic.trigger('medium');
     if (!dictation.supported) {
       onManual();
       return;
     }
-    if (escuchando) dictation.stop();
-    else dictation.start();
+    if (escuchando) {
+      haptic.trigger('light');
+      dictation.stop();
+    } else {
+      haptic.trigger('heavy');
+      dictation.start();
+    }
   };
 
   return (
@@ -47,7 +55,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
         <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-1.5">
           <button
             type="button"
-            onClick={onManual}
+            onClick={() => {
+              haptic.trigger('light');
+              onManual();
+            }}
             aria-label="Anotar a mano"
             className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
@@ -55,7 +66,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
           </button>
           <button
             type="button"
-            onClick={onBuscar}
+            onClick={() => {
+              haptic.trigger('light');
+              onBuscar();
+            }}
             aria-label="Buscar un movimiento"
             className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >

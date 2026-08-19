@@ -7,6 +7,7 @@ import { formatAmountInput } from '../lib/formatCop';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { useCatalogo } from '../catalogoContexto';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { TecladoNumerico } from './TecladoNumerico';
 import type { ConfirmDraft } from './ConfirmSheet';
 
@@ -58,6 +59,7 @@ export const Captura: React.FC<CapturaProps> = ({
 
   const descRef = useRef<HTMLTextAreaElement>(null);
   const catalogo = useCatalogo();
+  const haptic = useHapticFeedback();
   useBloqueoScroll(true);
 
   const amountCop = digitos === '' ? null : Number(digitos);
@@ -81,7 +83,11 @@ export const Captura: React.FC<CapturaProps> = ({
   };
 
   const guardar = () => {
-    if (amountCop === null || amountCop === 0) return;
+    if (amountCop === null || amountCop === 0) {
+      haptic.trigger('error');
+      return;
+    }
+    haptic.trigger('success');
     onSave({
       kind,
       amountCop,
@@ -119,7 +125,10 @@ export const Captura: React.FC<CapturaProps> = ({
           </span>
           <button
             type="button"
-            onClick={() => setKind(esGasto ? 'ingreso' : 'gasto')}
+            onClick={() => {
+              haptic.trigger('selection');
+              setKind(esGasto ? 'ingreso' : 'gasto');
+            }}
             className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold transition-colors"
             style={{ color: colorMonto }}
           >
@@ -186,7 +195,10 @@ export const Captura: React.FC<CapturaProps> = ({
               <button
                 key={entrada.clave}
                 type="button"
-                onClick={() => setCategory(entrada.clave)}
+                onClick={() => {
+                  haptic.trigger('selection');
+                  setCategory(entrada.clave);
+                }}
                 aria-pressed={activa}
                 className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-pill)] px-4 py-2.5 text-[15px] font-semibold transition-colors"
                 style={{
