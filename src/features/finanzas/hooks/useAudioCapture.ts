@@ -72,12 +72,12 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
         mediaRecorderRef.current = null;
 
         try {
-          const formData = new FormData();
-          formData.append('audio', blob, 'audio.webm');
-
+          // Cuerpo crudo, no multipart: el endpoint corre en el borde de Vercel,
+          // donde no hay parser de formularios. El tipo va en la cabecera.
           const res = await fetch('/api/transcribir', {
             method: 'POST',
-            body: formData,
+            headers: { 'Content-Type': mimeType },
+            body: blob,
           });
 
           if (!res.ok) {
