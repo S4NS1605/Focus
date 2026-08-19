@@ -18,6 +18,7 @@ import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { AsesorView } from './components/AsesorView';
 import { CajitasView } from './components/CajitasView';
+import { BienvenidaCard } from './components/BienvenidaCard';
 import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
@@ -403,6 +404,15 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
         // with the KPI row spanning the full width above them.
         <div className="mx-auto flex max-w-7xl flex-col gap-5">
           <div className="lg:hidden">{monthNav}</div>
+
+          {/* Solo para un libro totalmente en blanco. No se mira `cajitas`
+              porque useAlmacen siempre siembra una cuenta "Efectivo" para
+              cada usuario nuevo -- ese arranque no cuenta como actividad, así
+              que el único indicador real de "nunca ha usado la app" es que no
+              haya un solo movimiento registrado. */}
+          {transacciones.length === 0 ? (
+            <BienvenidaCard onEmpezar={() => setSection('cuentas')} />
+          ) : null}
 
           {/* "Resumen Ejecutivo" -- redundante con el título "Resumen" que ya
               pone el encabezado de la sección, y en un registro más
