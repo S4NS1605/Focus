@@ -95,8 +95,10 @@ export const useDictation = (onFinal: (text: string) => void): UseDictation => {
   const standalone = isStandalone();
   const hasApi = getCtor() !== null;
 
-  // Detectar si debe usar audio capture (PWA sin Web Speech API)
-  const useAudioCaptureMode = standalone && !hasApi;
+  // En una PWA instalada, Web Speech está presente pero rota (ver comentario
+  // arriba de SILENCE_PROBE_MS): el constructor existe, así que `hasApi` no
+  // sirve para distinguir este caso. Toda app standalone usa audio capture.
+  const useAudioCaptureMode = standalone;
   const audioCapture = useAudioCapture(useAudioCaptureMode ? onFinal : () => {});
 
   const recognitionRef = useRef<Recognition | null>(null);
