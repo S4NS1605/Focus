@@ -95,8 +95,9 @@ export const useDictation = (onFinal: (text: string) => void): UseDictation => {
   const standalone = isStandalone();
   const hasApi = getCtor() !== null;
 
-  // En PWA, usar captura de audio en lugar de Web Speech API (que está deshabilitada)
-  const audioCapture = useAudioCapture(onFinal);
+  // Detectar si debe usar audio capture (PWA sin Web Speech API)
+  const useAudioCaptureMode = standalone && !hasApi;
+  const audioCapture = useAudioCapture(useAudioCaptureMode ? onFinal : () => {});
 
   const recognitionRef = useRef<Recognition | null>(null);
   const probeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,7 +111,7 @@ export const useDictation = (onFinal: (text: string) => void): UseDictation => {
   }, [onFinal]);
 
   // Si es PWA y Web Speech no está disponible, usar captura de audio
-  if (standalone && !hasApi) {
+  if (useAudioCaptureMode) {
     return {
       supported: audioCapture.supported,
       standalone: true,

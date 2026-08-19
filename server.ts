@@ -1294,18 +1294,7 @@ Reglas clave:
 // ENDPOINT: Transcribir Audio (Whisper)
 // ----------------------------------------------------------------------
 app.post('/api/transcribir', async (req, res) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'No authorization header' });
-
-  const cliente = clienteAdmin();
-  if (!cliente) {
-    return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
-  }
-  const quienLlama = await exigirUsuario(cliente, token);
-  if ('status' in quienLlama) {
-    return res.status(quienLlama.status).json({ error: quienLlama.error });
-  }
-
+  // Transcripción sin autenticación requerida (funciona en PWA sin login)
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
     return res.status(200).json({ offline: true, error: 'OpenAI API key not configured' });
@@ -1317,6 +1306,7 @@ app.post('/api/transcribir', async (req, res) => {
       return res.status(400).json({ error: 'No audio data provided' });
     }
 
+    // FormData solo funciona en Node 18.10+
     const formData = new FormData();
     formData.append('file', new Blob([audioBuffer], { type: 'audio/webm' }), 'audio.webm');
     formData.append('model', 'whisper-1');

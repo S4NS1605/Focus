@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type AudioCaptureStatus = 'idle' | 'recording' | 'processing' | 'blocked';
 
@@ -24,9 +24,9 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   const onFinalRef = useRef(onFinal);
 
   // Keep callback fresh without recreating recorder
-  useState(() => {
+  useEffect(() => {
     onFinalRef.current = onFinal;
-  });
+  }, [onFinal]);
 
   const supported =
     typeof navigator !== 'undefined' &&
@@ -78,9 +78,6 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
           const res = await fetch('/api/transcribir', {
             method: 'POST',
             body: formData,
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
-            },
           });
 
           if (!res.ok) {
