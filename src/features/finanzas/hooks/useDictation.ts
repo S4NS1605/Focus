@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAudioCapture } from './useAudioCapture';
 
 // Minimal structural types. The webkit-prefixed constructor is not in the DOM lib,
 // and we only ever touch these few members.
@@ -91,6 +92,12 @@ export const useDictation = (onFinal: (text: string) => void): UseDictation => {
     typeof navigator === 'undefined' ? true : navigator.onLine,
   );
 
+  const standalone = isStandalone();
+  const hasApi = getCtor() !== null;
+
+  // En PWA, usar captura de audio en lugar de Web Speech API (que está deshabilitada)
+  const audioCapture = useAudioCapture(onFinal);
+
   const recognitionRef = useRef<Recognition | null>(null);
   const probeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sawLifeRef = useRef(false);
@@ -102,8 +109,18 @@ export const useDictation = (onFinal: (text: string) => void): UseDictation => {
     onFinalRef.current = onFinal;
   }, [onFinal]);
 
-  const standalone = isStandalone();
-  const hasApi = getCtor() !== null;
+  // Si es PWA y Web Speech no está disponible, usar captura de audio
+  if (standalone && !hasApi) {
+    return {
+      supported: audioCapture.supported,
+      standalone: true,
+      status: audioCapture.status as DictationStatus,
+      interim: audioCapture.interim,
+      start: audioCapture.start,
+      stop: audioCapture.stop,
+    };
+  }
+
   // Safari's implementation is server-side, so it needs the network. The keyboard
   // mic key does not, which is another reason it is the primary path.
   const supported = hasApi && !standalone && online && status !== 'blocked';

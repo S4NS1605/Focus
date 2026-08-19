@@ -56,7 +56,7 @@ export const Captura: React.FC<CapturaProps> = ({
   const [description, setDescription] = useState(parsed.description);
   const [editandoTexto, setEditandoTexto] = useState(false);
 
-  const descRef = useRef<HTMLInputElement>(null);
+  const descRef = useRef<HTMLTextAreaElement>(null);
   const catalogo = useCatalogo();
   useBloqueoScroll(true);
 
@@ -153,16 +153,16 @@ export const Captura: React.FC<CapturaProps> = ({
         </p>
 
         {editandoTexto ? (
-          <input
+          <textarea
             ref={descRef}
             autoFocus
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             onBlur={() => setEditandoTexto(false)}
-            onKeyDown={(e) => e.key === 'Enter' && setEditandoTexto(false)}
             aria-label="Descripción"
-            className="mt-3 w-full bg-transparent text-[28px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
-            placeholder="¿En qué fue?"
+            className="mt-3 w-full max-h-32 resize-none bg-transparent text-[20px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+            placeholder="¿En qué fue? Cuéntame con detalles..."
+            rows={3}
           />
         ) : (
           <button

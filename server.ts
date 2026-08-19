@@ -19,8 +19,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-// Limite ampliado a 10MB para PDFs grandes
+// Limite ampliado a 10MB para PDFs y audio
 app.use(express.json({ limit: '10mb' }));
+app.use(express.raw({ type: 'audio/*', limit: '10mb' }));
 
 // ----------------------------------------------------------------------
 // SEGURIDAD: Rate Limiter en Memoria para APIs
@@ -1285,6 +1286,58 @@ Reglas clave:
     );
 
     console.error('Error en asesor IA:', error);
+    return res.status(200).json({ offline: true, error: error.message });
+  }
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINT: Transcribir Audio (Whisper)
+// ----------------------------------------------------------------------
+app.post('/api/transcribir', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) {
+    return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+  }
+  const quienLlama = await exigirUsuario(cliente, token);
+  if ('status' in quienLlama) {
+    return res.status(quienLlama.status).json({ error: quienLlama.error });
+  }
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    return res.status(200).json({ offline: true, error: 'OpenAI API key not configured' });
+  }
+
+  try {
+    const audioBuffer = req.body as Buffer;
+    if (!audioBuffer || audioBuffer.length === 0) {
+      return res.status(400).json({ error: 'No audio data provided' });
+    }
+
+    const formData = new FormData();
+    formData.append('file', new Blob([audioBuffer], { type: 'audio/webm' }), 'audio.webm');
+    formData.append('model', 'whisper-1');
+    formData.append('language', 'es');
+
+    const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${openaiKey}` },
+      body: formData,
+    });
+
+    if (!whisperRes.ok) {
+      const error = await whisperRes.text();
+      console.error(`[transcribir] Whisper ${whisperRes.status}: ${error.slice(0, 200)}`);
+      return res.status(200).json({ offline: true, error: 'Transcription failed' });
+    }
+
+    const { text } = await whisperRes.json();
+    return res.status(200).json({ success: true, text: text || '' });
+  } catch (error: any) {
+    console.error('Error en transcripción:', error);
     return res.status(200).json({ offline: true, error: error.message });
   }
 });

@@ -970,6 +970,7 @@ export const parseTransaction = (
     if (description === '') {
       description = CATEGORY_LABELS[category as Category] ?? category;
     } else {
+      // Keep the full description with details, not just the category name
       description = capitalize(description);
     }
   } else {
