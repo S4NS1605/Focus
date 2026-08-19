@@ -14,8 +14,7 @@ const clienteCon = (cajitas: Record<string, unknown>[]) => {
   const cliente = {
     from: (tabla: string) => ({
       select: () => ({
-        eq: () =>
-          Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : vacio),
+        eq: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : vacio),
       }),
       upsert: (filas: Record<string, unknown> | Record<string, unknown>[]) => {
         guardado.push(...(Array.isArray(filas) ? filas : [filas]));
@@ -114,4 +113,3 @@ describe('RepositorioSupabase — errores legibles', () => {
     ).rejects.toThrow('El monto debe ser mayor que cero.');
   });
 });
-

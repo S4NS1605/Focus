@@ -43,8 +43,8 @@ const Contrapartes: React.FC<{ delMes: readonly Transaction[]; kind: TxKind }> =
   const gasto = kind === 'gasto';
 
   return (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-      <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+      <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         <Users className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         {gasto ? 'A quién le mandaste' : 'Quién te mandó'}
       </h2>
@@ -53,25 +53,27 @@ const Contrapartes: React.FC<{ delMes: readonly Transaction[]; kind: TxKind }> =
         {filas.map((fila) => (
           <li key={fila.nombre}>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="truncate text-xs font-bold text-[var(--fin-ink)]">{fila.nombre}</span>
+              <span className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">
+                {fila.nombre}
+              </span>
               <span
-                className="shrink-0 text-xs font-extrabold tabular-nums"
+                className="shrink-0 text-[15px] font-semibold tabular-nums"
                 style={{ color: gasto ? 'var(--fin-out)' : 'var(--fin-in)' }}
               >
                 {formatCop(fila.totalCop)}
               </span>
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--fin-soft)]">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-[var(--fin-r-pill)]"
                   style={{
                     width: `${(fila.totalCop / mayor) * 100}%`,
                     backgroundColor: gasto ? 'var(--fin-out)' : 'var(--fin-in)',
                   }}
                 />
               </div>
-              <span className="shrink-0 text-[10px] text-[var(--fin-ink-faint)] tabular-nums">
+              <span className="shrink-0 text-[13px] text-[var(--fin-ink-faint)] tabular-nums">
                 {fila.veces}×
               </span>
             </div>
@@ -88,8 +90,8 @@ const Mayores: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
   if (gastos.length === 0) return null;
 
   return (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-      <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+      <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         Tus gastos más grandes
       </h2>
@@ -102,16 +104,18 @@ const Mayores: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
           return (
             <li
               key={tx.id}
-              className="flex items-center gap-3 rounded-2xl bg-[var(--fin-bg)] px-3 py-2.5"
+              className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3 py-2.5"
             >
               <Icono className="h-4 w-4 shrink-0" style={{ color }} aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-bold text-[var(--fin-ink)]">{tx.description}</p>
-                <p className="text-[10px] text-[var(--fin-ink-faint)]">
+                <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">
+                  {tx.description}
+                </p>
+                <p className="text-[13px] text-[var(--fin-ink-faint)]">
                   {dayLabel(tx.occurredOn)} · {entrada.nombre}
                 </p>
               </div>
-              <span className="shrink-0 text-xs font-extrabold tabular-nums text-[var(--fin-out)]">
+              <span className="shrink-0 text-[15px] font-semibold tabular-nums text-[var(--fin-out)]">
                 {formatCop(tx.amountCop)}
               </span>
             </li>
@@ -141,45 +145,45 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> =
   const techo = Math.max(...dias.map((d) => d.gastoCop), 1);
 
   return (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-      <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+      <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         <CalendarDays className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         En qué días se fue
       </h2>
 
       {/* Fixed-height readout above the chart, not a floating tooltip: it never
-          covers the bars, and it works on touch, where hover does not exist. */}
-      <div className="mt-3 flex h-11 items-center justify-between rounded-2xl bg-[var(--fin-bg)] px-3.5">
+ covers the bars, and it works on touch, where hover does not exist. */}
+      <div className="mt-3 flex h-11 items-center justify-between rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3.5">
         {dia ? (
           <>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold capitalize text-[var(--fin-ink)]">
+              <p className="text-[13px] font-semibold capitalize text-[var(--fin-ink)]">
                 {dayLabel(dia.fecha)}
               </p>
-              <p className="text-[10px] text-[var(--fin-ink-faint)]">
+              <p className="text-[13px] text-[var(--fin-ink-faint)]">
                 {contarDelDia(transacciones, dia.fecha, catalogo)}
               </p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-sm font-extrabold tabular-nums text-[var(--fin-out)]">
+              <p className="text-[17px] font-semibold tabular-nums text-[var(--fin-out)]">
                 {formatCop(dia.gastoCop)}
               </p>
               {dia.ingresoCop > 0 ? (
-                <p className="text-[10px] font-bold tabular-nums text-[var(--fin-in)]">
+                <p className="text-[13px] font-semibold tabular-nums text-[var(--fin-in)]">
                   +{formatCop(dia.ingresoCop)}
                 </p>
               ) : null}
             </div>
           </>
         ) : (
-          <p className="text-[11px] text-[var(--fin-ink-faint)]">
+          <p className="text-[13px] text-[var(--fin-ink-faint)]">
             Pasa el cursor o toca una barra para ver ese día.
           </p>
         )}
       </div>
 
       {/* One column per day, empty ones included: the gaps are what show that
-          spending was a few heavy days rather than a steady drip. */}
+ spending was a few heavy days rather than a steady drip. */}
       <div className="mt-2 flex h-24 items-end gap-[2px]" onMouseLeave={() => setActivo(null)}>
         {dias.map((d, i) => (
           <button
@@ -198,7 +202,7 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> =
         ))}
       </div>
 
-      <div className="mt-1.5 flex justify-between text-[10px] text-[var(--fin-ink-faint)] tabular-nums">
+      <div className="mt-1.5 flex justify-between text-[13px] text-[var(--fin-ink-faint)] tabular-nums">
         <span>1</span>
         <span>{Math.ceil(dias.length / 2)}</span>
         <span>{dias.length}</span>
@@ -206,26 +210,26 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> =
 
       <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[var(--fin-soft)] pt-3">
         <div>
-          <p className="text-[10px] font-bold text-[var(--fin-ink-faint)]">Días con gasto</p>
-          <p className="font-display text-base font-extrabold tabular-nums text-[var(--fin-ink)]">
+          <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">Días con gasto</p>
+          <p className="text-[17px] font-semibold tabular-nums text-[var(--fin-ink)]">
             {resumen.diasConGasto}
           </p>
         </div>
         <div>
-          <p className="text-[10px] font-bold text-[var(--fin-ink-faint)]">Promedio por día</p>
-          <p className="font-display text-base font-extrabold tabular-nums text-[var(--fin-ink)]">
+          <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">Promedio por día</p>
+          <p className="text-[17px] font-semibold tabular-nums text-[var(--fin-ink)]">
             {formatCop(resumen.promedioPorDiaActivoCop)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] font-bold text-[var(--fin-ink-faint)]">Día más caro</p>
-          <p className="font-display text-base font-extrabold tabular-nums text-[var(--fin-ink)]">
+          <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">Día más caro</p>
+          <p className="text-[17px] font-semibold tabular-nums text-[var(--fin-ink)]">
             {resumen.diaMasCaro ? formatCop(resumen.diaMasCaro.gastoCop) : '—'}
           </p>
         </div>
       </div>
 
-      <p className="mt-2 text-[10px] text-[var(--fin-ink-faint)]">
+      <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">
         El promedio cuenta solo los días en que gastaste, no los {dias.length} del mes.
       </p>
     </section>
@@ -237,8 +241,8 @@ const Entradas: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
   if (ingresos.length === 0) return null;
 
   return (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-      <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+      <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         Tus mayores entradas
       </h2>
@@ -246,13 +250,15 @@ const Entradas: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
         {ingresos.map((tx) => (
           <li
             key={tx.id}
-            className="flex items-center gap-3 rounded-2xl bg-[var(--fin-bg)] px-3 py-2.5"
+            className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3 py-2.5"
           >
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-[var(--fin-ink)]">{tx.description}</p>
-              <p className="text-[10px] text-[var(--fin-ink-faint)]">{dayLabel(tx.occurredOn)}</p>
+              <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">
+                {tx.description}
+              </p>
+              <p className="text-[13px] text-[var(--fin-ink-faint)]">{dayLabel(tx.occurredOn)}</p>
             </div>
-            <span className="shrink-0 text-xs font-extrabold tabular-nums text-[var(--fin-in)]">
+            <span className="shrink-0 text-[15px] font-semibold tabular-nums text-[var(--fin-in)]">
               {formatCop(tx.amountCop)}
             </span>
           </li>

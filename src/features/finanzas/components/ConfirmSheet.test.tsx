@@ -56,12 +56,7 @@ describe('ConfirmSheet — aviso de monto inusual', () => {
   it('no avisa sin historial para comparar', () => {
     const parsed = parseTransaction('gasté 500 mil en comida');
     render(
-      <ConfirmSheet
-        parsed={parsed}
-        transacciones={[]}
-        onSave={() => {}}
-        onCancel={() => {}}
-      />,
+      <ConfirmSheet parsed={parsed} transacciones={[]} onSave={() => {}} onCancel={() => {}} />,
     );
     expect(screen.queryByText(/fuera de lo usual/i)).toBeNull();
   });

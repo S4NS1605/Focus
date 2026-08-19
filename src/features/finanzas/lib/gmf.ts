@@ -150,12 +150,12 @@ export const consumoDelMes = (
 
   const topeCop = topeExentoCop(uvt);
   const excedidoCop = Math.max(0, baseCop - topeCop);
-  
+
   const topeBajoCop = topeBajoMontoCop(uvt);
   let gravadoBajoMontoCop = 0;
   for (const consumido of consumoBajoMonto.values()) {
     if (consumido > topeBajoCop) {
-      gravadoBajoMontoCop += (consumido - topeBajoCop);
+      gravadoBajoMontoCop += consumido - topeBajoCop;
     }
   }
 
@@ -172,7 +172,7 @@ export const consumoDelMes = (
     pctUsado: topeCop === 0 ? 0 : Math.min(100, Math.round((baseCop / topeCop) * 1000) / 10),
     bajoMonto: {
       totalGravadoCop: gravadoBajoMontoCop,
-    }
+    },
   };
 };
 

@@ -180,8 +180,8 @@ export const partesDelLibro = (transacciones: readonly Transaction[]): ParteVist
     .map(([clave, dato]) => ({
       clave,
       // Ties break alphabetically so the shown name cannot flip between reloads.
-      nombre: [...dato.grafias.entries()].sort(
-        (a, b) => (b[1] !== a[1] ? b[1] - a[1] : a[0].localeCompare(b[0], 'es')),
+      nombre: [...dato.grafias.entries()].sort((a, b) =>
+        b[1] !== a[1] ? b[1] - a[1] : a[0].localeCompare(b[0], 'es'),
       )[0][0],
       movimientos: dato.n,
       ultimaFecha: dato.ultima,
@@ -312,7 +312,9 @@ export const contactoPorApodo = (
 
   const candidatos = contactos
     .filter((c) => c.archivedAt === null)
-    .flatMap((c) => c.apodos.map((apodo) => ({ contacto: c, seq: apodo.split(' ').filter(Boolean) })))
+    .flatMap((c) =>
+      c.apodos.map((apodo) => ({ contacto: c, seq: apodo.split(' ').filter(Boolean) })),
+    )
     .filter((x) => x.seq.length > 0)
     .sort((a, b) => b.seq.length - a.seq.length);
 

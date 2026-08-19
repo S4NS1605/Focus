@@ -10,9 +10,7 @@ const idFijo = () => {
 };
 const ahoraFijo = () => '2026-07-30T12:00:00.000Z';
 
-const mov = (
-  overrides: Partial<MovimientoExtraido> = {},
-): MovimientoExtraido => ({
+const mov = (overrides: Partial<MovimientoExtraido> = {}): MovimientoExtraido => ({
   fecha: '2026-07-15',
   descripcion: 'Mercado Éxito',
   montoCop: 180_000,
@@ -212,7 +210,11 @@ describe('lo que ya anotaste a mano', () => {
 
   it('un solo apunte a mano no absorbe tres líneas del extracto', () => {
     const plan = planearImportacion(
-      [delBanco({ descripcion: 'A' }), delBanco({ descripcion: 'B' }), delBanco({ descripcion: 'C' })],
+      [
+        delBanco({ descripcion: 'A' }),
+        delBanco({ descripcion: 'B' }),
+        delBanco({ descripcion: 'C' }),
+      ],
       [manual()],
       () => 'x',
     );
@@ -243,9 +245,15 @@ describe('lo que ya anotaste a mano', () => {
 describe('estabilidad entre renders', () => {
   it('la clave de un posible repetido no cambia al recalcular el plan', () => {
     const manual: Transaction = {
-      id: 'mio', kind: 'gasto', amountCop: 45_000, category: 'mercado',
-      description: 'Mercado Éxito', occurredOn: '2026-07-15',
-      cuentaId: null, rawTranscript: '', createdAt: '2026-07-15T00:00:00.000Z',
+      id: 'mio',
+      kind: 'gasto',
+      amountCop: 45_000,
+      category: 'mercado',
+      description: 'Mercado Éxito',
+      occurredOn: '2026-07-15',
+      cuentaId: null,
+      rawTranscript: '',
+      createdAt: '2026-07-15T00:00:00.000Z',
     };
     const delBanco = mov({ descripcion: 'COMPRA EN EXITO', montoCop: 45_000, fecha: '2026-07-15' });
 

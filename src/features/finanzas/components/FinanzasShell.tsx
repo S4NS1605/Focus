@@ -1,250 +1,110 @@
-import React, { useState } from 'react';
-import { ICONO_MAS, OCULTAS_EN_SIDEBAR_ESCRITORIO, SECCIONES_BARRA, SECCIONES_MAS, SECTIONS, sectionLabel } from '../sections';
+import React from 'react';
+import { SECTIONS } from '../sections';
 import type { SectionId } from '../sections';
-import { BrandMark } from './BrandMark';
-import { useBloqueoScroll } from '../data/useBloqueoScroll';
 
 interface FinanzasShellProps {
   section: SectionId;
   onSectionChange: (section: SectionId) => void;
-  /** Rendered to the right of the title in the desktop header. */
-  toolbar?: React.ReactNode;
-  /** Absent in local mode, where there is no account to sign out of. */
-  cuenta?: { email: string; onSalir: () => void };
-  temaToggle?: React.ReactNode;
+  /** La barra flotante de anotar. La pone FinanzasApp para no duplicar estado. */
+  accion?: React.ReactNode;
   onBack?: () => void;
   children: React.ReactNode;
 }
 
 /**
- * Two genuinely different layouts, not one layout that merely reflows:
+ * El armazón de la app: el contenido, y la barra de navegación de abajo.
  *
- * - Under 1024px it is a phone app — content fills the width and navigation is a
- *   fixed bottom tab bar, where the thumb already is. A sidebar would eat a
- *   third of a 390px screen.
- * - At 1024px and up it is a desktop dashboard — a persistent left sidebar
- *   (navigation should not cost a tap when there is room for it) and a content
- *   column that widens to a multi-column grid.
+ * Antes esto tenía DOS diseños distintos según el ancho de la pantalla: un menú
+ * lateral para computador y una barra de pestañas más una hoja "Más" para
+ * celular. Sonaba razonable, pero salieron tres problemas de ahí:
  *
- * The breakpoint is Tailwind's `lg`. Both trees are always mounted and CSS
- * decides which is visible, so there is no layout flash on load and no
- * window-width listener to keep in sync.
+ * 1. Tres funciones no existían en el celular, por un `hidden lg:grid`.
+ * 2. Contactos y Tendencias estaban en sitios distintos según el aparato: en
+ * el computador había que entrar a "Configuración" para ver una gráfica, y
+ * el título de la pantalla decía "Configuración" mientras mostraba otra
+ * cosa.
+ * 3. Al cambiar el tamaño de la ventana se podía quedar en una sección que el
+ * menú de ese tamaño no listaba, sin forma de volver.
+ *
+ * Ahora es UNA sola barra abajo, igual en los dos. En el computador el
+ * contenido se centra en una columna en vez de reorganizarse: la app no cambia
+ * de forma, solo de ancho. Y así no hay dos mapas que mantener de acuerdo.
  */
 export const FinanzasShell: React.FC<FinanzasShellProps> = ({
   section,
   onSectionChange,
-  toolbar,
-  cuenta,
-  temaToggle,
+  accion,
   onBack,
   children,
-}) => {
-  const [masAbierto, setMasAbierto] = useState(false);
-  useBloqueoScroll(masAbierto);
-  const enMas = SECCIONES_MAS.includes(section);
-
-  return (
-  <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased lg:flex">
-    {/* ---------- Desktop: persistent sidebar ---------- */}
-    <aside className="hidden lg:flex lg:h-[100dvh] lg:w-60 lg:shrink-0 lg:flex-col lg:justify-between lg:border-r lg:border-[var(--fin-line)] lg:bg-[var(--fin-card)] lg:px-4 lg:py-6 lg:sticky lg:top-0 lg:backdrop-blur-xl">
-      <div>
-        <div className="flex items-center gap-2.5 px-2">
-          {onBack && (
-            <button 
-              onClick={onBack}
-              className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
-              aria-label="Volver al ecosistema"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-          )}
-          <BrandMark className="h-6 w-6" />
-          <span className="text-base font-extrabold tracking-tight">Finanzas</span>
-        </div>
-
-        <nav className="mt-8 flex flex-col gap-1" aria-label="Secciones">
-          {SECTIONS.filter((item) => !OCULTAS_EN_SIDEBAR_ESCRITORIO.includes(item.id)).map((item) => {
-            const active = item.id === section;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSectionChange(item.id)}
-                aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition-colors ${
-                  active
-                    ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
-                    : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
-                }`}
-              >
-                <item.icon className={`h-4 w-4 shrink-0 ${item.color}`} aria-hidden="true" />
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      <div className="px-3">
-        {temaToggle ? <div className="mb-3">{temaToggle}</div> : null}
-        {cuenta ? (
-          <>
-            <p className="truncate text-[11px] font-semibold text-[var(--fin-ink-soft)]">{cuenta.email}</p>
-            <button
-              type="button"
-              onClick={cuenta.onSalir}
-              className="mt-1.5 text-[11px] font-bold text-[var(--fin-ink-faint)] underline-offset-2 hover:text-[var(--fin-ink)] hover:underline"
-            >
-              Cerrar sesión
-            </button>
-          </>
-        ) : null}
-        <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">Privado · solo para ti</p>
-      </div>
-    </aside>
-
-    {/* ---------- Content ---------- */}
-    <div className="flex min-w-0 flex-1 flex-col">
-      {/* Mobile header. Hidden on desktop, where the sidebar carries the brand. */}
-      <header className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-[var(--fin-line)] bg-[var(--fin-bg-blur)] px-4 pt-[calc(env(safe-area-inset-top)+0.875rem)] pb-3.5 backdrop-blur-xl backdrop-saturate-150 lg:hidden">
-        {onBack && (
-          <button 
-            onClick={onBack}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
-            aria-label="Volver al ecosistema"
+}) => (
+  <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased">
+    {/* El contenido. El hueco de abajo deja sitio para la barra y para la franja
+ del iPhone, y así la última fila de la lista nunca queda tapada. */}
+    <main className="mx-auto w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+8.5rem)]">
+      {onBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-2 -ml-2 flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+          aria-label="Volver al inicio"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          </button>
-        )}
-        <BrandMark className="h-5 w-5" />
-        <h1 className="text-sm font-extrabold tracking-tight">Finanzas</h1>
-        <div className="ml-auto flex items-center gap-2">
-          {temaToggle}
-          {cuenta ? (
-            <button
-              type="button"
-              onClick={cuenta.onSalir}
-              className="text-[11px] font-bold text-[var(--fin-ink-faint)]"
-            >
-              Salir
-            </button>
-          ) : null}
-        </div>
-      </header>
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+      ) : null}
+      {children}
+    </main>
 
-      {/* Desktop header: section title + whatever the view wants in the toolbar. */}
-      <header className="hidden lg:flex lg:items-center lg:justify-between lg:gap-4 lg:border-b lg:border-[var(--fin-line)] lg:px-8 lg:py-5">
-        <h1 className="text-xl font-extrabold tracking-tight">{sectionLabel(section)}</h1>
-        {toolbar}
-      </header>
+    {accion}
 
-      {/* `pb-24` on mobile clears the fixed tab bar; the safe-area inset covers
-          the iPhone home indicator on top of that. */}
-      <main className="flex-1 px-4 pt-5 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] lg:px-8 lg:py-7 lg:pb-10">
-        {children}
-      </main>
-    </div>
-
-    {/* ---------- Mobile: fixed bottom tab bar ---------- */}
+    {/* La barra de navegación. Va detrás del botón de anotar (z menor) porque
+ ese botón es la acción principal y nunca debe quedar tapado. */}
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-[var(--fin-line)] bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_0_var(--fin-glass-highlight)] lg:hidden"
+      className="fin-glass fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)]"
       aria-label="Secciones"
     >
-      {SECTIONS.filter((item) => SECCIONES_BARRA.includes(item.id)).map((item) => {
-        const active = item.id === section;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSectionChange(item.id)}
-            aria-current={active ? 'page' : undefined}
-            className="flex flex-1 min-w-0 flex-col items-center justify-center gap-1 py-2"
-          >
-            <span
-              className={`flex items-center justify-center rounded-full px-4 py-1 transition-colors ${
-                active ? 'bg-[var(--fin-soft)]' : ''
-              }`}
-              aria-hidden="true"
+      <div className="flex w-full max-w-[720px] items-center justify-around px-2 pb-[4.75rem] pt-2">
+        {SECTIONS.map((item) => {
+          const activa = item.id === section;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSectionChange(item.id)}
+              aria-current={activa ? 'page' : undefined}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 py-1.5"
             >
-              <item.icon className={`h-5 w-5 ${active ? item.color : ''}`} />
-            </span>
-            <span
-              className={`max-w-full truncate text-[10px] transition-colors ${
-                active ? 'font-extrabold text-[var(--fin-ink)]' : 'font-semibold text-[var(--fin-ink-faint)]'
-              }`}
-            >
-              {item.label}
-            </span>
-          </button>
-        );
-      })}
-
-      {/* Everything past the fourth tab lives here. Four plus "Más" keeps the
-          targets wide enough to hit; a fifth real tab would not have. */}
-      <button
-        type="button"
-        onClick={() => setMasAbierto(true)}
-        aria-current={enMas ? 'page' : undefined}
-        aria-haspopup="dialog"
-        className="flex flex-1 min-w-0 flex-col items-center justify-center gap-1 py-2"
-      >
-        <span
-          className={`flex items-center justify-center rounded-full px-4 py-1 transition-colors ${enMas ? 'bg-[var(--fin-soft)]' : ''}`}
-          aria-hidden="true"
-        >
-          <ICONO_MAS className={`h-5 w-5 ${enMas ? 'text-[var(--fin-ink)]' : ''}`} />
-        </span>
-        <span
-          className={`max-w-full truncate text-[10px] transition-colors ${
-            enMas ? 'font-extrabold text-[var(--fin-ink)]' : 'font-semibold text-[var(--fin-ink-faint)]'
-          }`}
-        >
-          Más
-        </span>
-      </button>
-    </nav>
-
-    {masAbierto ? (
-      <div
-        className="fixed inset-0 z-40 flex items-end bg-[var(--fin-scrim)] backdrop-blur-sm lg:hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Más secciones"
-        onClick={() => setMasAbierto(false)}
-      >
-        <div
-          className="w-full rounded-t-[2rem] bg-[var(--fin-card)] px-4 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--fin-line)]" aria-hidden="true" />
-          <ul className="flex flex-col gap-1">
-            {SECTIONS.filter((item) => SECCIONES_MAS.includes(item.id)).map((item) => {
-              const active = item.id === section;
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSectionChange(item.id);
-                      setMasAbierto(false);
-                    }}
-                    aria-current={active ? 'page' : undefined}
-                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-sm font-bold transition-colors ${
-                      active
-                        ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
-                        : 'text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]'
-                    }`}
-                  >
-                    <item.icon className={`h-4 w-4 shrink-0 ${active ? '' : item.color}`} aria-hidden="true" />
-                    {item.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+              <item.icon
+                className="h-[22px] w-[22px] shrink-0 transition-colors"
+                strokeWidth={activa ? 2.5 : 2}
+                style={{ color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-faint)' }}
+                aria-hidden="true"
+              />
+              <span
+                className="max-w-full truncate text-[13px] transition-colors"
+                style={{
+                  color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-faint)',
+                  fontWeight: activa ? 600 : 400,
+                }}
+              >
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
-    ) : null}
+    </nav>
   </div>
-  );
-};
+);

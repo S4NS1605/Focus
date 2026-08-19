@@ -91,8 +91,20 @@ describe('compararCategorias', () => {
   it('only compares the requested direction', () => {
     const cambios = compararCategorias(
       [
-        tx({ id: 'a', kind: 'ingreso', category: 'ingreso', amountCop: 900000, occurredOn: '2026-08-01' }),
-        tx({ id: 'b', kind: 'gasto', category: 'comida', amountCop: 10000, occurredOn: '2026-08-01' }),
+        tx({
+          id: 'a',
+          kind: 'ingreso',
+          category: 'ingreso',
+          amountCop: 900000,
+          occurredOn: '2026-08-01',
+        }),
+        tx({
+          id: 'b',
+          kind: 'gasto',
+          category: 'comida',
+          amountCop: 10000,
+          occurredOn: '2026-08-01',
+        }),
       ],
       '2026-08',
       '2026-07',

@@ -60,9 +60,7 @@ describe('yaRegistrado', () => {
     // Se compara por monto, tipo y categoría: si se comparara la descripción,
     // registrarlo a mano con otro texto haría que la app lo volviera a proponer
     // y el arriendo quedaría cobrado dos veces.
-    expect(
-      yaRegistrado(rec(), [tx({ description: 'pago apto agosto' })], '2026-08'),
-    ).toBe(true);
+    expect(yaRegistrado(rec(), [tx({ description: 'pago apto agosto' })], '2026-08')).toBe(true);
   });
 
   it('no lo confunde con otro mes', () => {

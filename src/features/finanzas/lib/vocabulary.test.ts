@@ -105,8 +105,7 @@ describe('KIND_PHRASES', () => {
   });
 
   it('keeps the pairwise traps on opposite sides', () => {
-    const kindOf = (phrase: string) =>
-      KIND_PHRASES.find((p) => p.seq.join(' ') === phrase)?.kind;
+    const kindOf = (phrase: string) => KIND_PHRASES.find((p) => p.seq.join(' ') === phrase)?.kind;
 
     expect(kindOf('me costo')).toBe('gasto');
     expect(kindOf('me pagaron')).toBe('ingreso');

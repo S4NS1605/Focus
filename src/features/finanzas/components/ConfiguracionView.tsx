@@ -42,7 +42,9 @@ const FilaCajita: React.FC<{
   const [nombre, setNombre] = useState(cajita.nombre);
   const [icon, setIcon] = useState(cajita.icon);
   const [metaTexto, setMetaTexto] = useState(formatAmountInput(cajita.metaCop));
-  const [tasaTexto, setTasaTexto] = useState(cajita.tasaEaPct === null ? '' : String(cajita.tasaEaPct));
+  const [tasaTexto, setTasaTexto] = useState(
+    cajita.tasaEaPct === null ? '' : String(cajita.tasaEaPct),
+  );
   const [saldoTexto, setSaldoTexto] = useState(formatAmountInput(saldoCop));
   const [bajoMonto, setBajoMonto] = useState(cajita.esBajoMonto ?? false);
 
@@ -69,10 +71,10 @@ const FilaCajita: React.FC<{
   };
 
   return (
-    <li className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-3.5">
+    <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-3.5">
       <div className="flex items-center gap-3">
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--fin-soft)]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)]"
           aria-hidden="true"
         >
           <Icono
@@ -83,8 +85,10 @@ const FilaCajita: React.FC<{
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-extrabold text-[var(--fin-ink)]">{cajita.nombre}</p>
-          <p className="text-[10px] text-[var(--fin-ink-faint)]">
+          <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">
+            {cajita.nombre}
+          </p>
+          <p className="text-[13px] text-[var(--fin-ink-faint)]">
             {TIPO_LABELS[cajita.tipo]}
             {cajita.tasaEaPct ? ` · ${cajita.tasaEaPct}% E.A.` : ''}
           </p>
@@ -92,14 +96,14 @@ const FilaCajita: React.FC<{
 
         {/* Inline balance, the thing most often needing a change. */}
         <div className="flex shrink-0 items-center gap-1.5">
-          <div className="flex w-[7.5rem] shrink-0 items-center gap-1 rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-2.5 py-1.5">
-            <span className="text-xs font-bold text-[var(--fin-ink-faint)]">$</span>
+          <div className="flex w-[7.5rem] shrink-0 items-center gap-1 rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-2.5 py-1.5">
+            <span className="text-[15px] font-semibold text-[var(--fin-ink-faint)]">$</span>
             <input
               value={saldoTexto}
               onChange={(e) => setSaldoTexto(formatAmountInput(parseSaldoInput(e.target.value)))}
               inputMode="numeric"
               aria-label={`Saldo de ${cajita.nombre}`}
-              className="w-full bg-transparent text-right text-base font-extrabold tabular-nums text-[var(--fin-ink)] focus:outline-none"
+              className="w-full bg-transparent text-right text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:outline-none"
             />
           </div>
           <button
@@ -109,7 +113,7 @@ const FilaCajita: React.FC<{
             }}
             disabled={!saldoCambio}
             aria-label={`Guardar saldo de ${cajita.nombre}`}
-            className="rounded-xl bg-[var(--fin-accent)] p-2 text-[var(--fin-on-accent)] transition-opacity disabled:opacity-20"
+            className="rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] p-2 text-[var(--fin-on-accent)] transition-opacity disabled:opacity-20"
           >
             <Check className="h-3.5 w-3.5" strokeWidth={3} />
           </button>
@@ -118,7 +122,7 @@ const FilaCajita: React.FC<{
             onClick={() => setEditando((v) => !v)}
             aria-label={`Editar ${cajita.nombre}`}
             aria-expanded={editando}
-            className="rounded-xl p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+            className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
@@ -126,43 +130,48 @@ const FilaCajita: React.FC<{
       </div>
 
       {editando ? (
-        <form onSubmit={guardar} className="mt-3 rounded-2xl bg-[var(--fin-soft)] p-3">
-          <label className="block text-[11px] font-bold text-[var(--fin-ink-soft)]">
+        <form
+          onSubmit={guardar}
+          className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3"
+        >
+          <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
             Nombre
             <input
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+              className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             />
           </label>
 
           {!pasivo ? (
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <label className="block text-[11px] font-bold text-[var(--fin-ink-soft)]">
+              <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 Meta
                 <input
                   value={metaTexto}
-                  onChange={(e) => setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))}
+                  onChange={(e) =>
+                    setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))
+                  }
                   inputMode="numeric"
                   placeholder="0"
-                  className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-base font-extrabold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                  className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 />
               </label>
-              <label className="block text-[11px] font-bold text-[var(--fin-ink-soft)]">
+              <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 % E.A.
                 <input
                   value={tasaTexto}
                   onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
                   inputMode="decimal"
                   placeholder="13,5"
-                  className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-base font-extrabold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                  className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 />
               </label>
             </div>
           ) : null}
 
           <fieldset className="mt-3">
-            <legend className="text-[11px] font-bold text-[var(--fin-ink-soft)]">Ícono</legend>
+            <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Ícono</legend>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {CAJITA_ICONS.map((op: string) => {
                 const IconComponent = iconoDeCajita(op);
@@ -173,7 +182,7 @@ const FilaCajita: React.FC<{
                     onClick={() => setIcon(op)}
                     aria-pressed={icon === op}
                     aria-label={`Ícono ${op}`}
-                    className={`flex h-8 w-8 items-center justify-center rounded-xl border-2 transition-colors ${
+                    className={`flex h-8 w-8 items-center justify-center rounded-[var(--fin-r-control)] border-2 transition-colors ${
                       icon === op
                         ? 'border-[var(--fin-ink)] bg-[var(--fin-card)] text-[var(--fin-ink)]'
                         : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'
@@ -187,7 +196,7 @@ const FilaCajita: React.FC<{
           </fieldset>
 
           {!pasivo ? (
-            <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5">
+            <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5">
               <input
                 type="checkbox"
                 checked={bajoMonto}
@@ -195,10 +204,10 @@ const FilaCajita: React.FC<{
                 className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
               />
               <span className="min-w-0">
-                <span className="block text-[11px] font-bold text-[var(--fin-ink)]">
+                <span className="block text-[13px] font-semibold text-[var(--fin-ink)]">
                   Es un depósito de bajo monto (ej. Nequi)
                 </span>
-                <span className="mt-0.5 block text-[10px] text-[var(--fin-ink-faint)]">
+                <span className="mt-0.5 block text-[13px] text-[var(--fin-ink-faint)]">
                   Tiene una exención de 4x1000 de hasta 65 UVT mensuales.
                 </span>
               </span>
@@ -207,7 +216,7 @@ const FilaCajita: React.FC<{
 
           <button
             type="submit"
-            className="mt-3 w-full rounded-full bg-[var(--fin-accent)] px-4 py-2.5 text-xs font-bold text-[var(--fin-on-accent)]"
+            className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
           >
             Guardar cambios
           </button>
@@ -238,19 +247,32 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
     // La nota y el estado vacío se quedan angostos; cada grupo de cuentas usa
     // una grilla de 2 columnas en vez de una sola lista larga -- las filas
     // traen un campo de saldo, así que no caben tan apretadas como en 3.
-    <div className="mx-auto flex max-w-5xl flex-col gap-5">
+    // `w-full` es obligatorio -- ver el comentario en TendenciasView.tsx
+    // sobre por qué un mx-auto sin w-full no llena dentro de un padre flex
+    // (este componente es el tab por defecto dentro del flex de Configuración).
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
       {sinCuentas ? (
-        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-10 text-center">
-          <Wallet className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]" strokeWidth={1.5} aria-hidden="true" />
-          <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">Todavía no tienes cuentas.</p>
-          <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">
+        <div className="rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-10 text-center">
+          <Wallet
+            className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
+          <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">
+            Todavía no tienes cuentas.
+          </p>
+          <p className="mt-1 text-[15px] text-[var(--fin-ink-faint)]">
             Crea una cuenta en Ahorro o una tarjeta en Deudas y aparecerá aquí.
           </p>
         </div>
       ) : (
-        <section className="rounded-3xl bg-[var(--fin-soft)] px-4 py-3">
-          <p className="flex items-start gap-2 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
-            <Settings2 className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+        <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3">
+          <p className="flex items-start gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+            <Settings2
+              className="mt-px h-3.5 w-3.5 shrink-0"
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
             Escribe el saldo que ves en tu banco y confirma con el visto. La app calcula sola la
             diferencia y la deja anotada en el historial.
           </p>
@@ -263,7 +285,9 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
 
         return (
           <section key={grupo.titulo}>
-            <h2 className="px-1 text-xs font-bold text-[var(--fin-ink-soft)]">{grupo.titulo}</h2>
+            <h2 className="px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+              {grupo.titulo}
+            </h2>
             <ul className="mt-2 grid grid-cols-1 items-start gap-2 lg:grid-cols-2">
               {delGrupo.map((cajita) => (
                 <FilaCajita
@@ -280,16 +304,16 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
       })}
 
       {sinCuentas ? null : (
-      <p className="px-1 text-[11px] text-[var(--fin-ink-faint)]">
-        Total en cuentas y cajitas:{' '}
-        <b className="text-[var(--fin-ink)]">
-          {formatCop(
-            vivas
-              .filter((c) => !ES_PASIVO[c.tipo])
-              .reduce((t, c) => t + (saldos.get(c.id) ?? 0), 0),
-          )}
-        </b>
-      </p>
+        <p className="px-1 text-[13px] text-[var(--fin-ink-faint)]">
+          Total en cuentas y cajitas:{' '}
+          <b className="text-[var(--fin-ink)]">
+            {formatCop(
+              vivas
+                .filter((c) => !ES_PASIVO[c.tipo])
+                .reduce((t, c) => t + (saldos.get(c.id) ?? 0), 0),
+            )}
+          </b>
+        </p>
       )}
     </div>
   );

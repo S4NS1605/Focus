@@ -117,7 +117,11 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
     // encuentra un monto real dictado, no hay nada que confirmar.
     vi.stubGlobal(
       'fetch',
-      fetchPorRuta({ offline: false, text: '¡Funcionando al 100%! Listo para ayudarte.', provider: 'Groq (GPT-OSS 120B)' }),
+      fetchPorRuta({
+        offline: false,
+        text: '¡Funcionando al 100%! Listo para ayudarte.',
+        provider: 'Groq (GPT-OSS 120B)',
+      }),
     );
     render(<AsesorView {...props} onCrearTransaccion={vi.fn()} />);
     await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
@@ -126,7 +130,9 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
     fireEvent.change(input, { target: { value: 'como estas?' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    await waitFor(() => expect(screen.getByText('¡Funcionando al 100%! Listo para ayudarte.')).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText('¡Funcionando al 100%! Listo para ayudarte.')).toBeTruthy(),
+    );
     expect(screen.queryByText(/sí, registrar/i)).toBeNull();
   });
 });

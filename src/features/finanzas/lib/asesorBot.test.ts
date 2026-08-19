@@ -166,7 +166,10 @@ describe('responderAsesor — presupuesto diario sugerido', () => {
   });
 
   it('sin saldo en cuentas, lo dice en vez de calcular un presupuesto de 0', () => {
-    const r = preguntar('cual es mi presupuesto', { cajitas: [cajita({ id: 'cta-1' })], balances: {} });
+    const r = preguntar('cual es mi presupuesto', {
+      cajitas: [cajita({ id: 'cta-1' })],
+      balances: {},
+    });
     expect(r.text).toMatch(/no tienes saldo/i);
   });
 });

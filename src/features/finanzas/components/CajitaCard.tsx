@@ -10,12 +10,7 @@ import { historialDeCajita } from '../lib/cajitas';
 import { rendimientoEstimado } from '../lib/rendimiento';
 import { bogotaDate } from '../lib/localDate';
 import type { CajitaMovimiento } from '../data/modelos';
-import {
-  formatCop,
-  formatAmountInput,
-  parseAmountInput,
-  parseSaldoInput,
-} from '../lib/formatCop';
+import { formatCop, formatAmountInput, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 
 interface CajitaCardProps {
@@ -82,12 +77,9 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   const T = esCuenta ? COPY.cuentas : COPY.cajitas;
   const ACCIONES = esCuenta ? ACCIONES_CUENTA : ACCIONES_CAJITA;
   const historial = historialDeCajita(movimientos, cajita.id);
-  const rendimiento = esCuenta ? null : rendimientoEstimado(
-    movimientos,
-    cajita.id,
-    cajita.tasaEaPct,
-    bogotaDate(),
-  );
+  const rendimiento = esCuenta
+    ? null
+    : rendimientoEstimado(movimientos, cajita.id, cajita.tasaEaPct, bogotaDate());
 
   const abrirAccion = (siguiente: Accion) => {
     const misma = accion === siguiente;
@@ -125,18 +117,17 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
       // it without saying where left the pocket right and every account wrong.
       if (destinoId === '' || !onTransferir) return;
       onTransferir({ origenId: cajita.id, destinoId, montoCop: Math.abs(valor) });
-    }
-    else onMovimiento(cajita.id, accion, Math.abs(valor));
+    } else onMovimiento(cajita.id, accion, Math.abs(valor));
 
     setAccion(null);
     setTexto('');
   };
 
   return (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
       <div className="flex items-start gap-3">
         <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--fin-soft)]"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]"
           aria-hidden="true"
         >
           {(() => {
@@ -146,8 +137,10 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
         </span>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-extrabold text-[var(--fin-ink)]">{cajita.nombre}</h3>
-          <p className="font-display text-2xl font-extrabold tabular-nums text-[var(--fin-ink)]">
+          <h3 className="truncate text-[17px] font-semibold text-[var(--fin-ink)]">
+            {cajita.nombre}
+          </h3>
+          <p className="text-[28px] font-semibold tabular-nums text-[var(--fin-ink)]">
             {formatCop(saldoCop)}
           </p>
         </div>
@@ -156,7 +149,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           type="button"
           onClick={() => setConfirmandoBorrado((v) => !v)}
           aria-label={`${T.eliminar}: ${cajita.nombre}`}
-          className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
+          className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
         >
           <Trash2 className="h-4 w-4" strokeWidth={2.5} />
         </button>
@@ -165,41 +158,40 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
       {/* Progress toward this pocket's own target */}
       {pct !== null && cajita.metaCop ? (
         <div className="mt-3">
-          <div className="h-2 overflow-hidden rounded-full bg-[var(--fin-soft)]">
+          <div className="h-2 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
             <div
-              className="h-full rounded-full bg-[var(--fin-in)] transition-[width] duration-500"
+              className="h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-in)] transition-[width] duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="mt-1.5 text-[11px] font-semibold text-[var(--fin-ink-soft)] tabular-nums">
+          <p className="mt-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] tabular-nums">
             {pct}% de {formatCop(cajita.metaCop)}
           </p>
         </div>
       ) : null}
 
       {/* Estimated yield. Derived, never stored: the balance must stay the sum of
-          its movements, so inventing interest rows would make these numbers
-          disagree with the bank's. */}
+ its movements, so inventing interest rows would make these numbers
+ disagree with the bank's. */}
       {rendimiento ? (
-        <div className="mt-3 rounded-2xl bg-[var(--fin-in-bg)] px-4 py-3">
+        <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-in-bg)] px-4 py-3">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[11px] font-bold text-[var(--fin-in)]">
+            <span className="text-[13px] font-semibold text-[var(--fin-in)]">
               {COPY.cajitas.rendimientoTitulo}
             </span>
-            <span className="text-[10px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
+            <span className="text-[13px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
               {cajita.tasaEaPct}% E.A.
             </span>
           </div>
 
-          <p className="mt-1 font-display text-xl font-extrabold tabular-nums text-[var(--fin-in)]">
+          <p className="mt-1 text-[20px] font-semibold tabular-nums text-[var(--fin-in)]">
             +{formatCop(rendimiento.acumuladoCop)}
           </p>
-          <p className="text-[10px] text-[var(--fin-ink-faint)]">
-            {COPY.cajitas.rendimientoAcumulado} {rendimiento.dias}{' '}
-            {COPY.cajitas.rendimientoDias}
+          <p className="text-[13px] text-[var(--fin-ink-faint)]">
+            {COPY.cajitas.rendimientoAcumulado} {rendimiento.dias} {COPY.cajitas.rendimientoDias}
           </p>
 
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--fin-ink-soft)] tabular-nums">
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[var(--fin-ink-soft)] tabular-nums">
             <span>
               <b className="text-[var(--fin-ink)]">{formatCop(rendimiento.diarioCop)}</b>{' '}
               {COPY.cajitas.rendimientoDiario}
@@ -213,22 +205,22 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
       ) : null}
 
       {confirmandoBorrado ? (
-        <div className="mt-3 rounded-2xl bg-[var(--fin-out-bg)] p-3">
-          <p className="text-[11px] leading-relaxed text-[var(--fin-out-ink)]">
+        <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] p-3">
+          <p className="text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
             {T.confirmarEliminar}
           </p>
           <div className="mt-2.5 flex gap-2">
             <button
               type="button"
               onClick={() => onEliminar(cajita.id)}
-              className="rounded-full bg-[var(--fin-out)] px-4 py-2 text-xs font-bold text-white"
+              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2 text-[15px] font-semibold text-white"
             >
               {T.eliminar}
             </button>
             <button
               type="button"
               onClick={() => setConfirmandoBorrado(false)}
-              className="rounded-full bg-[var(--fin-card)] px-4 py-2 text-xs font-bold text-[var(--fin-ink-soft)]"
+              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
             >
               {COPY.confirm.cancel}
             </button>
@@ -244,7 +236,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             type="button"
             onClick={() => abrirAccion(item.id)}
             aria-pressed={accion === item.id}
-            className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${
+            className={`rounded-[var(--fin-r-pill)] px-3 py-1.5 text-[13px] font-semibold transition-colors ${
               accion === item.id
                 ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                 : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]'
@@ -265,18 +257,20 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             transition={{ duration: 0.18 }}
             className="overflow-hidden"
           >
-            <div className="mt-3 rounded-2xl bg-[var(--fin-soft)] p-3">
+            <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3">
               {accion === 'saldo' ? (
                 <>
-                  <p className="text-xs font-bold text-[var(--fin-ink)]">{T.cuantoTienes}</p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
+                  <p className="text-[15px] font-semibold text-[var(--fin-ink)]">
+                    {T.cuantoTienes}
+                  </p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
                     {T.cuantoTienesHint}
                   </p>
                 </>
               ) : null}
 
-              <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5">
-                <span className="font-display text-xl font-extrabold text-[var(--fin-ink-faint)]">$</span>
+              <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5">
+                <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
                 <input
                   value={texto}
                   onChange={(e) => setTexto(formatAmountInput(leer(e.target.value)))}
@@ -284,7 +278,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                   placeholder="0"
                   autoFocus
                   aria-label={ACCIONES.find((a) => a.id === accion)?.label}
-                  className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+                  className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
                 />
               </div>
 
@@ -292,12 +286,12 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                 <div className="mt-2.5">
                   <label
                     htmlFor={`destino-${cajita.id}`}
-                    className="block text-[11px] font-bold text-[var(--fin-ink-soft)]"
+                    className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]"
                   >
                     {accion === 'retiro' ? '¿A qué cuenta la envías?' : '¿A cuál la pasas?'}
                   </label>
                   {paraElegir.length === 0 ? (
-                    <p className="mt-1.5 rounded-xl bg-[var(--fin-card)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+                    <p className="mt-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
                       {accion === 'retiro'
                         ? 'Primero crea una cuenta bancaria. La plata que sale de aquí tiene que llegar a algún lado.'
                         : 'Necesitas otra cuenta o cajita para poder transferir.'}
@@ -307,7 +301,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                       id={`destino-${cajita.id}`}
                       value={destinoId}
                       onChange={(e) => setDestinoId(e.target.value)}
-                      className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                      className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                     >
                       {paraElegir.map((d) => (
                         <option key={d.id} value={d.id}>
@@ -325,7 +319,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                   valorActual === null ||
                   ((accion === 'transferir' || accion === 'retiro') && destinoId === '')
                 }
-                className="mt-2.5 w-full rounded-full bg-[var(--fin-accent)] px-4 py-2.5 text-xs font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
+                className="mt-2.5 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 {COPY.confirm.save}
               </button>
@@ -341,7 +335,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             type="button"
             onClick={() => setAbierto((v) => !v)}
             aria-expanded={abierto}
-            className="mt-3 flex w-full items-center justify-between rounded-xl px-1 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]"
+            className="mt-3 flex w-full items-center justify-between rounded-[var(--fin-r-control)] px-1 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
           >
             {T.historial} ({historial.length})
             <ChevronDown
@@ -355,7 +349,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
               {historial.map(({ movimiento, saldoDespues }) => (
                 <li
                   key={movimiento.id}
-                  className="flex items-center gap-2.5 rounded-xl bg-[var(--fin-bg)] px-3 py-2"
+                  className="flex items-center gap-2.5 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
                 >
                   <span className="shrink-0" aria-hidden="true">
                     {(() => {
@@ -364,15 +358,15 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                     })()}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] font-bold text-[var(--fin-ink)]">
+                    <p className="truncate text-[13px] font-semibold text-[var(--fin-ink)]">
                       {CAJITA_MOV_LABELS[movimiento.kind]}
                     </p>
-                    <p className="text-[10px] text-[var(--fin-ink-faint)]">
+                    <p className="text-[13px] text-[var(--fin-ink-faint)]">
                       {dayLabel(movimiento.occurredOn)} · saldo {formatCop(saldoDespues)}
                     </p>
                   </div>
                   <span
-                    className="shrink-0 text-[11px] font-extrabold tabular-nums"
+                    className="shrink-0 text-[13px] font-semibold tabular-nums"
                     style={{ color: movimiento.deltaCop >= 0 ? 'var(--fin-in)' : 'var(--fin-out)' }}
                   >
                     {movimiento.deltaCop >= 0 ? '+' : '−'}
@@ -384,7 +378,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           ) : null}
         </>
       ) : (
-        <p className="mt-3 px-1 text-[11px] text-[var(--fin-ink-faint)]">{T.sinMovimientos}</p>
+        <p className="mt-3 px-1 text-[13px] text-[var(--fin-ink-faint)]">{T.sinMovimientos}</p>
       )}
     </section>
   );

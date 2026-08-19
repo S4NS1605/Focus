@@ -16,7 +16,7 @@ export const CATEGORIES = [
   'otros',
 ] as const;
 
-export type Category = typeof CATEGORIES[number];
+export type Category = (typeof CATEGORIES)[number];
 
 /** A `Category`, or a user-created category's id. See categorias.ts. */
 export type CategoriaClave = string;

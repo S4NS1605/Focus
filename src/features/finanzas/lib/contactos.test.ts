@@ -174,9 +174,7 @@ describe('partesDelLibro', () => {
 
 describe('dudasDeUnion', () => {
   const partes = (...nombres: string[]) =>
-    partesDelLibro(
-      nombres.map((n, i) => tx({ id: `t${i}`, description: `Transferencia a ${n}` })),
-    );
+    partesDelLibro(nombres.map((n, i) => tx({ id: `t${i}`, description: `Transferencia a ${n}` })));
 
   it('pregunta por dos grafías que se parecen', () => {
     const dudas = dudasDeUnion(partes('Juan Perez', 'Juan Carlos Perez'), []);
@@ -193,10 +191,9 @@ describe('dudasDeUnion', () => {
   });
 
   it('no pregunta por lo que ya es un mismo contacto', () => {
-    const dudas = dudasDeUnion(
-      partes('Juan Perez', 'Juan Carlos Perez'),
-      [contacto({ alias: ['juan perez', 'juan carlos perez'] })],
-    );
+    const dudas = dudasDeUnion(partes('Juan Perez', 'Juan Carlos Perez'), [
+      contacto({ alias: ['juan perez', 'juan carlos perez'] }),
+    ]);
 
     expect(dudas).toEqual([]);
   });
@@ -204,10 +201,9 @@ describe('dudasDeUnion', () => {
   it('NO vuelve a preguntar lo que ya se dijo que no', () => {
     // Sin esto, la misma tarjeta reaparece en cada recarga, que es la forma más
     // rápida de convertir una ayuda en una molestia.
-    const dudas = dudasDeUnion(
-      partes('Juan Perez', 'Juan Carlos Perez'),
-      [contacto({ alias: ['juan perez'], separadoDe: ['juan carlos perez'] })],
-    );
+    const dudas = dudasDeUnion(partes('Juan Perez', 'Juan Carlos Perez'), [
+      contacto({ alias: ['juan perez'], separadoDe: ['juan carlos perez'] }),
+    ]);
 
     expect(dudas).toEqual([]);
   });
@@ -269,7 +265,12 @@ describe('movimientosDeAlias y balance', () => {
   const LIBRO = [
     tx({ id: 'a', description: 'Envio con BRE-B a: JUAN PEREZ', amountCop: 50_000 }),
     tx({ id: 'b', description: 'Transferencia a Juan Carlos Perez', amountCop: 30_000 }),
-    tx({ id: 'c', kind: 'ingreso', description: 'Pago recibido de Juan Perez', amountCop: 200_000 }),
+    tx({
+      id: 'c',
+      kind: 'ingreso',
+      description: 'Pago recibido de Juan Perez',
+      amountCop: 200_000,
+    }),
     tx({ id: 'd', description: 'Transferencia a Maria Gomez', amountCop: 10_000 }),
   ];
 

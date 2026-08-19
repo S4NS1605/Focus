@@ -49,7 +49,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   // 16px is not a style choice: iOS zooms the page in on any field below it, and
   // in an installed app that zoom does not cleanly undo.
   const campo =
-    'w-full rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3.5 text-base font-medium text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] transition-colors focus:border-[var(--fin-ink-faint)] focus:bg-[var(--fin-card)] focus:outline-none';
+    'w-full rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-4 py-3.5 text-[17px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] transition-colors focus:border-[var(--fin-ink-faint)] focus:bg-[var(--fin-card)] focus:outline-none';
 
   return (
     <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[var(--fin-bg)] px-5 py-10">
@@ -66,27 +66,25 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
         className="relative z-10 w-full max-w-[26rem]"
       >
         {/* Brand sits above the card, not inside it: the card is the task, the
-            brand is the context. */}
+ brand is the context. */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-sm">
+          <span className="flex h-14 w-14 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-card)] shadow-sm">
             <BrandMark className="h-7 w-7" />
           </span>
-          <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight text-[var(--fin-ink)]">
+          <h1 className="mt-4 text-[28px] font-semibold tracking-tight text-[var(--fin-ink)]">
             Apps Personalizadas
           </h1>
           <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-            {modo === 'entrar'
-              ? 'Accede a tu ecosistema.'
-              : 'Crea tu cuenta para empezar.'}
+            {modo === 'entrar' ? 'Accede a tu ecosistema.' : 'Crea tu cuenta para empezar.'}
           </p>
         </div>
 
         <form
           onSubmit={enviar}
-          className="rounded-[1.75rem] border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_12px_32px_-12px_rgb(0_0_0/0.12)] sm:p-7"
+          className="rounded-[var(--fin-r-sheet)] bg-[var(--fin-card)] p-6 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_12px_32px_-12px_rgb(0_0_0/0.12)] sm:p-7"
         >
           {permitirRegistro ? (
-            <div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl bg-[var(--fin-soft)] p-1">
+            <div className="mb-6 grid grid-cols-2 gap-1 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-1">
               {(
                 [
                   { id: 'entrar', label: 'Entrar' },
@@ -98,15 +96,15 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                   type="button"
                   onClick={() => cambiarModo(item.id)}
                   aria-pressed={modo === item.id}
-                  className="relative rounded-xl px-4 py-2.5 text-[13px] font-bold transition-colors"
+                  className="relative rounded-[var(--fin-r-control)] px-4 py-2.5 text-[13px] font-semibold transition-colors"
                 >
                   {/* The pill slides between tabs instead of cutting, so the eye
-                      tracks where it went. */}
+ tracks where it went. */}
                   {modo === item.id ? (
                     <motion.span
                       layoutId="fin-login-pastilla"
                       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                      className="absolute inset-0 rounded-xl bg-[var(--fin-card)] shadow-sm"
+                      className="absolute inset-0 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] shadow-sm"
                     />
                   ) : null}
                   <span
@@ -123,7 +121,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
 
           <label
             htmlFor="login-identidad"
-            className="block text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
+            className="block text-[13px] font-semibold uppercase tracking-wider text-[var(--fin-ink-faint)]"
           >
             Usuario o correo
           </label>
@@ -147,7 +145,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
 
           <label
             htmlFor="login-password"
-            className="mt-5 block text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
+            className="mt-5 block text-[13px] font-semibold uppercase tracking-wider text-[var(--fin-ink-faint)]"
           >
             Contraseña
           </label>
@@ -168,7 +166,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               onClick={() => setVerPassword((v) => !v)}
               aria-label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               aria-pressed={verPassword}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-xl p-2.5 text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-[var(--fin-r-control)] p-2.5 text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
             >
               {verPassword ? (
                 <EyeOff className="h-4 w-4" strokeWidth={2.5} />
@@ -186,7 +184,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                 animate={{ opacity: 1, height: 'auto', marginTop: 20 }}
                 exit={{ opacity: 0, height: 0, marginTop: 0 }}
                 transition={{ duration: 0.2 }}
-                className="flex items-start gap-2 overflow-hidden rounded-2xl bg-[var(--fin-out-bg)] px-4 py-3 text-[12px] leading-relaxed text-[var(--fin-out-ink)]"
+                className="flex items-start gap-2 overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3 text-[15px] leading-relaxed text-[var(--fin-out-ink)]"
               >
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={3} />
                 {sesion.error}
@@ -199,7 +197,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             disabled={sesion.ocupado || !listo}
             whileHover={listo && !sesion.ocupado ? { scale: 1.015 } : undefined}
             whileTap={listo && !sesion.ocupado ? { scale: 0.985 } : undefined}
-            className="group mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--fin-accent)] px-6 py-4 text-sm font-bold text-[var(--fin-on-accent)] transition-[background-color,opacity] hover:bg-[var(--fin-accent-hover)] disabled:cursor-not-allowed disabled:opacity-25"
+            className="group mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-[background-color,opacity] hover:bg-[var(--fin-accent-hover)] disabled:cursor-not-allowed disabled:opacity-25"
           >
             {sesion.ocupado ? (
               <>
@@ -217,7 +215,6 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             )}
           </motion.button>
         </form>
-
       </motion.div>
     </div>
   );

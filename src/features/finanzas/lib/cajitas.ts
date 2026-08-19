@@ -57,7 +57,10 @@ export const saldoDeCajita = (
   transacciones: readonly Transaction[] = [],
   pasivos: ReadonlySet<string> = new Set(),
 ): number =>
-  movimientos.reduce((total, mov) => (mov.cajitaId === cajitaId ? total + mov.deltaCop : total), 0) +
+  movimientos.reduce(
+    (total, mov) => (mov.cajitaId === cajitaId ? total + mov.deltaCop : total),
+    0,
+  ) +
   transacciones.reduce(
     (total, tx) => (tx.cuentaId === cajitaId ? total + deltaAtribuido(tx, pasivos) : total),
     0,
@@ -156,7 +159,11 @@ export const totalPorTipo = (
   tipo: CajitaTipo,
   transacciones: readonly Transaction[] = [],
 ): number =>
-  totalEnCajitas(cajitas.filter((c) => c.tipo === tipo), movimientos, transacciones);
+  totalEnCajitas(
+    cajitas.filter((c) => c.tipo === tipo),
+    movimientos,
+    transacciones,
+  );
 
 export interface Patrimonio {
   cuentasCop: number;
@@ -197,11 +204,40 @@ export const resumenDePasivos = (
   movimientos: readonly CajitaMovimiento[],
   transacciones: readonly Transaction[] = [],
 ): ResumenCajita[] =>
-  resumenDeCajitas(cajitas.filter((c) => ES_PASIVO[c.tipo]), movimientos, transacciones);
+  resumenDeCajitas(
+    cajitas.filter((c) => ES_PASIVO[c.tipo]),
+    movimientos,
+    transacciones,
+  );
 
 /** Live balances of the kinds that represent money held. */
 export const resumenDeActivos = (
   cajitas: readonly Cajita[],
   movimientos: readonly CajitaMovimiento[],
 ): ResumenCajita[] =>
-  resumenDeCajitas(cajitas.filter((c) => !ES_PASIVO[c.tipo]), movimientos);
+  resumenDeCajitas(
+    cajitas.filter((c) => !ES_PASIVO[c.tipo]),
+    movimientos,
+  );
+
+/**
+ * Lo que se enseña como "tienes en total", que no siempre es lo mismo.
+ *
+ * `contarAhorros` es una preferencia de la persona, no un hecho: hay quien no
+ * considera suyo el fondo de emergencia hasta que lo saca. Con los ahorros
+ * apagados, el total es solo lo de las cuentas menos lo que debes — la lectura
+ * de "cuánto tengo disponible de verdad".
+ *
+ * Vive aquí y no en una pantalla porque lo preguntan dos (Inicio y Dinero), y
+ * si cada una lo calculara por su lado acabarían enseñando cifras distintas
+ * para la misma pregunta.
+ */
+export const totalVisible = (
+  cajitas: readonly Cajita[],
+  movimientos: readonly CajitaMovimiento[],
+  transacciones: readonly Transaction[],
+  contarAhorros: boolean,
+): number => {
+  const p = patrimonio(cajitas, movimientos, transacciones);
+  return contarAhorros ? p.netoCop : p.cuentasCop - p.deudasCop;
+};

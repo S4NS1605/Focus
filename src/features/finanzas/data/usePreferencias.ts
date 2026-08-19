@@ -11,6 +11,8 @@ import type { RegimenGmf, ValorUvt } from '../lib/gmf';
  * different answers, and nothing here needs to survive a reinstall.
  */
 const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
+const CLAVE_NOMBRE = 'finanzas:onboarding:nombre';
+const CLAVE_ONBOARDING = 'finanzas:onboarding:terminado';
 const CLAVE_UVT = 'finanzas:gmf:uvt';
 const CLAVE_CUENTAS_GMF = 'finanzas:gmf:cuentas';
 const CLAVE_REGIMEN = 'finanzas:gmf:regimen';
@@ -55,11 +57,18 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
     }
   };
 
-  if (metadata[CLAVE_AHORRO] !== undefined) setIf(CLAVE_AHORRO, metadata[CLAVE_AHORRO] ? 'si' : 'no');
+  if (metadata[CLAVE_AHORRO] !== undefined)
+    setIf(CLAVE_AHORRO, metadata[CLAVE_AHORRO] ? 'si' : 'no');
+  if (metadata[CLAVE_NOMBRE] !== undefined) setIf(CLAVE_NOMBRE, metadata[CLAVE_NOMBRE]);
+  // Nunca se baja a 'no' desde la nube: si en cualquier dispositivo ya se
+  // terminó la bienvenida, se terminó en todos.
+  if (metadata[CLAVE_ONBOARDING]) setIf(CLAVE_ONBOARDING, 'si');
   if (metadata[CLAVE_UVT] !== undefined) setIf(CLAVE_UVT, JSON.stringify(metadata[CLAVE_UVT]));
-  if (metadata[CLAVE_CUENTAS_GMF] !== undefined) setIf(CLAVE_CUENTAS_GMF, JSON.stringify(metadata[CLAVE_CUENTAS_GMF]));
+  if (metadata[CLAVE_CUENTAS_GMF] !== undefined)
+    setIf(CLAVE_CUENTAS_GMF, JSON.stringify(metadata[CLAVE_CUENTAS_GMF]));
   if (metadata[CLAVE_REGIMEN] !== undefined) setIf(CLAVE_REGIMEN, metadata[CLAVE_REGIMEN]);
-  if (metadata[CLAVE_CUENTA_EXENTA] !== undefined) setIf(CLAVE_CUENTA_EXENTA, metadata[CLAVE_CUENTA_EXENTA]);
+  if (metadata[CLAVE_CUENTA_EXENTA] !== undefined)
+    setIf(CLAVE_CUENTA_EXENTA, metadata[CLAVE_CUENTA_EXENTA]);
 
   // Si hubo algún cambio desde la nube, forzamos que todos los hooks locales se recarguen.
   if (cambio) {
@@ -105,6 +114,65 @@ export const useMostrarAhorro = () => {
   }, []);
 
   return { mostrarAhorro, setMostrarAhorro };
+};
+
+/**
+ * Si la persona ya pasó por la bienvenida, y cómo se llama.
+ *
+ * Esto tiene que guardarse de verdad, y aquí está el porqué: antes la
+ * bienvenida se decidía con `transacciones.length === 0`. O sea que se calculaba
+ * sola a partir de los datos, y eso tenía dos efectos raros:
+ *
+ *   - guardabas UN movimiento y la bienvenida desaparecía, aunque no hubieras
+ *     puesto ni un saldo real ni una categoría;
+ *   - borrabas ese movimiento y la bienvenida VOLVÍA, como si fueras nuevo otra
+ *     vez después de llevar meses usando la app.
+ *
+ * `terminado` se queda pegado: una vez está en verdadero, no vuelve a falso
+ * nunca, pase lo que pase con los datos. Haber pasado por la bienvenida es un
+ * hecho sobre la persona, no sobre su plata.
+ */
+export const useOnboarding = () => {
+  const [terminado, setEstado] = useState(() => leerBooleano(CLAVE_ONBOARDING, false));
+  const [nombre, setEstadoNombre] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      return localStorage.getItem(CLAVE_NOMBRE) ?? '';
+    } catch {
+      return '';
+    }
+  });
+
+  const guardarNombre = useCallback((valor: string) => {
+    setEstadoNombre(valor);
+    try {
+      localStorage.setItem(CLAVE_NOMBRE, valor);
+      guardarEnSupabase(CLAVE_NOMBRE, valor);
+    } catch {
+      // Sigue funcionando, solo que no se acuerda del nombre.
+    }
+  }, []);
+
+  const terminar = useCallback(() => {
+    setEstado(true);
+    guardarBooleano(CLAVE_ONBOARDING, true);
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== CLAVE_ONBOARDING && e.key !== CLAVE_NOMBRE) return;
+      setEstado(leerBooleano(CLAVE_ONBOARDING, false));
+      try {
+        setEstadoNombre(localStorage.getItem(CLAVE_NOMBRE) ?? '');
+      } catch {
+        // Nada que hacer.
+      }
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return { terminado, nombre, guardarNombre, terminar };
 };
 
 /**
@@ -175,9 +243,11 @@ export const useAjustesGmf = () => {
     const alCambiar = (e: StorageEvent) => {
       // When synced from Supabase, key is passed as null to force a full re-read.
       if (e.key === null || e.key === CLAVE_UVT) setEstadoUvt(leerUvt());
-      if (e.key === null || e.key === CLAVE_CUENTAS_GMF) setEstadoCuentas(leerLista(CLAVE_CUENTAS_GMF));
+      if (e.key === null || e.key === CLAVE_CUENTAS_GMF)
+        setEstadoCuentas(leerLista(CLAVE_CUENTAS_GMF));
       if (e.key === null || e.key === CLAVE_REGIMEN) setEstadoRegimen(leerRegimen());
-      if (e.key === null || e.key === CLAVE_CUENTA_EXENTA) setEstadoExenta(leerTexto(CLAVE_CUENTA_EXENTA));
+      if (e.key === null || e.key === CLAVE_CUENTA_EXENTA)
+        setEstadoExenta(leerTexto(CLAVE_CUENTA_EXENTA));
     };
     window.addEventListener('storage', alCambiar);
     return () => window.removeEventListener('storage', alCambiar);

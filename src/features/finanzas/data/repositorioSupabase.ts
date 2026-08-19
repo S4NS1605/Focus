@@ -77,8 +77,14 @@ export class RepositorioSupabase implements Repositorio {
 
   async cargarTodo(): Promise<Instantanea> {
     const [
-      transacciones, cajitas, movimientos, metas,
-      categorias, contactos, presupuestos, recurrentes,
+      transacciones,
+      cajitas,
+      movimientos,
+      metas,
+      categorias,
+      contactos,
+      presupuestos,
+      recurrentes,
     ] = await Promise.all([
       this.cliente.from('transacciones').select('*').eq('user_id', this.userId),
       this.cliente.from('cajitas').select('*').eq('user_id', this.userId),
@@ -125,9 +131,7 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async guardarCajita(cajita: Cajita): Promise<void> {
-    const { error } = await this.cliente
-      .from('cajitas')
-      .upsert(desdeCajita(cajita, this.userId));
+    const { error } = await this.cliente.from('cajitas').upsert(desdeCajita(cajita, this.userId));
     this.fallar('No se pudo guardar la cajita', error);
   }
 
@@ -232,8 +236,14 @@ export class RepositorioSupabase implements Repositorio {
     // movements first is redundant but keeps the intent explicit if the schema
     // ever loses that cascade.
     for (const tabla of [
-      'transacciones', 'metas', 'cajita_movimientos', 'cajitas',
-      'categorias', 'contactos', 'presupuestos', 'recurrentes',
+      'transacciones',
+      'metas',
+      'cajita_movimientos',
+      'cajitas',
+      'categorias',
+      'contactos',
+      'presupuestos',
+      'recurrentes',
     ]) {
       const { error } = await this.cliente.from(tabla).delete().eq('user_id', this.userId);
       this.fallar(`No se pudo vaciar ${tabla}`, error);

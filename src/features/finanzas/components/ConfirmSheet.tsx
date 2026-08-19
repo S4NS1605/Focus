@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, X, ArrowDownCircle, ArrowUpCircle, Ear, CheckCircle2, User, MapPin, Tag } from 'lucide-react';
+import {
+  AlertTriangle,
+  X,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Ear,
+  CheckCircle2,
+  User,
+  MapPin,
+  Tag,
+} from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, Transaction } from '../types';
 import type { TxKind } from '../types';
@@ -95,9 +105,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   // al editar un movimiento ya guardado no tiene sentido advertir sobre algo
   // que la persona ya vivió y confirmó una vez.
   const anomalia = useMemo(
-    () => (!editando && transacciones && amountCop && amountCop > 0
-      ? analizarAnomalias(transacciones, category, amountCop)
-      : null),
+    () =>
+      !editando && transacciones && amountCop && amountCop > 0
+        ? analizarAnomalias(transacciones, category, amountCop)
+        : null,
     [editando, transacciones, category, amountCop],
   );
 
@@ -128,7 +139,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
       cuentaId,
       rawTranscript: parsed.raw,
       // Solo viaja si el selector está en juego (edición) o si el motor de texto extrajo una fecha
-      occurredOn: (fechaInicial !== undefined || parsed.dateOverride) && fecha !== '' ? fecha : parsed.dateOverride,
+      occurredOn:
+        (fechaInicial !== undefined || parsed.dateOverride) && fecha !== ''
+          ? fecha
+          : parsed.dateOverride,
     });
   };
 
@@ -147,20 +161,20 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[2rem] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        className="max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-[var(--fin-ink)]">
+            <h2 className="flex items-center gap-2 text-[20px] font-semibold tracking-tight text-[var(--fin-ink)]">
               {(() => {
-                  const Icon = catalogo.de(category).Icono;
-                  return <Icon className="h-6 w-6 mr-1" aria-hidden="true" />;
+                const Icon = catalogo.de(category).Icono;
+                return <Icon className="h-6 w-6 mr-1" aria-hidden="true" />;
               })()}
               {editando ? COPY.confirm.titleEditar : COPY.confirm.title}
             </h2>
             {!editando && parsed.needsReview ? (
-              <p className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-[var(--fin-warn)]">
+              <p className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-[var(--fin-warn)]">
                 <AlertTriangle className="h-3.5 w-3.5" strokeWidth={3} />
                 {COPY.confirm.review}
               </p>
@@ -170,7 +184,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             type="button"
             onClick={onCancel}
             aria-label={COPY.confirm.cancel}
-            className="rounded-xl p-1.5 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
+            className="rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-4 w-4" strokeWidth={3} />
           </button>
@@ -178,13 +192,17 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
 
         {/* Amount */}
         <div className="mt-5">
-          <label htmlFor="fin-amount" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
+          <label
+            htmlFor="fin-amount"
+            className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+          >
             {COPY.confirm.amount}
           </label>
-          <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 bg-[var(--fin-card)] px-4 py-3"
+          <div
+            className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 bg-[var(--fin-card)] px-4 py-3"
             style={{ borderColor: amountWeak ? 'var(--fin-warn)' : 'var(--fin-line)' }}
           >
-            <span className="font-display text-2xl font-extrabold text-[var(--fin-ink-faint)]">$</span>
+            <span className="text-[28px] font-semibold text-[var(--fin-ink-faint)]">$</span>
             <input
               id="fin-amount"
               ref={amountRef}
@@ -192,15 +210,15 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
               onChange={(e) => setAmountText(formatAmountInput(parseAmountInput(e.target.value)))}
               inputMode="numeric"
               placeholder="0"
-              className="w-full bg-transparent font-display text-3xl font-extrabold text-[var(--fin-ink)] tabular-nums placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+              className="w-full bg-transparent text-[28px] font-semibold text-[var(--fin-ink)] tabular-nums placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
             />
           </div>
           {amountWeak ? (
-            <p className="mt-1.5 text-[11px] font-semibold text-[var(--fin-warn)]">
+            <p className="mt-1.5 text-[13px] font-semibold text-[var(--fin-warn)]">
               {COPY.confirm.amountMissing}
             </p>
           ) : anomalia?.esAnomalía ? (
-            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--fin-warn)]">
+            <p className="mt-1.5 flex items-center gap-1.5 text-[13px] font-semibold text-[var(--fin-warn)]">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />
               Fuera de lo usual — sueles gastar {formatCop(anomalia.promedio)} en esta categoría.
             </p>
@@ -209,15 +227,31 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
 
         {/* Direction */}
         <fieldset className="mt-5">
-          <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">{COPY.confirm.kind}</legend>
+          <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+            {COPY.confirm.kind}
+          </legend>
           <div
-            className="mt-2 grid grid-cols-2 gap-2 rounded-2xl border-2 bg-[var(--fin-card)] p-1.5"
+            className="mt-2 grid grid-cols-2 gap-2 rounded-[var(--fin-r-card)] border-2 bg-[var(--fin-card)] p-1.5"
             style={{ borderColor: kindWeak ? 'var(--fin-warn)' : 'var(--fin-line)' }}
           >
-            {([
-              { value: 'gasto', icon: ArrowDownCircle, label: COPY.confirm.gasto, on: 'var(--fin-out-bg)', ink: 'var(--fin-out)' },
-              { value: 'ingreso', icon: ArrowUpCircle, label: COPY.confirm.ingreso, on: 'var(--fin-in-bg)', ink: 'var(--fin-in)' },
-            ] as const).map((option) => {
+            {(
+              [
+                {
+                  value: 'gasto',
+                  icon: ArrowDownCircle,
+                  label: COPY.confirm.gasto,
+                  on: 'var(--fin-out-bg)',
+                  ink: 'var(--fin-out)',
+                },
+                {
+                  value: 'ingreso',
+                  icon: ArrowUpCircle,
+                  label: COPY.confirm.ingreso,
+                  on: 'var(--fin-in-bg)',
+                  ink: 'var(--fin-in)',
+                },
+              ] as const
+            ).map((option) => {
               const active = kind === option.value;
               return (
                 <button
@@ -225,7 +259,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                   type="button"
                   onClick={() => setKind(option.value)}
                   aria-pressed={active}
-                  className="flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded-[var(--fin-r-control)] px-4 py-2.5 text-[17px] font-semibold transition-colors"
                   style={{
                     backgroundColor: active ? option.on : 'transparent',
                     color: active ? option.ink : 'var(--fin-ink-faint)',
@@ -241,7 +275,9 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
 
         {/* Category: Visual grid of colorful buttons */}
         <fieldset className="mt-5">
-          <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">{COPY.confirm.category}</legend>
+          <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+            {COPY.confirm.category}
+          </legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {opciones.map((entrada) => {
               const option = entrada.clave;
@@ -253,7 +289,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                   type="button"
                   onClick={() => setCategory(option)}
                   aria-pressed={active}
-                  className="flex items-center gap-1.5 rounded-full border-2 px-3 py-2 text-xs font-bold transition-colors"
+                  className="flex items-center gap-1.5 rounded-[var(--fin-r-pill)] border-2 px-3 py-2 text-[15px] font-semibold transition-colors"
                   style={{
                     backgroundColor: active ? tint(color, 0.16) : 'var(--fin-card)',
                     borderColor: active ? color : 'var(--fin-line)',
@@ -272,20 +308,26 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         </fieldset>
 
         {/* Signals Extracted */}
-        {(!editando && (parsed.signals.destinatario || parsed.signals.ubicacion || parsed.signals.tags?.length > 0)) ? (
+        {!editando &&
+        (parsed.signals.destinatario ||
+          parsed.signals.ubicacion ||
+          parsed.signals.tags?.length > 0) ? (
           <div className="mt-4 flex flex-wrap gap-2">
             {parsed.signals.destinatario && (
-              <span className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
+              <span className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 <User className="h-3 w-3" strokeWidth={2.5} /> {parsed.signals.destinatario}
               </span>
             )}
             {parsed.signals.ubicacion && (
-              <span className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
+              <span className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 <MapPin className="h-3 w-3" strokeWidth={2.5} /> {parsed.signals.ubicacion}
               </span>
             )}
-            {parsed.signals.tags?.map(t => (
-              <span key={t} className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">
+            {parsed.signals.tags?.map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
+              >
                 <Tag className="h-3 w-3" strokeWidth={2.5} /> {t}
               </span>
             ))}
@@ -293,18 +335,21 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         ) : null}
 
         {/* Which balance this moved. Optional, and last: the fast path is
-            dictate-and-confirm, so anything that is not needed to record the
-            movement correctly must not stand between the user and saving. */}
+ dictate-and-confirm, so anything that is not needed to record the
+ movement correctly must not stand between the user and saving. */}
         {cuentas.length > 0 ? (
           <div className="mt-5">
-            <label htmlFor="fin-cuenta" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
+            <label
+              htmlFor="fin-cuenta"
+              className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+            >
               {kind === 'ingreso' ? COPY.confirm.cuentaIngreso : COPY.confirm.cuenta}
             </label>
             <select
               id="fin-cuenta"
               value={cuentaId ?? ''}
               onChange={(e) => setCuentaId(e.target.value || null)}
-              className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+              className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             >
               <option value="">{COPY.confirm.sinCuenta}</option>
               {cuentas.map((c) => (
@@ -313,7 +358,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                 </option>
               ))}
             </select>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+            <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               {COPY.confirm.cuentaHint}
             </p>
           </div>
@@ -321,23 +366,29 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
 
         {/* Description */}
         <div className="mt-5">
-          <label htmlFor="fin-desc" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
+          <label
+            htmlFor="fin-desc"
+            className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+          >
             {COPY.confirm.description}
           </label>
           <input
             id="fin-desc"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+            className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
           />
         </div>
 
         {/* Fecha — solo al editar o si el motor extrajo una fecha (ayer, hoy). Un movimiento nuevo es de hoy por definición;
-            corregir el día de uno viejo (lo registré tarde, cayó en otra fecha)
-            es justo lo que aquí faltaba poder hacer. */}
-        {(fechaInicial !== undefined || parsed.dateOverride) ? (
+ corregir el día de uno viejo (lo registré tarde, cayó en otra fecha)
+ es justo lo que aquí faltaba poder hacer. */}
+        {fechaInicial !== undefined || parsed.dateOverride ? (
           <div className="mt-5">
-            <label htmlFor="fin-fecha" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
+            <label
+              htmlFor="fin-fecha"
+              className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+            >
               {COPY.confirm.fecha}
             </label>
             <input
@@ -346,16 +397,16 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
               value={fecha}
               max={fechaMax}
               onChange={(e) => setFecha(e.target.value)}
-              className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+              className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             />
           </div>
         ) : null}
 
         {/* What was actually heard, so a mis-parse is always traceable */}
         {parsed.raw.trim() ? (
-          <p className="mt-4 rounded-2xl bg-[var(--fin-soft)] px-4 py-3 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
+          <p className="mt-4 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             <Ear className="inline h-4 w-4 mr-1 mb-0.5" aria-hidden="true" />
-            <span className="font-bold">{COPY.confirm.heard}: </span>
+            <span className="font-semibold">{COPY.confirm.heard}: </span>
             &ldquo;{parsed.raw.trim()}&rdquo;
           </p>
         ) : null}
@@ -366,7 +417,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           disabled={amountCop === null}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--fin-accent)] px-6 py-4 text-sm font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
         >
           <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
           {editando ? COPY.confirm.saveEditar : COPY.confirm.save}

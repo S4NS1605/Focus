@@ -31,9 +31,7 @@ export interface FraseCategoria {
  * nombre de categoría que sea un número ("mil") jamás corrompe una cifra: ese
  * token ya se consumió antes de llegar aquí.
  */
-export const frasesDeCategorias = (
-  categorias: readonly CategoriaPersonal[],
-): FraseCategoria[] =>
+export const frasesDeCategorias = (categorias: readonly CategoriaPersonal[]): FraseCategoria[] =>
   categorias
     .filter((c) => c.archivedAt === null)
     .map((c) => ({ id: c.id, seq: c.nombre.split(/\s+/).map(normalizeWord).filter(Boolean) }))

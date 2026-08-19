@@ -52,7 +52,16 @@ const DeudaCard: React.FC<{
   onEliminar: DeudasViewProps['onEliminar'];
   cuentas: DeudasViewProps['cuentas'];
   onAbonar: DeudasViewProps['onAbonar'];
-}> = ({ cajita, saldoCop, movimientos, onFijarSaldo, onMovimiento, onEliminar, cuentas, onAbonar }) => {
+}> = ({
+  cajita,
+  saldoCop,
+  movimientos,
+  onFijarSaldo,
+  onMovimiento,
+  onEliminar,
+  cuentas,
+  onAbonar,
+}) => {
   const [accion, setAccion] = useState<Accion | null>(null);
   const [texto, setTexto] = useState('');
   const [categoria, setCategoria] = useState<Category>('otros');
@@ -91,53 +100,55 @@ const DeudaCard: React.FC<{
   };
 
   return (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
       <div className="flex items-start gap-3">
         <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--fin-out-bg)]"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)]"
           aria-hidden="true"
         >
           <Icono className="h-6 w-6 text-[var(--fin-out)]" strokeWidth={1.75} />
         </span>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-extrabold text-[var(--fin-ink)]">{cajita.nombre}</h3>
-          <p className="text-[10px] font-semibold text-[var(--fin-ink-faint)]">
+          <h3 className="truncate text-[17px] font-semibold text-[var(--fin-ink)]">
+            {cajita.nombre}
+          </h3>
+          <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">
             {TIPO_LABELS[cajita.tipo]}
           </p>
-          <p className="mt-0.5 font-display text-2xl font-extrabold tabular-nums text-[var(--fin-out)]">
+          <p className="mt-0.5 text-[28px] font-semibold tabular-nums text-[var(--fin-out)]">
             {formatCop(saldoCop)}
           </p>
-          <p className="text-[10px] text-[var(--fin-ink-faint)]">debes</p>
+          <p className="text-[13px] text-[var(--fin-ink-faint)]">debes</p>
         </div>
 
         <button
           type="button"
           onClick={() => setConfirmando((v) => !v)}
           aria-label={`Eliminar ${cajita.nombre}`}
-          className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
+          className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
         >
           <Trash2 className="h-4 w-4" strokeWidth={2.5} />
         </button>
       </div>
 
       {confirmando ? (
-        <div className="mt-3 rounded-2xl bg-[var(--fin-out-bg)] p-3">
-          <p className="text-[11px] leading-relaxed text-[var(--fin-out-ink)]">
+        <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] p-3">
+          <p className="text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
             Se elimina y con ella todo su historial de cargos y abonos.
           </p>
           <div className="mt-2.5 flex gap-2">
             <button
               type="button"
               onClick={() => onEliminar(cajita.id)}
-              className="rounded-full bg-[var(--fin-out)] px-4 py-2 text-xs font-bold text-white"
+              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2 text-[15px] font-semibold text-white"
             >
               Eliminar
             </button>
             <button
               type="button"
               onClick={() => setConfirmando(false)}
-              className="rounded-full bg-[var(--fin-card)] px-4 py-2 text-xs font-bold text-[var(--fin-ink-soft)]"
+              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
             >
               Cancelar
             </button>
@@ -158,7 +169,7 @@ const DeudaCard: React.FC<{
             type="button"
             onClick={() => abrir(item.id)}
             aria-pressed={accion === item.id}
-            className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${
+            className={`rounded-[var(--fin-r-pill)] px-3 py-1.5 text-[13px] font-semibold transition-colors ${
               accion === item.id
                 ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                 : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]'
@@ -170,9 +181,12 @@ const DeudaCard: React.FC<{
       </div>
 
       {accion ? (
-        <form onSubmit={enviar} className="mt-3 rounded-2xl bg-[var(--fin-soft)] p-3">
-          <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5">
-            <span className="font-display text-xl font-extrabold text-[var(--fin-ink-faint)]">$</span>
+        <form
+          onSubmit={enviar}
+          className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3"
+        >
+          <div className="flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5">
+            <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
             <input
               value={texto}
               onChange={(e) => setTexto(formatAmountInput(leer(e.target.value)))}
@@ -180,15 +194,15 @@ const DeudaCard: React.FC<{
               placeholder="0"
               autoFocus
               aria-label="Monto"
-              className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+              className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
             />
           </div>
 
           {/* Only purchases get a category: an payment against the balance is not
-              spending on anything, it is settling what was already spent. */}
+ spending on anything, it is settling what was already spent. */}
           {accion === 'compra' ? (
             <fieldset className="mt-3">
-              <legend className="text-[11px] font-bold text-[var(--fin-ink-soft)]">
+              <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 ¿En qué fue?
               </legend>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -202,7 +216,7 @@ const DeudaCard: React.FC<{
                       type="button"
                       onClick={() => setCategoria(op)}
                       aria-pressed={activa}
-                      className="flex items-center gap-1 rounded-full border-2 px-2.5 py-1.5 text-[10px] font-bold transition-colors"
+                      className="flex items-center gap-1 rounded-[var(--fin-r-pill)] border-2 px-2.5 py-1.5 text-[13px] font-semibold transition-colors"
                       style={{
                         backgroundColor: activa ? tint(color, 0.16) : 'var(--fin-card)',
                         borderColor: activa ? color : 'var(--fin-line)',
@@ -222,14 +236,14 @@ const DeudaCard: React.FC<{
             <div className="mt-3">
               <label
                 htmlFor={`abono-cuenta-${cajita.id}`}
-                className="block text-[11px] font-bold text-[var(--fin-ink-soft)]"
+                className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]"
               >
                 ¿De dónde sale el pago?
               </label>
               {cuentas.length === 0 ? (
-                <p className="mt-1.5 rounded-xl bg-[var(--fin-card)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
-                  Primero crea una cuenta en Ahorro. El dinero de un abono tiene que
-                  salir de algún lado, o los saldos dejan de cuadrar.
+                <p className="mt-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                  Primero crea una cuenta en Ahorro. El dinero de un abono tiene que salir de algún
+                  lado, o los saldos dejan de cuadrar.
                 </p>
               ) : (
                 <select
@@ -237,7 +251,7 @@ const DeudaCard: React.FC<{
                   value={cuentaId}
                   onChange={(e) => setCuentaId(e.target.value)}
                   required
-                  className="mt-1.5 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                  className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 >
                   {cuentas.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -252,7 +266,7 @@ const DeudaCard: React.FC<{
           <button
             type="submit"
             disabled={valor === null || (accion === 'abono' && cuentaId === '')}
-            className="mt-3 w-full rounded-full bg-[var(--fin-accent)] px-4 py-2.5 text-xs font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
+            className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
           >
             Guardar
           </button>
@@ -264,20 +278,20 @@ const DeudaCard: React.FC<{
           {historial.slice(0, 6).map(({ movimiento, saldoDespues }) => (
             <li
               key={movimiento.id}
-              className="flex items-center gap-2.5 rounded-xl bg-[var(--fin-bg)] px-3 py-2"
+              className="flex items-center gap-2.5 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] font-bold text-[var(--fin-ink)]">
+                <p className="truncate text-[13px] font-semibold text-[var(--fin-ink)]">
                   {movimiento.categoria
                     ? CATEGORY_LABELS[movimiento.categoria]
                     : CAJITA_MOV_LABELS[movimiento.kind]}
                 </p>
-                <p className="text-[10px] text-[var(--fin-ink-faint)]">
+                <p className="text-[13px] text-[var(--fin-ink-faint)]">
                   {dayLabel(movimiento.occurredOn)} · debías {formatCop(saldoDespues)}
                 </p>
               </div>
               <span
-                className="shrink-0 text-[11px] font-extrabold tabular-nums"
+                className="shrink-0 text-[13px] font-semibold tabular-nums"
                 style={{ color: movimiento.deltaCop >= 0 ? 'var(--fin-out)' : 'var(--fin-in)' }}
               >
                 {movimiento.deltaCop >= 0 ? '+' : '−'}
@@ -287,7 +301,7 @@ const DeudaCard: React.FC<{
           ))}
         </ul>
       ) : (
-        <p className="mt-3 px-1 text-[11px] text-[var(--fin-ink-faint)]">Sin cargos todavía.</p>
+        <p className="mt-3 px-1 text-[13px] text-[var(--fin-ink-faint)]">Sin cargos todavía.</p>
       )}
     </section>
   );
@@ -334,144 +348,156 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
   return (
     // Mismo criterio que CajitasView: total y formulario en columna angosta,
     // las tarjetas de deudas en su propia grilla ancha.
-    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+    // `w-full` por consistencia -- ver el comentario en TendenciasView.tsx.
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-        <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
-          <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-          Lo que debes
-        </h2>
-        <p className="mt-1 font-display text-4xl font-extrabold tabular-nums text-[var(--fin-out)]">
-          {formatCop(total)}
-        </p>
-        {filas.length > 0 ? (
-          <p className="mt-1 text-[11px] text-[var(--fin-ink-faint)]">
-            entre {filas.length} {filas.length === 1 ? 'obligación' : 'obligaciones'}
+        <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+            <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+            Lo que debes
+          </h2>
+          <p className="mt-1 text-[44px] font-semibold tabular-nums text-[var(--fin-out)]">
+            {formatCop(total)}
           </p>
-        ) : null}
-      </section>
+          {filas.length > 0 ? (
+            <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
+              entre {filas.length} {filas.length === 1 ? 'obligación' : 'obligaciones'}
+            </p>
+          ) : null}
+        </section>
 
-      {creando ? (
-        <form
-          onSubmit={crear}
-          className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5"
-        >
-          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">Nueva obligación</h2>
+        {creando ? (
+          <form onSubmit={crear} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+            <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+              Nueva obligación
+            </h2>
 
-          <fieldset className="mt-4">
-            <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">¿Qué es?</legend>
-            <div className="mt-2 grid grid-cols-2 gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5">
-              {(['tarjeta', 'deuda'] as const).map((op) => (
-                <button
-                  key={op}
-                  type="button"
-                  onClick={() => setTipo(op)}
-                  aria-pressed={tipo === op}
-                  className={`rounded-xl px-3 py-2.5 text-[11px] font-bold transition-colors ${
-                    tipo === op
-                      ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]'
-                      : 'text-[var(--fin-ink-soft)]'
-                  }`}
-                >
-                  {TIPO_LABELS[op]}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <label htmlFor="deuda-nombre" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
-            Nombre
-          </label>
-          <input
-            id="deuda-nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            placeholder={tipo === 'tarjeta' ? 'Ej: Visa Davivienda' : 'Ej: Préstamo a mi mamá'}
-            autoFocus
-            className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
-          />
-
-          <label htmlFor="deuda-saldo" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
-            ¿Cuánto debes ahora?
-          </label>
-          <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
-            <span className="font-display text-xl font-extrabold text-[var(--fin-ink-faint)]">$</span>
-            <input
-              id="deuda-saldo"
-              value={saldoTexto}
-              onChange={(e) => setSaldoTexto(formatAmountInput(parseAmountInput(e.target.value)))}
-              inputMode="numeric"
-              placeholder="0"
-              className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
-            />
-          </div>
-
-          <fieldset className="mt-4">
-            <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">Ícono</legend>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {CAJITA_ICONS.map((op: string) => {
-                const IconComponent = iconoDeCajita(op);
-                return (
+            <fieldset className="mt-4">
+              <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+                ¿Qué es?
+              </legend>
+              <div className="mt-2 grid grid-cols-2 gap-1.5 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-1.5">
+                {(['tarjeta', 'deuda'] as const).map((op) => (
                   <button
                     key={op}
                     type="button"
-                    onClick={() => setIcon(op)}
-                    aria-pressed={icon === op}
-                    aria-label={`Ícono ${op}`}
-                    className={`flex h-10 w-10 items-center justify-center rounded-2xl border-2 transition-colors ${
-                      icon === op
-                        ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] text-[var(--fin-ink)]'
-                        : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'
+                    onClick={() => setTipo(op)}
+                    aria-pressed={tipo === op}
+                    className={`rounded-[var(--fin-r-control)] px-3 py-2.5 text-[13px] font-semibold transition-colors ${
+                      tipo === op
+                        ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]'
+                        : 'text-[var(--fin-ink-soft)]'
                     }`}
                   >
-                    <IconComponent className="h-5 w-5" />
+                    {TIPO_LABELS[op]}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+            </fieldset>
+
+            <label
+              htmlFor="deuda-nombre"
+              className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+            >
+              Nombre
+            </label>
+            <input
+              id="deuda-nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder={tipo === 'tarjeta' ? 'Ej: Visa Davivienda' : 'Ej: Préstamo a mi mamá'}
+              autoFocus
+              className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+            />
+
+            <label
+              htmlFor="deuda-saldo"
+              className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+            >
+              ¿Cuánto debes ahora?
+            </label>
+            <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+              <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
+              <input
+                id="deuda-saldo"
+                value={saldoTexto}
+                onChange={(e) => setSaldoTexto(formatAmountInput(parseAmountInput(e.target.value)))}
+                inputMode="numeric"
+                placeholder="0"
+                className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+              />
             </div>
-          </fieldset>
 
-          <div className="mt-5 flex gap-2">
-            <button
-              type="submit"
-              disabled={nombre.trim() === ''}
-              className="flex-1 rounded-full bg-[var(--fin-accent)] px-6 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
-            >
-              Crear
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreando(false)}
-              className="rounded-full bg-[var(--fin-soft)] px-6 py-3.5 text-sm font-bold text-[var(--fin-ink-soft)]"
-            >
-              Cancelar
-            </button>
+            <fieldset className="mt-4">
+              <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+                Ícono
+              </legend>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {CAJITA_ICONS.map((op: string) => {
+                  const IconComponent = iconoDeCajita(op);
+                  return (
+                    <button
+                      key={op}
+                      type="button"
+                      onClick={() => setIcon(op)}
+                      aria-pressed={icon === op}
+                      aria-label={`Ícono ${op}`}
+                      className={`flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-card)] border-2 transition-colors ${
+                        icon === op
+                          ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] text-[var(--fin-ink)]'
+                          : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'
+                      }`}
+                    >
+                      <IconComponent className="h-5 w-5" />
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="submit"
+                disabled={nombre.trim() === ''}
+                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
+              >
+                Crear
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreando(false)}
+                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCreando(true)}
+            className="flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
+          >
+            <Plus className="h-4 w-4" strokeWidth={3} />
+            Nueva deuda o tarjeta
+          </button>
+        )}
+
+        {filas.length === 0 && !creando ? (
+          <div className="rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
+            <CreditCard
+              className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">
+              No debes nada registrado.
+            </p>
+            <p className="mt-1 text-[15px] text-[var(--fin-ink-faint)]">
+              Agrega una tarjeta o un préstamo para llevarle el rastro.
+            </p>
           </div>
-        </form>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setCreando(true)}
-          className="flex items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-4 text-sm font-bold text-[var(--fin-ink-soft)] transition-colors hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
-        >
-          <Plus className="h-4 w-4" strokeWidth={3} />
-          Nueva deuda o tarjeta
-        </button>
-      )}
-
-      {filas.length === 0 && !creando ? (
-        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
-          <CreditCard
-            className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]"
-            strokeWidth={1.5}
-            aria-hidden="true"
-          />
-          <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">No debes nada registrado.</p>
-          <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">
-            Agrega una tarjeta o un préstamo para llevarle el rastro.
-          </p>
-        </div>
-      ) : null}
+        ) : null}
       </div>
 
       {filas.length > 0 ? (

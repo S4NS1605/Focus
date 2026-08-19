@@ -75,7 +75,14 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Vacaciones', icon: '🏖️', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+      await result.current.crearCajita({
+        nombre: 'Vacaciones',
+        icon: '🏖️',
+        tipo: 'cajita',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
+      });
     });
     const cajitaId = result.current.datos.cajitas.find((c) => c.nombre === 'Vacaciones')!.id;
 
@@ -98,7 +105,14 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Carro', icon: '🚗', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+      await result.current.crearCajita({
+        nombre: 'Carro',
+        icon: '🚗',
+        tipo: 'cajita',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
+      });
     });
     const cajitaId = result.current.datos.cajitas.find((c) => c.nombre === 'Carro')!.id;
     await act(async () => {
@@ -118,7 +132,14 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Viaje', icon: '✈️', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+      await result.current.crearCajita({
+        nombre: 'Viaje',
+        icon: '✈️',
+        tipo: 'cajita',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
+      });
     });
     const cajitaId = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
     await act(async () => {
@@ -220,7 +241,9 @@ describe('useAlmacen', () => {
 
     // A second session must not add a second one.
     const otra = await montar(repo);
-    expect(otra.result.current.datos.cajitas.filter((c) => c.nombre === 'Efectivo')).toHaveLength(1);
+    expect(otra.result.current.datos.cajitas.filter((c) => c.nombre === 'Efectivo')).toHaveLength(
+      1,
+    );
   });
 
   it('does not resurrect the cash account once it has been archived', async () => {
@@ -256,14 +279,22 @@ describe('useAlmacen', () => {
     // primera.
     await act(async () => {
       await result.current.crearCajita({
-        nombre: 'Credito NU', icon: 'CreditCard', tipo: 'tarjeta',
-        metaCop: null, tasaEaPct: null, saldoInicialCop: 200_000,
+        nombre: 'Credito NU',
+        icon: 'CreditCard',
+        tipo: 'tarjeta',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 200_000,
       });
     });
     await act(async () => {
       await result.current.crearCajita({
-        nombre: 'Nequi', icon: 'Wallet', tipo: 'cuenta',
-        metaCop: null, tasaEaPct: null, saldoInicialCop: 500_000,
+        nombre: 'Nequi',
+        icon: 'Wallet',
+        tipo: 'cuenta',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 500_000,
       });
     });
 
@@ -281,7 +312,7 @@ describe('useAlmacen', () => {
     expect(saldoDeCajita(movs, cuentaId)).toBe(470_000);
   });
 
-  it('records a debt payment as a transfer, never as a month\'s expense', async () => {
+  it("records a debt payment as a transfer, never as a month's expense", async () => {
     // Paying a card is not new consumption: the money was already counted when
     // it was spent. Booking it as a gasto would inflate every month a card gets
     // paid off.
@@ -290,8 +321,12 @@ describe('useAlmacen', () => {
 
     await act(async () => {
       await result.current.crearCajita({
-        nombre: 'Visa', icon: 'CreditCard', tipo: 'tarjeta',
-        metaCop: null, tasaEaPct: null, saldoInicialCop: 100_000,
+        nombre: 'Visa',
+        icon: 'CreditCard',
+        tipo: 'tarjeta',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 100_000,
       });
     });
     const deudaId = result.current.datos.cajitas.find((c) => c.nombre === 'Visa')!.id;
@@ -383,14 +418,22 @@ describe('useAlmacen', () => {
 
     await act(async () => {
       await result.current.crearCajita({
-        nombre: 'Nequi', icon: 'Wallet', tipo: 'cuenta',
-        metaCop: null, tasaEaPct: null, saldoInicialCop: 500_000,
+        nombre: 'Nequi',
+        icon: 'Wallet',
+        tipo: 'cuenta',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 500_000,
       });
     });
     await act(async () => {
       await result.current.crearCajita({
-        nombre: 'Viaje', icon: 'Plane', tipo: 'cajita',
-        metaCop: null, tasaEaPct: null, saldoInicialCop: 0,
+        nombre: 'Viaje',
+        icon: 'Plane',
+        tipo: 'cajita',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
       });
     });
 
@@ -415,8 +458,12 @@ describe('useAlmacen', () => {
 
     await act(async () => {
       await result.current.crearCajita({
-        nombre: 'Viaje', icon: 'Plane', tipo: 'cajita',
-        metaCop: null, tasaEaPct: null, saldoInicialCop: 0,
+        nombre: 'Viaje',
+        icon: 'Plane',
+        tipo: 'cajita',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
       });
     });
 
@@ -437,7 +484,11 @@ describe('useAlmacen', () => {
     const id = result.current.datos.cajitas[0].id;
 
     await act(async () => {
-      await result.current.transferirEntreCuentas({ origenId: id, destinoId: id, montoCop: 50_000 });
+      await result.current.transferirEntreCuentas({
+        origenId: id,
+        destinoId: id,
+        montoCop: 50_000,
+      });
     });
 
     expect(result.current.datos.cajitaMovimientos).toEqual([]);
@@ -449,8 +500,12 @@ describe('useAlmacen', () => {
 
     await act(async () => {
       await result.current.crearCajita({
-        nombre: 'Viaje', icon: 'Plane', tipo: 'cajita',
-        metaCop: null, tasaEaPct: null, saldoInicialCop: 0,
+        nombre: 'Viaje',
+        icon: 'Plane',
+        tipo: 'cajita',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
       });
     });
     const a = result.current.datos.cajitas[0].id;
@@ -469,8 +524,12 @@ describe('useAlmacen', () => {
 
     await act(async () => {
       await result.current.crearCajita({
-        nombre: 'Viaje', icon: 'Plane', tipo: 'cajita',
-        metaCop: null, tasaEaPct: null, saldoInicialCop: 0,
+        nombre: 'Viaje',
+        icon: 'Plane',
+        tipo: 'cajita',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
       });
     });
     const origenId = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!.id;

@@ -1,15 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  AlertTriangle,
-  Copy,
-  Info,
-  Repeat,
-  Sparkles,
-  TrendingUp,
-  X,
-  Zap,
-} from 'lucide-react';
+import { AlertTriangle, Copy, Info, Repeat, Sparkles, TrendingUp, X, Zap } from 'lucide-react';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { useCatalogo } from '../catalogoContexto';
 import type { LucideIcon } from 'lucide-react';
@@ -46,13 +37,21 @@ const FilaSenal: React.FC<{ senal: Senal }> = ({ senal }) => {
   const { fondo, tinta } = COLOR[senal.tono];
 
   return (
-    <li className="flex items-start gap-3 rounded-2xl px-4 py-3" style={{ backgroundColor: fondo }}>
-      <Icono className="mt-0.5 h-4 w-4 shrink-0" style={{ color: tinta }} strokeWidth={2.5} aria-hidden="true" />
+    <li
+      className="flex items-start gap-3 rounded-[var(--fin-r-card)] px-4 py-3"
+      style={{ backgroundColor: fondo }}
+    >
+      <Icono
+        className="mt-0.5 h-4 w-4 shrink-0"
+        style={{ color: tinta }}
+        strokeWidth={2.5}
+        aria-hidden="true"
+      />
       <div className="min-w-0">
-        <p className="text-[13px] font-bold" style={{ color: tinta }}>
+        <p className="text-[13px] font-semibold" style={{ color: tinta }}>
           {senal.titulo}
         </p>
-        <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--fin-ink-soft)]">
+        <p className="mt-0.5 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
           {senal.detalle}
         </p>
       </div>
@@ -100,22 +99,22 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[2rem] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        className="max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--fin-r-card)]"
               style={{ backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)` }}
               aria-hidden="true"
             >
               <Icono className="h-5 w-5" style={{ color }} strokeWidth={2.25} />
             </span>
             <div className="min-w-0">
-              <h2 className="truncate text-base font-extrabold tracking-tight text-[var(--fin-ink)]">
+              <h2 className="truncate text-[17px] font-semibold tracking-tight text-[var(--fin-ink)]">
                 {tx.description}
               </h2>
-              <p className="text-[11px] text-[var(--fin-ink-faint)]">
+              <p className="text-[13px] text-[var(--fin-ink-faint)]">
                 {dayLabel(tx.occurredOn)} · {cat.nombre}
               </p>
             </div>
@@ -124,14 +123,14 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
             type="button"
             onClick={onCerrar}
             aria-label="Cerrar"
-            className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
+            className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-4 w-4" strokeWidth={3} />
           </button>
         </div>
 
         <p
-          className="mt-4 font-display text-3xl font-extrabold tabular-nums"
+          className="mt-4 text-[28px] font-semibold tabular-nums"
           style={{ color: esIngreso ? 'var(--fin-in)' : 'var(--fin-out)' }}
         >
           {formatSigned(tx.amountCop, tx.kind)}
@@ -144,24 +143,27 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
             ))}
           </ul>
         ) : (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl bg-[var(--fin-soft)] px-4 py-3">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-ink-faint)]" strokeWidth={2.5} aria-hidden="true" />
-            <p className="text-[12px] leading-relaxed text-[var(--fin-ink-soft)]">
-              Nada raro con este movimiento: encaja con lo que sueles gastar en{' '}
-              {cat.nombre}.
+          <div className="mt-5 flex items-start gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3">
+            <Info
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-ink-faint)]"
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+            <p className="text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
+              Nada raro con este movimiento: encaja con lo que sueles gastar en {cat.nombre}.
             </p>
           </div>
         )}
 
         {tx.rawTranscript.trim() ? (
-          <p className="mt-4 rounded-2xl bg-[var(--fin-soft)] px-4 py-3 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+          <p className="mt-4 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
             {tx.rawTranscript.trim()}
           </p>
         ) : null}
 
-        <p className="mt-4 text-center text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
-          Todo esto se calcula en tu dispositivo comparando con tu propio historial.
-          Sin inteligencia artificial y sin que tus datos salgan de aquí.
+        <p className="mt-4 text-center text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+          Todo esto se calcula en tu dispositivo comparando con tu propio historial. Sin
+          inteligencia artificial y sin que tus datos salgan de aquí.
         </p>
 
         <p className="sr-only">{formatCop(tx.amountCop)}</p>

@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
-import {
-  estadoDePresupuesto,
-  estadoDeTodos,
-  gastadoEnCategoria,
-  tonoDe,
-} from './presupuestos';
+import { estadoDePresupuesto, estadoDeTodos, gastadoEnCategoria, tonoDe } from './presupuestos';
 import type { Presupuesto } from './presupuestos';
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
@@ -92,7 +87,12 @@ describe('estadoDePresupuesto', () => {
   });
 
   it('un mes ya cerrado no se proyecta: lo gastado ya se gastó', () => {
-    const e = estadoDePresupuesto(pre(), [tx({ occurredOn: '2026-07-05' })], '2026-07', '2026-08-10');
+    const e = estadoDePresupuesto(
+      pre(),
+      [tx({ occurredOn: '2026-07-05' })],
+      '2026-07',
+      '2026-08-10',
+    );
 
     expect(e.proyectadoCop).toBe(e.gastadoCop);
   });
@@ -112,7 +112,12 @@ describe('estadoDePresupuesto', () => {
   });
 
   it('el porcentaje se topa, para que la barra no se salga de la pantalla', () => {
-    const e = estadoDePresupuesto(pre({ montoCop: 1_000 }), [tx({ amountCop: 90_000_000 })], '2026-08', '2026-08-10');
+    const e = estadoDePresupuesto(
+      pre({ montoCop: 1_000 }),
+      [tx({ amountCop: 90_000_000 })],
+      '2026-08',
+      '2026-08-10',
+    );
 
     expect(e.pctUsado).toBeLessThanOrEqual(999);
   });

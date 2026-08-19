@@ -160,7 +160,9 @@ describe('DeudasView', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Nueva deuda o tarjeta/ }));
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Amex' } });
-    fireEvent.change(screen.getByLabelText('¿Cuánto debes ahora?'), { target: { value: '1200000' } });
+    fireEvent.change(screen.getByLabelText('¿Cuánto debes ahora?'), {
+      target: { value: '1200000' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Crear' }));
 
     expect(onCrear).toHaveBeenCalledWith(

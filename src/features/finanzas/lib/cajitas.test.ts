@@ -105,8 +105,18 @@ describe('historialDeCajita', () => {
   it('breaks same-day ties by entry order', () => {
     const filas = historialDeCajita(
       [
-        mov({ id: 'segundo', occurredOn: '2026-08-01', deltaCop: 10000, createdAt: '2026-08-01T12:00:00.000Z' }),
-        mov({ id: 'primero', occurredOn: '2026-08-01', deltaCop: 90000, createdAt: '2026-08-01T09:00:00.000Z' }),
+        mov({
+          id: 'segundo',
+          occurredOn: '2026-08-01',
+          deltaCop: 10000,
+          createdAt: '2026-08-01T12:00:00.000Z',
+        }),
+        mov({
+          id: 'primero',
+          occurredOn: '2026-08-01',
+          deltaCop: 90000,
+          createdAt: '2026-08-01T09:00:00.000Z',
+        }),
       ],
       'c1',
     );
@@ -130,7 +140,10 @@ describe('totalEnCajitas', () => {
   it('adds up live pockets', () => {
     const total = totalEnCajitas(
       [caj({ id: 'c1' }), caj({ id: 'c2' })],
-      [mov({ id: 'a', cajitaId: 'c1', deltaCop: 100000 }), mov({ id: 'b', cajitaId: 'c2', deltaCop: 250000 })],
+      [
+        mov({ id: 'a', cajitaId: 'c1', deltaCop: 100000 }),
+        mov({ id: 'b', cajitaId: 'c2', deltaCop: 250000 }),
+      ],
     );
 
     expect(total).toBe(350000);
@@ -139,7 +152,10 @@ describe('totalEnCajitas', () => {
   it('leaves archived pockets out of the total', () => {
     const total = totalEnCajitas(
       [caj({ id: 'c1' }), caj({ id: 'c2', archivedAt: '2026-08-01T00:00:00.000Z' })],
-      [mov({ id: 'a', cajitaId: 'c1', deltaCop: 100000 }), mov({ id: 'b', cajitaId: 'c2', deltaCop: 250000 })],
+      [
+        mov({ id: 'a', cajitaId: 'c1', deltaCop: 100000 }),
+        mov({ id: 'b', cajitaId: 'c2', deltaCop: 250000 }),
+      ],
     );
 
     expect(total).toBe(100000);
@@ -150,7 +166,10 @@ describe('resumenDeCajitas', () => {
   it('sorts by balance, largest first', () => {
     const resumen = resumenDeCajitas(
       [caj({ id: 'c1', nombre: 'Chica' }), caj({ id: 'c2', nombre: 'Grande' })],
-      [mov({ id: 'a', cajitaId: 'c1', deltaCop: 10000 }), mov({ id: 'b', cajitaId: 'c2', deltaCop: 500000 })],
+      [
+        mov({ id: 'a', cajitaId: 'c1', deltaCop: 10000 }),
+        mov({ id: 'b', cajitaId: 'c2', deltaCop: 500000 }),
+      ],
     );
 
     expect(resumen.map((r) => r.cajita.nombre)).toEqual(['Grande', 'Chica']);
@@ -197,8 +216,14 @@ describe('patrimonio', () => {
 
   it('leaves archived balances out of the total', () => {
     const r = patrimonio(
-      [caj({ id: 'c1', tipo: 'cuenta' }), caj({ id: 'c2', tipo: 'cuenta', archivedAt: '2026-01-01T00:00:00.000Z' })],
-      [mov({ id: 'a', cajitaId: 'c1', deltaCop: 500_000 }), mov({ id: 'b', cajitaId: 'c2', deltaCop: 900_000 })],
+      [
+        caj({ id: 'c1', tipo: 'cuenta' }),
+        caj({ id: 'c2', tipo: 'cuenta', archivedAt: '2026-01-01T00:00:00.000Z' }),
+      ],
+      [
+        mov({ id: 'a', cajitaId: 'c1', deltaCop: 500_000 }),
+        mov({ id: 'b', cajitaId: 'c2', deltaCop: 900_000 }),
+      ],
     );
 
     expect(r.cuentasCop).toBe(500_000);

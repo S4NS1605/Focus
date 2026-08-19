@@ -188,7 +188,9 @@ describe('parseTransaction — description', () => {
 
   it('restores merchant accents and casing that dictation flattens', () => {
     expect(parseTransaction('gasté 50 mil en exito').description).toBe('Gasté en Éxito');
-    expect(parseTransaction('pagué 45 mil de transmilenio').description).toBe('Pagué de TransMilenio');
+    expect(parseTransaction('pagué 45 mil de transmilenio').description).toBe(
+      'Pagué de TransMilenio',
+    );
   });
 
   it('keeps a quantity that is not the amount', () => {
@@ -196,11 +198,20 @@ describe('parseTransaction — description', () => {
   });
 
   it('extracts specific message from OCR receipts', () => {
-    expect(parseTransaction('[OCR] Envío exitoso Destino Julian Mensaje Para la pizza de anoche Valor $ 50.000').description).toBe('Para la pizza de anoche');
-    expect(parseTransaction('[OCR] Aprobado Motivo Pago de arriendo Fecha 12 de Agosto').description).toBe('Pago de arriendo');
-    const nequiRaw = '[OCR] € comprobante de pago (O Envío Realizado A [a] Le I "| E _— L.] NN L a La “ EH El [m] P E, h: O ¡Escanea este GR con Nequi para verificar tu envío al instante! Para Josue Conversación Te envío esto como prueba para la app de finanzas gracias bro ¿Cuánto? $ 100,00 Número Nequi 310 2201494 Fecha 16 de agosto de 2026 alas 06:15 p.m. Referencia M16482536';
+    expect(
+      parseTransaction(
+        '[OCR] Envío exitoso Destino Julian Mensaje Para la pizza de anoche Valor $ 50.000',
+      ).description,
+    ).toBe('Para la pizza de anoche');
+    expect(
+      parseTransaction('[OCR] Aprobado Motivo Pago de arriendo Fecha 12 de Agosto').description,
+    ).toBe('Pago de arriendo');
+    const nequiRaw =
+      '[OCR] € comprobante de pago (O Envío Realizado A [a] Le I "| E _— L.] NN L a La “ EH El [m] P E, h: O ¡Escanea este GR con Nequi para verificar tu envío al instante! Para Josue Conversación Te envío esto como prueba para la app de finanzas gracias bro ¿Cuánto? $ 100,00 Número Nequi 310 2201494 Fecha 16 de agosto de 2026 alas 06:15 p.m. Referencia M16482536';
     const nequiTx = parseTransaction(nequiRaw);
-    expect(nequiTx.description).toBe('Te envío esto como prueba para la app de finanzas gracias bro (06:15)');
+    expect(nequiTx.description).toBe(
+      'Te envío esto como prueba para la app de finanzas gracias bro (06:15)',
+    );
     expect(nequiTx.amount).toBe(100);
   });
 });
@@ -411,8 +422,7 @@ describe('parseTransaction — aprendido del historial', () => {
   const lex = {
     // "croquetas" aprendida hacia una categoría del usuario; "cine" desviada por
     // el usuario hacia 'salud' (contra la de fábrica, entretenimiento).
-    categoriaDe: (n: string) =>
-      n === 'croquetas' ? 'c-mascotas' : n === 'cine' ? 'salud' : null,
+    categoriaDe: (n: string) => (n === 'croquetas' ? 'c-mascotas' : n === 'cine' ? 'salud' : null),
     tamano: 2,
   };
 

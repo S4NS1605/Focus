@@ -1,6 +1,19 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, CheckCircle2, ChevronDown, Download, FileDown, FileText, FileUp, KeyRound, Loader2, RotateCcw, ShieldCheck, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  FileDown,
+  FileText,
+  FileUp,
+  KeyRound,
+  Loader2,
+  RotateCcw,
+  ShieldCheck,
+  X,
+} from 'lucide-react';
 import type { Transaction } from '../types';
 import { planearImportacion } from '../analista/aMovimientos';
 import type { Trabajo } from '../analista/useAnalista';
@@ -28,12 +41,15 @@ interface TrabajoEnCursoProps {
 }
 
 const TrabajoEnCurso: React.FC<TrabajoEnCursoProps> = ({ trabajo, segundos }) => (
-  <li className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
+  <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
     <div className="flex items-center gap-3">
-      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[var(--fin-ink-faint)]" strokeWidth={3} />
+      <Loader2
+        className="h-5 w-5 shrink-0 animate-spin text-[var(--fin-ink-faint)]"
+        strokeWidth={3}
+      />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-extrabold">{trabajo.archivo.name}</p>
-        <p className="text-[12px] text-[var(--fin-ink-soft)]">
+        <p className="truncate text-[17px] font-semibold">{trabajo.archivo.name}</p>
+        <p className="text-[15px] text-[var(--fin-ink-soft)]">
           {segundos > 0 ? `Leyendo tu extracto… van ${segundos}s` : 'Leyendo tu extracto…'}
         </p>
       </div>
@@ -48,24 +64,28 @@ interface TrabajoConErrorProps {
 }
 
 const TrabajoConError: React.FC<TrabajoConErrorProps> = ({ trabajo, onReintentar, onQuitar }) => (
-  <li className="rounded-3xl bg-[var(--fin-out-bg)] p-5">
+  <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] p-5">
     <div className="flex items-start gap-3">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" strokeWidth={3} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-extrabold text-[var(--fin-out)]">{trabajo.archivo.name}</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-[var(--fin-out)]">{trabajo.error?.mensaje}</p>
+        <p className="truncate text-[13px] font-semibold text-[var(--fin-out)]">
+          {trabajo.archivo.name}
+        </p>
+        <p className="mt-1 text-[15px] leading-relaxed text-[var(--fin-out)]">
+          {trabajo.error?.mensaje}
+        </p>
         <div className="mt-2.5 flex gap-2">
           <button
             type="button"
             onClick={() => onReintentar(trabajo.id)}
-            className="rounded-full bg-[var(--fin-card)] px-3.5 py-1.5 text-[11px] font-bold text-[var(--fin-out)]"
+            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--fin-out)]"
           >
             Reintentar
           </button>
           <button
             type="button"
             onClick={() => onQuitar(trabajo.id)}
-            className="rounded-full px-3.5 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]"
+            className="rounded-[var(--fin-r-pill)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
           >
             Quitar
           </button>
@@ -103,16 +123,20 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   const plan = planearImportacion(trabajo.resultado.movimientos, existentes, nuevoId);
 
   return (
-    <li className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
+    <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
       <button
         type="button"
         onClick={() => onToggle(trabajo.id)}
         className="flex w-full items-center gap-3 text-left"
       >
-        <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--fin-in)]" strokeWidth={2.5} aria-hidden="true" />
+        <CheckCircle2
+          className="h-5 w-5 shrink-0 text-[var(--fin-in)]"
+          strokeWidth={2.5}
+          aria-hidden="true"
+        />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-extrabold">{trabajo.archivo.name}</p>
-          <p className="truncate text-[11px] font-semibold text-[var(--fin-ink-faint)] capitalize">
+          <p className="truncate text-[17px] font-semibold">{trabajo.archivo.name}</p>
+          <p className="truncate text-[13px] font-semibold text-[var(--fin-ink-faint)] capitalize">
             {trabajo.resultado.periodo.etiqueta}
             {importado > 0 ? ` · ${importado} importado${importado === 1 ? '' : 's'}` : ''}
           </p>
@@ -135,7 +159,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             }
           }}
           aria-label={`Quitar ${trabajo.archivo.name} de la lista`}
-          className="shrink-0 rounded-full p-1.5 text-[var(--fin-ink-ghost)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+          className="shrink-0 rounded-[var(--fin-r-pill)] p-1.5 text-[var(--fin-ink-ghost)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
         >
           <X className="h-3.5 w-3.5" strokeWidth={3} />
         </span>
@@ -143,8 +167,8 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
 
       {!contraido ? (
         <div className="mt-4 flex flex-col gap-5 border-t border-[var(--fin-line)] pt-4">
-          <section className="rounded-2xl bg-[var(--fin-soft)] p-4">
-            <h3 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+          <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-4">
+            <h3 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
               <Download className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
               Importar a tu historial
             </h3>
@@ -156,18 +180,21 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                 { label: 'Ya estaban', n: plan.duplicados.length, ink: 'var(--fin-ink-soft)' },
                 { label: 'No cuentan', n: plan.excluidos.length, ink: 'var(--fin-baja-ink)' },
               ].map((c) => (
-                <div key={c.label} className="rounded-xl bg-[var(--fin-card)] px-2 py-2.5">
-                  <p className="text-lg font-extrabold tabular-nums" style={{ color: c.ink }}>
+                <div
+                  key={c.label}
+                  className="rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-2 py-2.5"
+                >
+                  <p className="text-[20px] font-semibold tabular-nums" style={{ color: c.ink }}>
                     {c.n}
                   </p>
-                  <p className="text-[10px] font-bold text-[var(--fin-ink-soft)]">{c.label}</p>
+                  <p className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">{c.label}</p>
                 </div>
               ))}
             </div>
 
             {plan.posibles.length > 0 && importado === 0 ? (
-              <div className="mt-3 rounded-2xl bg-[var(--fin-warn-bg)] p-3">
-                <p className="text-[11px] leading-relaxed text-[var(--fin-warn-ink)]">
+              <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] p-3">
+                <p className="text-[13px] leading-relaxed text-[var(--fin-warn-ink)]">
                   {plan.posibles.length} movimiento{plan.posibles.length === 1 ? '' : 's'} del
                   extracto {plan.posibles.length === 1 ? 'cae' : 'caen'} el mismo día y por el mismo
                   monto que algo que ya tienes, pero con otro texto. Puede ser lo mismo que anotaste
@@ -177,7 +204,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                   type="button"
                   onClick={() => setVerPosibles((v) => !v)}
                   aria-expanded={verPosibles}
-                  className="mt-2 text-[11px] font-bold text-[var(--fin-warn-ink)] underline underline-offset-2"
+                  className="mt-2 text-[13px] font-semibold text-[var(--fin-warn-ink)] underline underline-offset-2"
                 >
                   {verPosibles ? 'Ocultar' : 'Revisarlos uno por uno'}
                 </button>
@@ -187,15 +214,19 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                     {plan.posibles.map((p) => {
                       const marcado = aceptados.has(p.clave);
                       return (
-                        <li key={p.clave} className="rounded-xl bg-[var(--fin-card)] p-2.5">
-                          <p className="text-[11px] text-[var(--fin-ink-soft)]">
-                            Ya tienes: <b className="text-[var(--fin-ink)]">{p.yaTengo.description}</b>
+                        <li
+                          key={p.clave}
+                          className="rounded-[var(--fin-r-control)] bg-[var(--fin-card)] p-2.5"
+                        >
+                          <p className="text-[13px] text-[var(--fin-ink-soft)]">
+                            Ya tienes:{' '}
+                            <b className="text-[var(--fin-ink)]">{p.yaTengo.description}</b>
                           </p>
-                          <p className="text-[11px] text-[var(--fin-ink-soft)]">
+                          <p className="text-[13px] text-[var(--fin-ink-soft)]">
                             El extracto dice:{' '}
                             <b className="text-[var(--fin-ink)]">{p.movimiento.descripcion}</b>
                           </p>
-                          <label className="mt-1.5 flex items-center gap-2 text-[11px] font-bold text-[var(--fin-ink)]">
+                          <label className="mt-1.5 flex items-center gap-2 text-[13px] font-semibold text-[var(--fin-ink)]">
                             <input
                               type="checkbox"
                               checked={marcado}
@@ -219,7 +250,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             ) : null}
 
             {importado > 0 ? (
-              <p className="mt-3 rounded-xl bg-[var(--fin-in-bg)] px-3 py-2.5 text-[12px] font-bold text-[var(--fin-in)]">
+              <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-in-bg)] px-3 py-2.5 text-[15px] font-semibold text-[var(--fin-in)]">
                 Importaste {importado} movimiento{importado === 1 ? '' : 's'}.
               </p>
             ) : (
@@ -234,7 +265,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                   onImportar(total);
                   setImportado(total.length);
                 }}
-                className="mt-3 w-full rounded-full bg-[var(--fin-accent)] px-6 py-3 text-[13px] font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
+                className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
               >
                 {plan.nuevos.length + aceptados.size === 0
                   ? 'Nada nuevo por importar'
@@ -245,7 +276,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             )}
 
             {plan.duplicados.length > 0 && plan.nuevos.length > 0 ? (
-              <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+              <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
                 {plan.duplicados.length} ya estaban en tu historial y no se van a duplicar.
               </p>
             ) : null}
@@ -291,22 +322,26 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
             setTokenBorrador('');
             setCambiandoToken(false);
           }}
-          className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-center"
+          className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-6 text-center"
         >
-          <KeyRound className="mx-auto h-9 w-9 text-[var(--fin-ink-faint)]" strokeWidth={1.75} aria-hidden="true" />
-          <h2 className="mt-3 text-lg font-extrabold tracking-tight">Token de acceso</h2>
+          <KeyRound
+            className="mx-auto h-9 w-9 text-[var(--fin-ink-faint)]"
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
+          <h2 className="mt-3 text-[20px] font-semibold tracking-tight">Token de acceso</h2>
           <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-            El endpoint pide un token para que nadie más que encuentre la URL pueda usarlo.
-            Guárdalo cuando tu navegador lo ofrezca y en tus otros dispositivos con la misma
-            cuenta (iCloud Keychain o Google) aparecerá solo.
+            El endpoint pide un token para que nadie más que encuentre la URL pueda usarlo. Guárdalo
+            cuando tu navegador lo ofrezca y en tus otros dispositivos con la misma cuenta (iCloud
+            Keychain o Google) aparecerá solo.
           </p>
 
           {/* A visible username field is what makes Safari/Chrome recognize this
-              as a real login form and offer to save it to iCloud Keychain /
-              Google Password Manager — which is what actually syncs the token
-              across the owner's own devices without ever putting the secret in
-              the public bundle. A hidden or absent username field makes most
-              password managers skip the save prompt entirely. */}
+ as a real login form and offer to save it to iCloud Keychain /
+ Google Password Manager — which is what actually syncs the token
+ across the owner's own devices without ever putting the secret in
+ the public bundle. A hidden or absent username field makes most
+ password managers skip the save prompt entirely. */}
           <input
             type="text"
             name="username"
@@ -325,21 +360,21 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
             onChange={(e) => setTokenBorrador(e.target.value)}
             autoComplete="current-password"
             placeholder="ANALISTA_TOKEN"
-            className="mt-5 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-center text-base font-medium focus:border-[var(--fin-ink-faint)] focus:outline-none"
+            className="mt-5 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-center text-[17px] font-normal focus:border-[var(--fin-ink-faint)] focus:outline-none"
             aria-label="Token de acceso"
           />
 
           <button
             type="submit"
             disabled={!tokenBorrador.trim()}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--fin-accent)] px-6 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
           >
             <KeyRound className="h-4 w-4" strokeWidth={3} />
             Guardar
           </button>
 
           {/* Only offered while replacing an existing token — with none stored
-              there is nothing to go back to. */}
+ there is nothing to go back to. */}
           {analista.token ? (
             <button
               type="button"
@@ -347,7 +382,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
                 setTokenBorrador('');
                 setCambiandoToken(false);
               }}
-              className="mt-2 w-full rounded-full px-6 py-2.5 text-xs font-bold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+              className="mt-2 w-full rounded-[var(--fin-r-pill)] px-6 py-2.5 text-[15px] font-semibold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
             >
               Cancelar
             </button>
@@ -394,16 +429,26 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           const archivos = [...e.dataTransfer.files];
           if (archivos.length > 0) analista.analizarArchivos(archivos);
         }}
-        className={`rounded-3xl border-2 border-dashed px-6 py-9 text-center transition-colors ${
-          arrastrando ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)]' : 'border-[var(--fin-line)] bg-[var(--fin-card)]'
+        className={`rounded-[var(--fin-r-card)] border-2 border-dashed px-6 py-9 text-center transition-colors ${
+          arrastrando
+            ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)]'
+            : 'border-[var(--fin-line)] bg-[var(--fin-card)]'
         }`}
       >
         {arrastrando ? (
-          <FileDown className="mx-auto h-9 w-9 text-[var(--fin-ink)]" strokeWidth={1.75} aria-hidden="true" />
+          <FileDown
+            className="mx-auto h-9 w-9 text-[var(--fin-ink)]"
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
         ) : (
-          <FileText className="mx-auto h-9 w-9 text-[var(--fin-ink-faint)]" strokeWidth={1.75} aria-hidden="true" />
+          <FileText
+            className="mx-auto h-9 w-9 text-[var(--fin-ink-faint)]"
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
         )}
-        <h2 className="mt-3 text-lg font-extrabold tracking-tight">
+        <h2 className="mt-3 text-[20px] font-semibold tracking-tight">
           {arrastrando ? 'Suelta aquí' : 'Sube tus extractos'}
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
@@ -429,14 +474,18 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           onClick={() => inputArchivo.current?.click()}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--fin-accent)] px-7 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)]"
+          className="mt-5 inline-flex items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-7 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)]"
         >
           <FileUp className="h-4 w-4" strokeWidth={3} />
           Elegir PDF
         </motion.button>
 
-        <p className="mx-auto mt-4 flex max-w-sm items-start gap-1.5 text-left text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
-          <ShieldCheck className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+        <p className="mx-auto mt-4 flex max-w-sm items-start gap-1.5 text-left text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+          <ShieldCheck
+            className="mt-px h-3.5 w-3.5 shrink-0"
+            strokeWidth={2.5}
+            aria-hidden="true"
+          />
           <span>
             El análisis se hace con plantillas propias, sin inteligencia artificial: tu extracto
             nunca sale de este servidor. Soporta Nequi, Nu, Bancolombia y Davivienda.
@@ -448,7 +497,11 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
       {enCurso.length > 0 ? (
         <ul className="flex flex-col gap-3">
           {enCurso.map((trabajo) => (
-            <TrabajoEnCurso key={trabajo.id} trabajo={trabajo} segundos={segundosDe(trabajo, analista.ahora)} />
+            <TrabajoEnCurso
+              key={trabajo.id}
+              trabajo={trabajo}
+              segundos={segundosDe(trabajo, analista.ahora)}
+            />
           ))}
         </ul>
       ) : null}
@@ -485,15 +538,15 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
       ) : null}
 
       {analista.trabajos.length > 0 ? (
-        <p className="flex items-center justify-center gap-1.5 text-[11px] text-[var(--fin-ink-faint)]">
+        <p className="flex items-center justify-center gap-1.5 text-[13px] text-[var(--fin-ink-faint)]">
           <RotateCcw className="h-3 w-3" strokeWidth={3} />
           Puedes seguir arrastrando más extractos mientras estos terminan.
         </p>
       ) : null}
 
       {tokenRechazado ? (
-        <div className="rounded-2xl bg-[var(--fin-out-bg)] px-4 py-3 text-center">
-          <p className="text-[12px] leading-relaxed text-[var(--fin-out-ink)]">
+        <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3 text-center">
+          <p className="text-[15px] leading-relaxed text-[var(--fin-out-ink)]">
             El servidor rechazó el token guardado. Comprueba que coincida con
             <code className="mx-1 font-mono">ANALISTA_TOKEN</code>
             en el servidor.
@@ -501,7 +554,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           <button
             type="button"
             onClick={() => setCambiandoToken(true)}
-            className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-accent)] px-4 py-2 text-xs font-bold text-[var(--fin-on-accent)]"
+            className="mt-2.5 inline-flex items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-on-accent)]"
           >
             <KeyRound className="h-3.5 w-3.5" strokeWidth={3} />
             Cambiar token
@@ -511,7 +564,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
         <button
           type="button"
           onClick={() => setCambiandoToken(true)}
-          className="mx-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+          className="mx-auto inline-flex items-center gap-1.5 rounded-[var(--fin-r-pill)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
         >
           <KeyRound className="h-3 w-3" strokeWidth={3} />
           Cambiar token

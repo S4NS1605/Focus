@@ -6,7 +6,11 @@ import { LEXICO_VACIO } from './aprendizaje';
 import type { LexicoAprendido } from './aprendizaje';
 import type { Transaction } from '../types';
 import { detectarRecurrencia } from './senalesAvanzadas';
-import { buscarSimilar, calcularConfianzaGranular, type ConfianzaGranular } from './inteligenciaAvanzada';
+import {
+  buscarSimilar,
+  calcularConfianzaGranular,
+  type ConfianzaGranular,
+} from './inteligenciaAvanzada';
 import { normalizeNumericToken, normalizeWord, readNumberAt } from './numerals';
 import {
   AMOUNT_CUES,
@@ -22,9 +26,29 @@ import {
 export type AmountSource = 'digits' | 'digits+scale' | 'words' | 'slang' | 'none';
 export type KindSource = 'keyword' | 'morphology' | 'category-implied' | 'default';
 
-const DIAS_SEMANA = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
-const MESES_ANO = { enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5, julio: 6, agosto: 7, septiembre: 8, octubre: 9, noviembre: 10, diciembre: 11 };
-
+const DIAS_SEMANA = {
+  domingo: 0,
+  lunes: 1,
+  martes: 2,
+  miercoles: 3,
+  jueves: 4,
+  viernes: 5,
+  sabado: 6,
+};
+const MESES_ANO = {
+  enero: 0,
+  febrero: 1,
+  marzo: 2,
+  abril: 3,
+  mayo: 4,
+  junio: 5,
+  julio: 6,
+  agosto: 7,
+  septiembre: 8,
+  octubre: 9,
+  noviembre: 10,
+  diciembre: 11,
+};
 
 /**
  * How the account was decided. `preposicion` is the strong case — "a
@@ -40,8 +64,14 @@ export interface CuentaConocida {
 }
 export type CategorySource = 'usuario' | 'merchant' | 'aprendida' | 'keyword' | 'default';
 export type PaymentMethod =
-  | 'tarjeta_credito' | 'tarjeta_debito' | 'billetera_digital'
-  | 'transferencia_bancaria' | 'efectivo' | 'cheque' | 'cripto' | 'desconocido';
+  | 'tarjeta_credito'
+  | 'tarjeta_debito'
+  | 'billetera_digital'
+  | 'transferencia_bancaria'
+  | 'efectivo'
+  | 'cheque'
+  | 'cripto'
+  | 'desconocido';
 
 export interface ParsedTransaction {
   kind: TxKind;
@@ -124,14 +154,12 @@ export const tokenize = (input: string): Token[] => {
   for (const piece of input.split(/\s+/)) {
     if (!piece) continue;
 
-    let trimmed = piece
-      .replace(/^[^\p{L}\p{N}$]+/u, '')
-      .replace(/[^\p{L}\p{N}]+$/u, '');
-      
+    let trimmed = piece.replace(/^[^\p{L}\p{N}$]+/u, '').replace(/[^\p{L}\p{N}]+$/u, '');
+
     if (!trimmed && piece.includes('$')) {
       trimmed = '$';
     }
-    
+
     if (!trimmed) continue;
 
     for (const norm of normalizeNumericToken(normalizeWord(trimmed))) {
@@ -161,26 +189,34 @@ export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
     let score = 0;
     if (match.hasScale) score += 3;
     if (match.value >= 1000) score += 2;
-    
+
     const STRONG_CUES = new Set(['$', 'usd', 'cop', 'cuanto', 'valor']);
     if (before) {
       if (AMOUNT_CUES.has(before)) score += 5;
       if (STRONG_CUES.has(before)) score += 15;
     }
-    
+
     // If the actual typed token contained a currency symbol, it's almost certainly the amount
     for (let k = i; k < match.next; k++) {
-      if (tokens[k].raw.includes('$') || tokens[k].raw.toLowerCase().includes('usd') || tokens[k].raw.toLowerCase().includes('cop')) {
+      if (
+        tokens[k].raw.includes('$') ||
+        tokens[k].raw.toLowerCase().includes('usd') ||
+        tokens[k].raw.toLowerCase().includes('cop')
+      ) {
         score += 15;
         break;
       }
     }
-    
+
     // MEGA UPGRADE: Multidivisa Automática
     let finalValue = match.value;
     let endToken = match.next;
     const isUSD = after === 'usd' || after === 'dolares' || after === 'dolar';
-    const isEUR = after === 'eur' || after === 'euros' || after === 'euro' || tokens[match.next - 1]?.raw.includes('€');
+    const isEUR =
+      after === 'eur' ||
+      after === 'euros' ||
+      after === 'euro' ||
+      tokens[match.next - 1]?.raw.includes('€');
     if (isUSD) {
       finalValue = match.value * 4000;
       score += 15; // Mentioning "dolares" is a huge amount cue
@@ -231,7 +267,7 @@ const classifyAmountSource = (c: Candidate): AmountSource => {
 
 /** Strips a plural suffix so `clases` finds the `clase` keyword. Kept
  *  conservative: only long tokens, and only after an exact lookup failed. */
-const lookupWithStem = <T,>(table: Record<string, T>, norm: string): T | undefined => {
+const lookupWithStem = <T>(table: Record<string, T>, norm: string): T | undefined => {
   const exact = table[norm];
   if (exact !== undefined) return exact;
   if (norm.length <= 4) return undefined;
@@ -253,11 +289,31 @@ const MORPHOLOGICAL_INCOME = /(aron|eron|ieron)$/;
  * prepositional match wins when the sentence offers more than one.
  */
 const PREPOSICIONES_DE_CUENTA = new Set([
-  'a', 'al', 'de', 'del', 'en', 'desde', 'con', 'hacia', 'para', 'hasta', 'por',
+  'a',
+  'al',
+  'de',
+  'del',
+  'en',
+  'desde',
+  'con',
+  'hacia',
+  'para',
+  'hasta',
+  'por',
 ]);
 
 const ACCOUNT_DETERMINERS = new Set([
-  'mi', 'tu', 'su', 'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas'
+  'mi',
+  'tu',
+  'su',
+  'el',
+  'la',
+  'los',
+  'las',
+  'un',
+  'una',
+  'unos',
+  'unas',
 ]);
 
 interface CuentaHallada {
@@ -336,13 +392,20 @@ const buscarCuenta = (
   return hallazgos.find((h) => h.source === 'preposicion') ?? hallazgos[0];
 };
 
-const detectAndConsumePaymentMethod = (tokens: readonly Token[], consumed: boolean[]): PaymentMethod => {
+const detectAndConsumePaymentMethod = (
+  tokens: readonly Token[],
+  consumed: boolean[],
+): PaymentMethod => {
   for (let i = 0; i < tokens.length; i++) {
     if (consumed[i]) continue;
     const method = PAYMENT_METHODS[tokens[i].norm];
     if (method) {
       consumed[i] = true;
-      if (i > 0 && !consumed[i - 1] && (tokens[i - 1].norm === 'con' || tokens[i - 1].norm === 'en')) {
+      if (
+        i > 0 &&
+        !consumed[i - 1] &&
+        (tokens[i - 1].norm === 'con' || tokens[i - 1].norm === 'en')
+      ) {
         consumed[i - 1] = true;
       }
       return method as PaymentMethod;
@@ -383,42 +446,45 @@ export const parseTransaction = (
   // MEGA UPGRADE 6: Fraction Math
   let fractionMultiplier = 1;
   const rawLowerForMath = raw.toLowerCase();
-  if (rawLowerForMath.includes('la mitad de') || rawLowerForMath.includes('mitad de')) fractionMultiplier = 0.5;
-  else if (rawLowerForMath.includes('un tercio de') || rawLowerForMath.includes('tercera parte de')) fractionMultiplier = 1/3;
-  else if (rawLowerForMath.includes('un cuarto de') || rawLowerForMath.includes('cuarta parte de')) fractionMultiplier = 0.25;
+  if (rawLowerForMath.includes('la mitad de') || rawLowerForMath.includes('mitad de'))
+    fractionMultiplier = 0.5;
+  else if (rawLowerForMath.includes('un tercio de') || rawLowerForMath.includes('tercera parte de'))
+    fractionMultiplier = 1 / 3;
+  else if (rawLowerForMath.includes('un cuarto de') || rawLowerForMath.includes('cuarta parte de'))
+    fractionMultiplier = 0.25;
   else if (rawLowerForMath.includes('el doble de')) fractionMultiplier = 2;
   else if (rawLowerForMath.includes('el triple de')) fractionMultiplier = 3;
-  
+
   // Upgrade 1: Sumar múltiples montos unidos por conjunciones ("20 mil y 3 mil")
   let amount: number | null = null;
   let best = pickBest(candidates);
-  
+
   if (best) {
-    const valid = candidates.filter(c => c.score >= 0).sort((a, b) => a.start - b.start);
-    
+    const valid = candidates.filter((c) => c.score >= 0).sort((a, b) => a.start - b.start);
+
     // Check if best is part of a conjoined chain
     const CONJUNCTIONS = new Set(['y', 'e', 'mas', 'más', 'con', 'propina', 'de']);
-    
+
     // We will find chains of conjoined valid amounts
     let bestChainTotal = 0;
     let bestChainIndices: number[] = [];
     let bestChainScore = -Infinity;
-    
+
     for (let startIdx = 0; startIdx < valid.length; startIdx++) {
       let chainTotal = valid[startIdx].value;
       let chainIndices: number[] = [];
       let chainMaxScore = valid[startIdx].score;
-      for(let j=valid[startIdx].start; j<valid[startIdx].end; j++) chainIndices.push(j);
-      
+      for (let j = valid[startIdx].start; j < valid[startIdx].end; j++) chainIndices.push(j);
+
       let curr = valid[startIdx];
       for (let i = startIdx + 1; i < valid.length; i++) {
         const next = valid[i];
         if (next.start - curr.end <= 2) {
-          const middle = tokens.slice(curr.end, next.start).map(t => t.norm);
-          if (middle.length === 0 || middle.some(t => CONJUNCTIONS.has(t))) {
+          const middle = tokens.slice(curr.end, next.start).map((t) => t.norm);
+          if (middle.length === 0 || middle.some((t) => CONJUNCTIONS.has(t))) {
             chainTotal += next.value;
             chainMaxScore = Math.max(chainMaxScore, next.score);
-            for(let j=curr.end; j<next.end; j++) chainIndices.push(j);
+            for (let j = curr.end; j < next.end; j++) chainIndices.push(j);
             curr = next;
           } else {
             break;
@@ -433,17 +499,17 @@ export const parseTransaction = (
         bestChainScore = chainMaxScore;
       }
     }
-    
+
     if (bestChainTotal > best.value && bestChainScore >= best.score) {
       amount = Math.round(bestChainTotal * fractionMultiplier);
       for (const idx of bestChainIndices) consumed[idx] = true;
       // Note: we might have consumed the middle tokens too!
       // Actually let's manually consume the middle tokens.
-      let curr = valid.find(v => v.start === bestChainIndices[0])!;
+      let curr = valid.find((v) => v.start === bestChainIndices[0])!;
       for (let i = valid.indexOf(curr) + 1; i < valid.length; i++) {
         const next = valid[i];
         if (bestChainIndices.includes(next.start)) {
-          for(let j=curr.end; j<next.start; j++) consumed[j] = true;
+          for (let j = curr.end; j < next.start; j++) consumed[j] = true;
           curr = next;
         }
       }
@@ -460,9 +526,7 @@ export const parseTransaction = (
   }
 
   const available = () =>
-    tokens
-      .map((t, index) => ({ ...t, index }))
-      .filter((t) => !consumed[t.index]);
+    tokens.map((t, index) => ({ ...t, index })).filter((t) => !consumed[t.index]);
 
   // 2 — Direction. Longest phrase first, so "me costó" (expense) is never
   // mistaken for the income sense of a leading "me".
@@ -470,8 +534,8 @@ export const parseTransaction = (
   let kindSource: KindSource = 'default';
 
   // Find ALL kind phrase matches to eliminate redundant fillers
-  const kindMatches: { kind: TxKind, startIndex: number, endIndex: number }[] = [];
-  
+  const kindMatches: { kind: TxKind; startIndex: number; endIndex: number }[] = [];
+
   for (let i = 0; i < tokens.length; i++) {
     for (const phrase of KIND_PHRASES) {
       const span = phrase.seq.length;
@@ -480,7 +544,7 @@ export const parseTransaction = (
           kindMatches.push({
             kind: phrase.kind,
             startIndex: i,
-            endIndex: i + span
+            endIndex: i + span,
           });
           // Move `i` forward by the length of the matched phrase
           i += span - 1;
@@ -493,7 +557,7 @@ export const parseTransaction = (
   if (kindMatches.length > 0) {
     kind = kindMatches[0].kind;
     kindSource = 'keyword';
-    
+
     // We KEEP the first kind phrase in the description (so it starts naturally: "Me compre..."),
     // but we CONSUME all subsequent redundant kind phrases ("pague", "me costo").
     for (let m = 1; m < kindMatches.length; m++) {
@@ -529,8 +593,6 @@ export const parseTransaction = (
     }
   }
 
-
-
   // 4 — Account. Its tokens ARE consumed, unlike category keywords: once the
   // bank is a structured field on the movement, repeating it in the description
   // says the same thing twice.
@@ -547,7 +609,7 @@ export const parseTransaction = (
   // MEGA UPGRADE 2: Time Machine (Date extraction)
   let dateOverride: string | undefined = undefined;
   const today = new Date();
-  
+
   // Format Date to YYYY-MM-DD
   const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
@@ -558,13 +620,32 @@ export const parseTransaction = (
     let consumedIdx: number[] = [];
 
     // 1. Días relativos simples
-    if (norm === 'ayer' || norm === 'anoche') { d = new Date(today); d.setDate(d.getDate() - 1); consumedIdx = [i]; }
-    else if (norm === 'anteayer' || norm === 'antier') { d = new Date(today); d.setDate(d.getDate() - 2); consumedIdx = [i]; }
-    else if (norm === 'hoy') { d = new Date(today); consumedIdx = [i]; }
+    if (norm === 'ayer' || norm === 'anoche') {
+      d = new Date(today);
+      d.setDate(d.getDate() - 1);
+      consumedIdx = [i];
+    } else if (norm === 'anteayer' || norm === 'antier') {
+      d = new Date(today);
+      d.setDate(d.getDate() - 2);
+      consumedIdx = [i];
+    } else if (norm === 'hoy') {
+      d = new Date(today);
+      consumedIdx = [i];
+    }
 
     // 2. "hace X dias"
-    if (!d && norm === 'hace' && i + 2 < tokens.length && (tokens[i + 2].norm === 'dias' || tokens[i + 2].norm === 'dia' || tokens[i + 2].norm === 'dí­as')) {
-      const match = readNumberAt(tokens.map(t => t.norm), i + 1);
+    if (
+      !d &&
+      norm === 'hace' &&
+      i + 2 < tokens.length &&
+      (tokens[i + 2].norm === 'dias' ||
+        tokens[i + 2].norm === 'dia' ||
+        tokens[i + 2].norm === 'dí­as')
+    ) {
+      const match = readNumberAt(
+        tokens.map((t) => t.norm),
+        i + 1,
+      );
       if (match && match.value > 0) {
         d = new Date(today);
         d.setDate(d.getDate() - match.value);
@@ -588,7 +669,10 @@ export const parseTransaction = (
 
     // 4. "el [numero] de [mes]"
     if (!d && norm === 'el' && i + 3 < tokens.length && tokens[i + 2].norm === 'de') {
-      const match = readNumberAt(tokens.map(t => t.norm), i + 1);
+      const match = readNumberAt(
+        tokens.map((t) => t.norm),
+        i + 1,
+      );
       if (match && match.value >= 1 && match.value <= 31) {
         // match.next is the index of 'de', so month is match.next + 1
         const mesIdx = match.next + 1;
@@ -616,13 +700,20 @@ export const parseTransaction = (
   // MEGA UPGRADE 4: Implicit accounts by payment method
   if (!cuentaId) {
     if (paymentMethod === 'efectivo') {
-      const efectivoAcc = cuentas.find(c => c.nombre.toLowerCase().includes('efectivo') || c.nombre.toLowerCase().includes('billetera'));
+      const efectivoAcc = cuentas.find(
+        (c) =>
+          c.nombre.toLowerCase().includes('efectivo') ||
+          c.nombre.toLowerCase().includes('billetera'),
+      );
       if (efectivoAcc) {
         cuentaId = efectivoAcc.id;
         cuentaSource = 'nombre'; // pretend it matched by name
       }
     } else if (paymentMethod === 'tarjeta_credito' || paymentMethod === 'tarjeta_debito') {
-      const tarjetaAcc = cuentas.find(c => c.nombre.toLowerCase().includes('tarjeta') || c.nombre.toLowerCase().includes('credito'));
+      const tarjetaAcc = cuentas.find(
+        (c) =>
+          c.nombre.toLowerCase().includes('tarjeta') || c.nombre.toLowerCase().includes('credito'),
+      );
       if (tarjetaAcc) {
         cuentaId = tarjetaAcc.id;
         cuentaSource = 'nombre';
@@ -649,14 +740,16 @@ export const parseTransaction = (
   // una categoría "Mascotas", "mascotas" es justo lo que la fila debe decir.
   const frasesCat = frasesDeCategorias(categorias);
   const dispon = available();
-  
+
   for (const frase of frasesCat) {
     const span = frase.seq.length;
     for (let i = 0; i + span <= dispon.length; i += 1) {
-      if (frase.seq.every((s, k) => {
-        const t = dispon[i + k].norm;
-        return t === s || t + 's' === s || s + 's' === t || t + 'es' === s || s + 'es' === t;
-      })) {
+      if (
+        frase.seq.every((s, k) => {
+          const t = dispon[i + k].norm;
+          return t === s || t + 's' === s || s + 's' === t || t + 'es' === s || s + 'es' === t;
+        })
+      ) {
         addCategoryScore(frase.id, 'usuario', 100);
       }
     }
@@ -706,8 +799,10 @@ export const parseTransaction = (
     }
   }
 
-  const sortedCandidates = Array.from(categoryCandidates.entries()).sort((a, b) => b[1].score - a[1].score);
-  
+  const sortedCandidates = Array.from(categoryCandidates.entries()).sort(
+    (a, b) => b[1].score - a[1].score,
+  );
+
   if (sortedCandidates.length > 0) {
     category = sortedCandidates[0][0];
     categorySource = sortedCandidates[0][1].source;
@@ -719,22 +814,42 @@ export const parseTransaction = (
   } else if (categorySource === 'default' && kind === 'gasto') {
     // Zero-Shot Heuristic Fallback
     const textNorm = raw.toLowerCase();
-    if (/\b(burger|pizza|sushi|taco|asadero|restaurante|empanada|panaderia|helado|almuerzo|comida|cena|desayuno|kfc|corrientazo)\b/.test(textNorm)) {
+    if (
+      /\b(burger|pizza|sushi|taco|asadero|restaurante|empanada|panaderia|helado|almuerzo|comida|cena|desayuno|kfc|corrientazo)\b/.test(
+        textNorm,
+      )
+    ) {
       category = 'comida';
       categorySource = 'keyword';
-    } else if (/\b(uber|taxi|didi|cabify|bus|transmilenio|metro|gasolina|peaje|parqueadero|pasaje)\b/.test(textNorm)) {
+    } else if (
+      /\b(uber|taxi|didi|cabify|bus|transmilenio|metro|gasolina|peaje|parqueadero|pasaje)\b/.test(
+        textNorm,
+      )
+    ) {
       category = 'transporte';
       categorySource = 'keyword';
-    } else if (/\b(discoteca|bar|pub|club|cine|pelicula|concierto|boleta|netflix|spotify|suscripcion)\b/.test(textNorm)) {
+    } else if (
+      /\b(discoteca|bar|pub|club|cine|pelicula|concierto|boleta|netflix|spotify|suscripcion)\b/.test(
+        textNorm,
+      )
+    ) {
       category = 'ocio';
       categorySource = 'keyword';
-    } else if (/\b(medico|pastilla|farmacia|drogueria|hospital|clinica|eps|cita|salud)\b/.test(textNorm)) {
+    } else if (
+      /\b(medico|pastilla|farmacia|drogueria|hospital|clinica|eps|cita|salud)\b/.test(textNorm)
+    ) {
       category = 'salud';
       categorySource = 'keyword';
-    } else if (/\b(ropa|zapato|camisa|pantalon|chaqueta|zapatilla|falda|vestido|outfit)\b/.test(textNorm)) {
+    } else if (
+      /\b(ropa|zapato|camisa|pantalon|chaqueta|zapatilla|falda|vestido|outfit)\b/.test(textNorm)
+    ) {
       category = 'compras';
       categorySource = 'keyword';
-    } else if (/\b(mercado|supermercado|exito|carulla|jumbo|tienda|fruver|carniceria|viveres)\b/.test(textNorm)) {
+    } else if (
+      /\b(mercado|supermercado|exito|carulla|jumbo|tienda|fruver|carniceria|viveres)\b/.test(
+        textNorm,
+      )
+    ) {
       category = 'mercado';
       categorySource = 'keyword';
     } else if (/\b(luz|agua|gas|internet|celular|plan|factura|recibo|arriendo)\b/.test(textNorm)) {
@@ -748,11 +863,14 @@ export const parseTransaction = (
   const tags: string[] = [];
 
   let currentChunk: 'motivo' | 'destinatario' | 'ubicacion' | 'ignore' = 'motivo';
-  const chunks: Record<'motivo' | 'destinatario' | 'ubicacion' | 'ignore', (Token & { index: number })[]> = {
+  const chunks: Record<
+    'motivo' | 'destinatario' | 'ubicacion' | 'ignore',
+    (Token & { index: number })[]
+  > = {
     motivo: [],
     destinatario: [],
     ubicacion: [],
-    ignore: []
+    ignore: [],
   };
 
   const isOCR = raw.startsWith('[OCR]');
@@ -791,7 +909,20 @@ export const parseTransaction = (
         continue;
       }
 
-      if (['viaje', 'regalo', 'emergencia', 'salud', 'vacaciones', 'fiesta', 'prestamo', 'comida', 'transporte', 'suscripcion'].includes(n)) {
+      if (
+        [
+          'viaje',
+          'regalo',
+          'emergencia',
+          'salud',
+          'vacaciones',
+          'fiesta',
+          'prestamo',
+          'comida',
+          'transporte',
+          'suscripcion',
+        ].includes(n)
+      ) {
         if (!tags.includes(t.raw)) tags.push(t.raw);
       }
 
@@ -799,10 +930,10 @@ export const parseTransaction = (
     }
 
     if (chunks.destinatario.length > 0) {
-      destinatario = capitalize(chunks.destinatario.map(t => t.raw).join(' '));
+      destinatario = capitalize(chunks.destinatario.map((t) => t.raw).join(' '));
     }
     if (chunks.ubicacion.length > 0) {
-      ubicacion = capitalize(chunks.ubicacion.map(t => t.raw).join(' '));
+      ubicacion = capitalize(chunks.ubicacion.map((t) => t.raw).join(' '));
     }
   } else {
     // OCR specific destinatario extraction
@@ -817,7 +948,9 @@ export const parseTransaction = (
 
   if (isOCR) {
     // Look for common receipt message markers and extract the text until the next marker
-    const messageMatch = raw.match(/(?:mensaje|motivo|concepto|detalle|conversación|conversacion)\s+([\s\S]+?)(?:\s+(?:valor|fecha|costo|referencia|aprobado|hora|desde|hacia|¿cuánto\?|cuanto|numero|número)|$)/i);
+    const messageMatch = raw.match(
+      /(?:mensaje|motivo|concepto|detalle|conversación|conversacion)\s+([\s\S]+?)(?:\s+(?:valor|fecha|costo|referencia|aprobado|hora|desde|hacia|¿cuánto\?|cuanto|numero|número)|$)/i,
+    );
     if (messageMatch && messageMatch[1] && messageMatch[1].trim().length > 0) {
       description = messageMatch[1].trim();
     }
@@ -827,7 +960,7 @@ export const parseTransaction = (
     const words = tokens
       .filter((t, i) => {
         if (consumed[i]) return false;
-        if (chunks.ignore.some(ign => ign.index === i)) return false;
+        if (chunks.ignore.some((ign) => ign.index === i)) return false;
         if (isOCR && t.norm === 'ocr') return false; // Ignore the [OCR] tag
         return true;
       })
@@ -877,7 +1010,10 @@ export const parseTransaction = (
     // Search newest first
     for (let i = transacciones.length - 1; i >= 0; i--) {
       const t = transacciones[i];
-      if (t.description.toLowerCase().includes(descLower) || descLower.includes(t.description.toLowerCase())) {
+      if (
+        t.description.toLowerCase().includes(descLower) ||
+        descLower.includes(t.description.toLowerCase())
+      ) {
         amount = t.amountCop;
         if (category === 'otros' || categorySource === 'default') {
           category = t.category as CategoriaClave;
@@ -896,17 +1032,39 @@ export const parseTransaction = (
 
   // MEGA UPGRADE 7: Auto-tagging based on description/raw context
   const rawLower = raw.toLowerCase();
-  if (rawLower.includes('viaje') || rawLower.includes('vacaciones') || rawLower.includes('vuelo') || rawLower.includes('hotel')) tags.push('viaje');
-  if (rawLower.includes('cumpleaños') || rawLower.includes('regalo') || rawLower.includes('sorpresa')) tags.push('regalo');
-  if (rawLower.includes('fiesta') || rawLower.includes('rumba') || rawLower.includes('salida')) tags.push('fiesta');
-  if (rawLower.includes('multa') || rawLower.includes('infraccion') || rawLower.includes('intereses')) tags.push('multa');
-  if (rawLower.includes('domicilio') || rawLower.includes('delivery') || rawLower.includes('rappi')) tags.push('domicilio');
+  if (
+    rawLower.includes('viaje') ||
+    rawLower.includes('vacaciones') ||
+    rawLower.includes('vuelo') ||
+    rawLower.includes('hotel')
+  )
+    tags.push('viaje');
+  if (
+    rawLower.includes('cumpleaños') ||
+    rawLower.includes('regalo') ||
+    rawLower.includes('sorpresa')
+  )
+    tags.push('regalo');
+  if (rawLower.includes('fiesta') || rawLower.includes('rumba') || rawLower.includes('salida'))
+    tags.push('fiesta');
+  if (
+    rawLower.includes('multa') ||
+    rawLower.includes('infraccion') ||
+    rawLower.includes('intereses')
+  )
+    tags.push('multa');
+  if (rawLower.includes('domicilio') || rawLower.includes('delivery') || rawLower.includes('rappi'))
+    tags.push('domicilio');
 
   const suggestedCategories = [
     category,
-    ...sortedCandidates.filter(c => c[0] !== category).map(c => c[0]),
-    'otros', 'comida', 'transporte'
-  ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 3);
+    ...sortedCandidates.filter((c) => c[0] !== category).map((c) => c[0]),
+    'otros',
+    'comida',
+    'transporte',
+  ]
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .slice(0, 3);
 
   return {
     kind,

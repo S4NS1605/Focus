@@ -19,7 +19,8 @@ const auth = {
   signUp: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
   signOut: vi.fn<() => Promise<{ error: Fallo | null }>>(),
 };
-const rpc = vi.fn<(nombre: string, args: unknown) => Promise<{ data: unknown; error: Fallo | null }>>();
+const rpc =
+  vi.fn<(nombre: string, args: unknown) => Promise<{ data: unknown; error: Fallo | null }>>();
 let configurado = true;
 
 // One object, not a fresh one per call — the real `obtenerSupabase` caches a

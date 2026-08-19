@@ -45,7 +45,9 @@ export const useSesion = (): Sesion => {
       if (!cancelado) {
         setEstado(aEstado(data.session));
         if (data.session?.user?.user_metadata) {
-          import('./usePreferencias').then((m) => m.sincronizarDesdeSupabase(data.session!.user.user_metadata));
+          import('./usePreferencias').then((m) =>
+            m.sincronizarDesdeSupabase(data.session!.user.user_metadata),
+          );
         }
       }
     });
@@ -55,7 +57,9 @@ export const useSesion = (): Sesion => {
     const { data: sub } = cliente.auth.onAuthStateChange((_evento, sesion) => {
       setEstado(aEstado(sesion));
       if (sesion?.user?.user_metadata) {
-        import('./usePreferencias').then((m) => m.sincronizarDesdeSupabase(sesion.user.user_metadata));
+        import('./usePreferencias').then((m) =>
+          m.sincronizarDesdeSupabase(sesion.user.user_metadata),
+        );
       }
     });
 
@@ -138,9 +142,7 @@ const TIEMPO_AGOTADO = 'tiempo-agotado';
 const conTiempoLimite = <T>(promesa: Promise<T>): Promise<T> =>
   Promise.race([
     promesa,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(TIEMPO_AGOTADO)), LIMITE_MS),
-    ),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(TIEMPO_AGOTADO)), LIMITE_MS)),
   ]);
 
 /** Supabase reports auth failures in English; this is a Spanish-only tool. */

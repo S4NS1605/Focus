@@ -38,7 +38,9 @@ export const topContrapartes = (
   }
 
   return [...porNombre.values()]
-    .sort((a, b) => (b.totalCop !== a.totalCop ? b.totalCop - a.totalCop : a.nombre.localeCompare(b.nombre)))
+    .sort((a, b) =>
+      b.totalCop !== a.totalCop ? b.totalCop - a.totalCop : a.nombre.localeCompare(b.nombre),
+    )
     .slice(0, limite);
 };
 
@@ -74,10 +76,7 @@ export interface DiaDelMes {
  * three big days rather than a steady drip, which is the shape people actually
  * recognise about their own habits.
  */
-export const porDiaDelMes = (
-  transacciones: readonly Transaction[],
-  mes: string,
-): DiaDelMes[] => {
+export const porDiaDelMes = (transacciones: readonly Transaction[], mes: string): DiaDelMes[] => {
   const [anio, m] = mes.split('-').map(Number);
   // Day 0 of the next month is the last day of this one, leap years included.
   const ultimo = new Date(Date.UTC(anio, m, 0)).getUTCDate();
@@ -122,7 +121,8 @@ export const resumenDelMes = (
     // Divided by days that actually had spending, not by the length of the
     // month: averaging in the untouched days drags every figure toward zero.
     promedioPorDiaActivoCop: activos.length > 0 ? Math.round(total / activos.length) : 0,
-    diaMasCaro: activos.length > 0 ? activos.reduce((a, b) => (b.gastoCop > a.gastoCop ? b : a)) : null,
+    diaMasCaro:
+      activos.length > 0 ? activos.reduce((a, b) => (b.gastoCop > a.gastoCop ? b : a)) : null,
     movimientos: forMonth(transacciones, mes).length,
   };
 };

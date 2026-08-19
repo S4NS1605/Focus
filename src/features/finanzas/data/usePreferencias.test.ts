@@ -85,7 +85,9 @@ describe('useMostrarAhorro', () => {
     const { result } = renderHook(() => useMostrarAhorro());
 
     act(() => {
-      window.dispatchEvent(new StorageEvent('storage', { key: 'finanzas:tema', newValue: 'oscuro' }));
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: 'finanzas:tema', newValue: 'oscuro' }),
+      );
     });
 
     expect(result.current.mostrarAhorro).toBe(true);

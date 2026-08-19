@@ -1,6 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Hand, Pencil, Sparkles, Trash2 } from 'lucide-react';
+import { Hand } from 'lucide-react';
 import { tint } from '../types';
 import type { Transaction } from '../types';
 import { COPY } from '../copy';
@@ -18,10 +17,11 @@ interface TransactionListProps {
    * visible movement.
    */
   conSenal?: ReadonlySet<string>;
-  onAnalizar?: (tx: Transaction) => void;
-  onDelete: (id: string) => void;
-  /** Optional so read-only listings (summaries) can omit the control entirely. */
-  onEdit?: (tx: Transaction) => void;
+  /**
+   * Abre el detalle del movimiento. Ahí adentro están analizar, editar y borrar.
+   * Opcional para los listados que solo se leen.
+   */
+  onAbrir?: (tx: Transaction) => void;
 }
 
 interface DayGroup {
@@ -44,122 +44,124 @@ const groupByDay = (transactions: readonly Transaction[]): DayGroup[] => {
     .map(([date, items]) => ({
       date,
       items: [...items].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-      net: items.reduce((sum, tx) => sum + (tx.kind === 'ingreso' ? tx.amountCop : -tx.amountCop), 0),
+      net: items.reduce(
+        (sum, tx) => sum + (tx.kind === 'ingreso' ? tx.amountCop : -tx.amountCop),
+        0,
+      ),
     }));
 };
 
+/**
+ * La lista de movimientos. Ahora es EL cuerpo de la pantalla de inicio, no una
+ * tarjeta de cinco filas metida entre otras once tarjetas.
+ *
+ * El cambio que más se nota: cada fila tenía tres botones a la derecha
+ * (analizar, editar, borrar). Con la cuenta hecha en un celular de 375px de
+ * ancho, esos tres botones se comían 120px y a la descripción le quedaban 41 —
+ * o sea tres o cuatro letras. Por eso la lista decía "I.", "A.", "C.", "Tra…"
+ * en vez de "Internet" o "Almuerzo": el contenido se estaba sacrificando por
+ * unos controles que casi nunca se usan.
+ *
+ * Ahora se toca la fila y las tres acciones salen en su detalle. La descripción
+ * recupera esos 120px y caben unas 20 letras, que es casi cualquier movimiento
+ * entero.
+ *
+ * También se fue el borde de cada fila: doce filas eran doce rectángulos
+ * dibujados. Ahora es una sola tarjeta con líneas finas por dentro, como la
+ * lista de Ajustes de iOS.
+ */
 export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   conSenal,
-  onAnalizar,
-  onDelete,
-  onEdit,
+  onAbrir,
 }) => {
   const catalogo = useCatalogo();
+
   if (transactions.length === 0) {
     return (
-      <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
-        <span className="block text-[var(--fin-ink-ghost)] mb-2 flex justify-center" aria-hidden="true">
-          <Hand className="h-10 w-10" strokeWidth={1.5} />
+      <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
+        <span className="mb-2 flex justify-center text-[var(--fin-ink-ghost)]" aria-hidden="true">
+          <Hand className="h-9 w-9" strokeWidth={1.5} />
         </span>
-        <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">{COPY.list.empty}</p>
-        <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{COPY.list.emptyHint}</p>
+        <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">{COPY.list.empty}</p>
+        <p className="mt-1 text-[15px] text-[var(--fin-ink-faint)]">{COPY.list.emptyHint}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       {groupByDay(transactions).map((group) => (
         <section key={group.date} aria-label={dayLabel(group.date)}>
-          {/* Day header with its own subtotal */}
-          <div className="mb-2 flex items-baseline justify-between px-1">
-            <h3 className="text-xs font-bold text-[var(--fin-ink-soft)] capitalize">{dayLabel(group.date)}</h3>
-            <span className="text-[11px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
+          {/* El día, y a la derecha cuánto se movió ese día. */}
+          <div className="mb-1.5 flex items-baseline justify-between px-1">
+            <h3 className="text-[13px] capitalize text-[var(--fin-ink-faint)]">
+              {dayLabel(group.date)}
+            </h3>
+            <span className="text-[13px] tabular-nums text-[var(--fin-ink-faint)]">
               {formatCop(group.net)}
             </span>
           </div>
 
-          <ul className="flex flex-col gap-2">
+          <ul className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)]">
             {group.items.map((tx, idx) => {
               const entrada = catalogo.de(tx.category);
               const color = entrada.color;
               const esIngreso = tx.kind === 'ingreso';
-
-                const Icon = entrada.Icono;
+              const Icon = entrada.Icono;
+              const ultima = idx === group.items.length - 1;
 
               return (
-                <motion.li
-                  key={tx.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: Math.min(idx * 0.03, 0.15) }}
-                  className="flex items-center gap-3 rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3"
-                >
-                  {/* Category identity: icon on its own hue. Two channels, not one. */}
-                  <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-                    style={{ backgroundColor: tint(color, 0.14), color: color }}
-                    aria-hidden="true"
-                  >
-                    <Icon className="h-6 w-6" />
-                  </span>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-1.5 truncate text-sm font-bold text-[var(--fin-ink)]">
-                      <span className="truncate">{tx.description}</span>
-                      {/* A quiet dot, not a badge: most movements are ordinary,
-                          and marking everything would mark nothing. */}
-                      {conSenal?.has(tx.id) ? (
-                        <span
-                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--fin-warn)]"
-                          aria-label="Tiene algo que revisar"
-                        />
-                      ) : null}
-                    </p>
-                    <p className="text-[11px] font-medium" style={{ color }}>
-                      {entrada.nombre}
-                    </p>
-                  </div>
-
-                  <span
-                    className="shrink-0 text-sm font-extrabold tabular-nums"
-                    style={{ color: esIngreso ? 'var(--fin-in)' : 'var(--fin-out)' }}
-                  >
-                    {formatSigned(tx.amountCop, tx.kind)}
-                  </span>
-
-                  {onAnalizar ? (
-                    <button
-                      type="button"
-                      onClick={() => onAnalizar(tx)}
-                      aria-label={`Analizar: ${tx.description}`}
-                      className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
-                    >
-                      <Sparkles className="h-4 w-4" strokeWidth={2.5} />
-                    </button>
-                  ) : null}
-
-                  {onEdit ? (
-                    <button
-                      type="button"
-                      onClick={() => onEdit(tx)}
-                      aria-label={`${COPY.list.edit}: ${tx.description}`}
-                      className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
-                    >
-                      <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                    </button>
-                  ) : null}
-
+                <li key={tx.id}>
                   <button
                     type="button"
-                    onClick={() => onDelete(tx.id)}
-                    aria-label={`${COPY.list.delete}: ${tx.description}`}
-                    className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
+                    onClick={onAbrir ? () => onAbrir(tx) : undefined}
+                    // Sin onAbrir la fila no es pulsable: los listados de solo
+                    // lectura no deben parecer que llevan a alguna parte.
+                    disabled={!onAbrir}
+                    aria-label={onAbrir ? `Ver ${tx.description}` : undefined}
+                    className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors enabled:hover:bg-[var(--fin-soft)]"
+                    style={{ boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)' }}
                   >
-                    <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+                    {/* El icono lleva el color de la categoría. El texto no: una
+ lista de veinte movimientos con veinte colores distintos
+ de letra no se puede leer. */}
+                    <span
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]"
+                      style={{ backgroundColor: tint(color, 0.14), color }}
+                      aria-hidden="true"
+                    >
+                      <Icon className="h-5 w-5" />
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="truncate text-[17px] font-semibold text-[var(--fin-ink)]">
+                          {tx.description}
+                        </span>
+                        {/* Un punto discreto, no una etiqueta: casi todos los
+ movimientos son normales, y marcarlos todos sería
+ como no marcar ninguno. */}
+                        {conSenal?.has(tx.id) ? (
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-warn)]"
+                            aria-label="Tiene algo que revisar"
+                          />
+                        ) : null}
+                      </span>
+                      <span className="block truncate text-[15px] text-[var(--fin-ink-soft)]">
+                        {entrada.nombre}
+                      </span>
+                    </span>
+
+                    <span
+                      className="shrink-0 text-[17px] font-semibold tabular-nums"
+                      style={{ color: esIngreso ? 'var(--fin-in)' : 'var(--fin-out)' }}
+                    >
+                      {formatSigned(tx.amountCop, tx.kind)}
+                    </span>
                   </button>
-                </motion.li>
+                </li>
               );
             })}
           </ul>

@@ -162,7 +162,10 @@ export const useAnalista = (): UseAnalista => {
           if (cancelado.current) return;
 
           if (!cuerpo.ok) {
-            actualizarTrabajo(id, { fase: 'error', error: { codigo: cuerpo.codigo, mensaje: cuerpo.mensaje } });
+            actualizarTrabajo(id, {
+              fase: 'error',
+              error: { codigo: cuerpo.codigo, mensaje: cuerpo.mensaje },
+            });
             return;
           }
 

@@ -16,7 +16,7 @@ interface BuscadorMovimientosProps {
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
   filtro,
@@ -31,7 +31,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
   const cambiar = (parcial: Partial<Filtro>) => onCambiar({ ...filtro, ...parcial });
 
   return (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
       <div className="relative">
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fin-ink-faint)]"
@@ -92,12 +92,12 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
       </div>
 
       {/* Only once something is being filtered. Said plainly, because the list
-          below has quietly stopped being "this month" and is now the whole
-          ledger — a search that only looked at the visible month would mean
-          stepping back through the calendar to find anything. */}
+ below has quietly stopped being "this month" and is now the whole
+ ledger — a search that only looked at the visible month would mean
+ stepping back through the calendar to find anything. */}
       {activo ? (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[var(--fin-bg)] px-3.5 py-2.5">
-          <p className="text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3.5 py-2.5">
+          <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             <b className="text-[var(--fin-ink)]">
               {resumen.cuantos} movimiento{resumen.cuantos === 1 ? '' : 's'}
             </b>{' '}
@@ -118,7 +118,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
           <button
             type="button"
             onClick={() => onCambiar(FILTRO_VACIO)}
-            className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--fin-soft)] px-3 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
+            className="flex shrink-0 items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
             Limpiar

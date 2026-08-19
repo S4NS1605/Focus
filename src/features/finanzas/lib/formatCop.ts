@@ -1,7 +1,6 @@
 // Grouping is done by hand rather than through Intl so the output is identical
 // across Node and every browser regardless of the ICU build available.
-const groupThousands = (digits: string): string =>
-  digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const groupThousands = (digits: string): string => digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 /** Colombian pesos, no decimals: 1234567 -> "$1.234.567". */
 export const formatCop = (value: number): string => {

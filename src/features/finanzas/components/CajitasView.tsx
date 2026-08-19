@@ -102,209 +102,238 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     // Las tarjetas de cajitas/cuentas sí: antes se apilaban una debajo de
     // otra hasta el fondo de la pantalla aunque hubiera sitio de sobra a los
     // lados, así que van en su propia grilla más ancha.
-    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+    // `w-full` es obligatorio -- ver el comentario en TendenciasView.tsx
+    // sobre por qué un mx-auto sin w-full no llena dentro de un padre flex.
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      {/* Total across every live pocket */}
-      <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-        <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
-          <PiggyBank className="inline h-4 w-4 mr-1 mb-0.5" aria-hidden="true" />
-          {esCuenta ? COPY.cuentas.total : COPY.cajitas.total}
-        </h2>
-        <p className="mt-1 font-display text-4xl font-extrabold tabular-nums text-[var(--fin-ink)]">
-          {formatCop(total)}
-        </p>
-        {resumenes.length > 0 ? (
-          <p className="mt-1 text-[11px] text-[var(--fin-ink-faint)]">
-            repartido en {resumenes.length} {esCuenta ? 'cuenta' : 'cajita'}
-            {resumenes.length === 1 ? '' : 's'}
+        {/* Total across every live pocket */}
+        <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+          <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+            <PiggyBank className="inline h-4 w-4 mr-1 mb-0.5" aria-hidden="true" />
+            {esCuenta ? COPY.cuentas.total : COPY.cajitas.total}
+          </h2>
+          <p className="mt-1 text-[44px] font-semibold tabular-nums text-[var(--fin-ink)]">
+            {formatCop(total)}
           </p>
-        ) : null}
+          {resumenes.length > 0 ? (
+            <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
+              repartido en {resumenes.length} {esCuenta ? 'cuenta' : 'cajita'}
+              {resumenes.length === 1 ? '' : 's'}
+            </p>
+          ) : null}
 
-        {/* Sits under the savings total rather than in Configuración: the
-            question is about this number, and the answer is easier to trust
-            with the figure it changes in view.
+          {/* Sits under the savings total rather than in Configuración: the
+ question is about this number, and the answer is easier to trust
+ with the figure it changes in view.
 
-            Gated on `tipo === 'cajita'` and not on "is not an account": this
-            component also renders debts and cards, and the negated form would
-            hang a savings switch under what you owe. */}
-        {tipo === 'cajita' && onMostrarEnResumen ? (
-          <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-[var(--fin-bg)] px-3.5 py-3">
-            <span className="min-w-0">
-              {/* The hint is `aria-describedby`, not part of the label. Inside
-                  it, the accessible name became the whole paragraph AND changed
-                  wording on every toggle — a control that renames itself when
-                  you use it is one a screen-reader user cannot keep track of. */}
-              <label
-                htmlFor="ahorro-en-resumen"
-                className="block cursor-pointer text-[11px] font-bold text-[var(--fin-ink)]"
-              >
-                Contar las cajitas en el resumen
-              </label>
-              <span
-                id="ahorro-en-resumen-nota"
-                className="mt-0.5 block text-[10px] leading-relaxed text-[var(--fin-ink-faint)]"
-              >
-                {mostrarEnResumen
-                  ? 'Se suman a lo que tienes ahora.'
-                  : 'El resumen muestra solo lo que hay en cuentas.'}
-              </span>
-            </span>
-            {/* A plain checkbox, announced as one. It was marked
-                role="switch" while still drawing as a square box, so the role
-                promised a control the screen did not show. */}
-            <input
-              id="ahorro-en-resumen"
-              type="checkbox"
-              checked={mostrarEnResumen}
-              onChange={(e) => onMostrarEnResumen(e.target.checked)}
-              aria-describedby="ahorro-en-resumen-nota"
-              className="h-5 w-5 shrink-0 cursor-pointer accent-[var(--fin-accent)]"
-            />
-          </div>
-        ) : null}
-      </section>
-
-      {/* Create */}
-      {creando ? (
-        <form onSubmit={crear} className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">{esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}</h2>
-
-          <label htmlFor="cajita-nombre" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
-            {COPY.cajitas.nombre}
-          </label>
-          <input
-            id="cajita-nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            placeholder={esCuenta ? COPY.cuentas.nombrePlaceholder : COPY.cajitas.nombrePlaceholder}
-            autoFocus
-            className="mt-2 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
-          />
-
-
-          <label htmlFor="cajita-saldo" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
-            {esCuenta ? COPY.cuentas.saldoInicial : COPY.cajitas.saldoInicial}
-          </label>
-          <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
-            <span className="font-display text-xl font-extrabold text-[var(--fin-ink-faint)]">$</span>
-            <input
-              id="cajita-saldo"
-              value={saldoTexto}
-              onChange={(e) => setSaldoTexto(formatAmountInput(parseAmountInput(e.target.value)))}
-              inputMode="numeric"
-              placeholder="0"
-              className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
-            />
-          </div>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
-            {COPY.cajitas.saldoInicialHint}
-          </p>
-
-          <fieldset className="mt-4">
-            <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">Ícono</legend>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {CAJITA_ICONS.map((option: string) => {
-                const IconComponent = iconoDeCajita(option);
-                return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setIcon(option)}
-                  aria-pressed={icon === option}
-                  aria-label={`Ícono ${option}`}
-                  className={`flex h-10 w-10 items-center justify-center rounded-2xl border-2 transition-colors ${
-                    icon === option
-                      ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] text-[var(--fin-ink)]'
-                      : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'
-                  }`}
+ Gated on `tipo === 'cajita'` and not on "is not an account": this
+ component also renders debts and cards, and the negated form would
+ hang a savings switch under what you owe. */}
+          {tipo === 'cajita' && onMostrarEnResumen ? (
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3.5 py-3">
+              <span className="min-w-0">
+                {/* The hint is `aria-describedby`, not part of the label. Inside
+ it, the accessible name became the whole paragraph AND changed
+ wording on every toggle — a control that renames itself when
+ you use it is one a screen-reader user cannot keep track of. */}
+                <label
+                  htmlFor="ahorro-en-resumen"
+                  className="block cursor-pointer text-[13px] font-semibold text-[var(--fin-ink)]"
                 >
-                  <IconComponent className="h-5 w-5" />
-                </button>
-              )})}
+                  Contar las cajitas en el resumen
+                </label>
+                <span
+                  id="ahorro-en-resumen-nota"
+                  className="mt-0.5 block text-[13px] leading-relaxed text-[var(--fin-ink-faint)]"
+                >
+                  {mostrarEnResumen
+                    ? 'Se suman a lo que tienes ahora.'
+                    : 'El resumen muestra solo lo que hay en cuentas.'}
+                </span>
+              </span>
+              {/* A plain checkbox, announced as one. It was marked
+ role="switch" while still drawing as a square box, so the role
+ promised a control the screen did not show. */}
+              <input
+                id="ahorro-en-resumen"
+                type="checkbox"
+                checked={mostrarEnResumen}
+                onChange={(e) => onMostrarEnResumen(e.target.checked)}
+                aria-describedby="ahorro-en-resumen-nota"
+                className="h-5 w-5 shrink-0 cursor-pointer accent-[var(--fin-accent)]"
+              />
             </div>
-          </fieldset>
-
-          {!esCuenta ? (
-            <>
-          <label htmlFor="cajita-meta" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
-            {COPY.cajitas.metaOpcional}
-          </label>
-          <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
-            <span className="font-display text-xl font-extrabold text-[var(--fin-ink-faint)]">$</span>
-            <input
-              id="cajita-meta"
-              value={metaTexto}
-              onChange={(e) => setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))}
-              inputMode="numeric"
-              placeholder="0"
-              className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
-            />
-          </div>
-
-            </>
           ) : null}
+        </section>
 
-          {!esCuenta ? (
-            <>
-          <label htmlFor="cajita-tasa" className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">
-            {COPY.cajitas.tasaOpcional}
-          </label>
-          <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+        {/* Create */}
+        {creando ? (
+          <form onSubmit={crear} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+            <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+              {esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
+            </h2>
+
+            <label
+              htmlFor="cajita-nombre"
+              className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+            >
+              {COPY.cajitas.nombre}
+            </label>
             <input
-              id="cajita-tasa"
-              value={tasaTexto}
-              onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
-              inputMode="decimal"
-              placeholder="13,5"
-              className="w-full bg-transparent font-display text-xl font-extrabold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+              id="cajita-nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder={
+                esCuenta ? COPY.cuentas.nombrePlaceholder : COPY.cajitas.nombrePlaceholder
+              }
+              autoFocus
+              className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             />
-            <span className="shrink-0 text-xs font-bold text-[var(--fin-ink-faint)]">% E.A.</span>
-          </div>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
-            {COPY.cajitas.tasaHint}
-          </p>
 
-            </>
-          ) : null}
-
-          <div className="mt-5 flex gap-2">
-            <button
-              type="submit"
-              disabled={nombre.trim() === ''}
-              className="flex-1 rounded-full bg-[var(--fin-accent)] px-6 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
+            <label
+              htmlFor="cajita-saldo"
+              className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
             >
-              {esCuenta ? COPY.cajitas.crearCuenta : COPY.cajitas.crearCajita}
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreando(false)}
-              className="rounded-full bg-[var(--fin-soft)] px-6 py-3.5 text-sm font-bold text-[var(--fin-ink-soft)]"
-            >
-              {COPY.confirm.cancel}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setCreando(true)}
-          className="flex items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-4 text-sm font-bold text-[var(--fin-ink-soft)] transition-colors hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
-        >
-          <Plus className="h-4 w-4" strokeWidth={3} />
-          {esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
-        </button>
-      )}
+              {esCuenta ? COPY.cuentas.saldoInicial : COPY.cajitas.saldoInicial}
+            </label>
+            <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+              <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
+              <input
+                id="cajita-saldo"
+                value={saldoTexto}
+                onChange={(e) => setSaldoTexto(formatAmountInput(parseAmountInput(e.target.value)))}
+                inputMode="numeric"
+                placeholder="0"
+                className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+              />
+            </div>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+              {COPY.cajitas.saldoInicialHint}
+            </p>
 
-      {/* Pockets */}
-      {resumenes.length === 0 && !creando ? (
-        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center flex flex-col items-center">
-          <span className="block text-[var(--fin-ink-ghost)] mb-2 flex justify-center" aria-hidden="true">
-            <PiggyBank className="h-10 w-10" strokeWidth={1.5} />
-          </span>
-          <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">{esCuenta ? COPY.cuentas.vacio : COPY.cajitas.vacio}</p>
-          <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{esCuenta ? COPY.cuentas.vacioHint : COPY.cajitas.vacioHint}</p>
-        </div>
-      ) : null}
+            <fieldset className="mt-4">
+              <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+                Ícono
+              </legend>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {CAJITA_ICONS.map((option: string) => {
+                  const IconComponent = iconoDeCajita(option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setIcon(option)}
+                      aria-pressed={icon === option}
+                      aria-label={`Ícono ${option}`}
+                      className={`flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-card)] border-2 transition-colors ${
+                        icon === option
+                          ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] text-[var(--fin-ink)]'
+                          : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'
+                      }`}
+                    >
+                      <IconComponent className="h-5 w-5" />
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            {!esCuenta ? (
+              <>
+                <label
+                  htmlFor="cajita-meta"
+                  className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+                >
+                  {COPY.cajitas.metaOpcional}
+                </label>
+                <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+                  <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
+                  <input
+                    id="cajita-meta"
+                    value={metaTexto}
+                    onChange={(e) =>
+                      setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))
+                    }
+                    inputMode="numeric"
+                    placeholder="0"
+                    className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+                  />
+                </div>
+              </>
+            ) : null}
+
+            {!esCuenta ? (
+              <>
+                <label
+                  htmlFor="cajita-tasa"
+                  className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+                >
+                  {COPY.cajitas.tasaOpcional}
+                </label>
+                <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+                  <input
+                    id="cajita-tasa"
+                    value={tasaTexto}
+                    onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
+                    inputMode="decimal"
+                    placeholder="13,5"
+                    className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+                  />
+                  <span className="shrink-0 text-[15px] font-semibold text-[var(--fin-ink-faint)]">
+                    % E.A.
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                  {COPY.cajitas.tasaHint}
+                </p>
+              </>
+            ) : null}
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="submit"
+                disabled={nombre.trim() === ''}
+                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
+              >
+                {esCuenta ? COPY.cajitas.crearCuenta : COPY.cajitas.crearCajita}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreando(false)}
+                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
+              >
+                {COPY.confirm.cancel}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCreando(true)}
+            className="flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
+          >
+            <Plus className="h-4 w-4" strokeWidth={3} />
+            {esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
+          </button>
+        )}
+
+        {/* Pockets */}
+        {resumenes.length === 0 && !creando ? (
+          <div className="rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center flex flex-col items-center">
+            <span
+              className="block text-[var(--fin-ink-ghost)] mb-2 flex justify-center"
+              aria-hidden="true"
+            >
+              <PiggyBank className="h-10 w-10" strokeWidth={1.5} />
+            </span>
+            <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">
+              {esCuenta ? COPY.cuentas.vacio : COPY.cajitas.vacio}
+            </p>
+            <p className="mt-1 text-[15px] text-[var(--fin-ink-faint)]">
+              {esCuenta ? COPY.cuentas.vacioHint : COPY.cajitas.vacioHint}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {resumenes.length > 0 ? (

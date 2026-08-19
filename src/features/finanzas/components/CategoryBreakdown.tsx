@@ -22,11 +22,8 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
   const largest = slices[0].total;
 
   return (
-    <section
-      className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5"
-      aria-label={title}
-    >
-      <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">{title}</h2>
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5" aria-label={title}>
+      <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">{title}</h2>
 
       <ul className="mt-4 flex flex-col gap-3.5">
         {slices.map((slice, idx) => {
@@ -37,12 +34,12 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
           const width = Math.max((slice.total / largest) * 100, 4);
 
           const Icon = entrada.Icono;
-          
+
           return (
             <li key={slice.category}>
               <div className="flex items-center gap-2.5">
                 <span
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-control)]"
                   style={{ backgroundColor: tint(color, 0.14), color: color }}
                   aria-hidden="true"
                 >
@@ -51,27 +48,27 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-[13px] font-bold text-[var(--fin-ink)]">
+                    <span className="truncate text-[13px] font-semibold text-[var(--fin-ink)]">
                       {entrada.nombre}
                     </span>
-                    <span className="shrink-0 text-[13px] font-extrabold text-[var(--fin-ink)] tabular-nums">
+                    <span className="shrink-0 text-[13px] font-semibold text-[var(--fin-ink)] tabular-nums">
                       {formatCop(slice.total)}
                     </span>
                   </div>
 
                   {/* The percentage is written out, so the bar length is never
-                      the only way to read the value. */}
+ the only way to read the value. */}
                   <div className="mt-1.5 flex flex-nowrap items-center gap-2">
-                    <div className="h-2 flex-1 min-w-0 overflow-hidden rounded-full bg-[var(--fin-soft)]">
+                    <div className="h-2 flex-1 min-w-0 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${width}%` }}
                         transition={{ duration: 0.5, delay: idx * 0.05, ease: 'easeOut' }}
-                        className="h-full rounded-full"
+                        className="h-full rounded-[var(--fin-r-pill)]"
                         style={{ backgroundColor: color }}
                       />
                     </div>
-                    <span className="w-10 shrink-0 text-right text-[11px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
+                    <span className="w-10 shrink-0 text-right text-[13px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
                       {slice.pct}%
                     </span>
                   </div>

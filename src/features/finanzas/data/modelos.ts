@@ -159,7 +159,7 @@ export const CAJITA_ICONS = [
   'Gift',
   'LifeBuoy',
   'Gem',
-  'Plane'
+  'Plane',
 ] as const;
 
 /**

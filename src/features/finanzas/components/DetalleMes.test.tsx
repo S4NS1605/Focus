@@ -115,7 +115,12 @@ describe('DetalleMes — gráfica por día', () => {
 describe('DetalleMes — contrapartes', () => {
   it('answers who was paid, which the category alone cannot', () => {
     montar([
-      tx({ id: 'a', category: 'transferencia', description: 'Para ANA MARIA GOMEZ', amountCop: 80_000 }),
+      tx({
+        id: 'a',
+        category: 'transferencia',
+        description: 'Para ANA MARIA GOMEZ',
+        amountCop: 80_000,
+      }),
       tx({ id: 'b', category: 'transferencia', description: 'Para LUIS PEREZ', amountCop: 40_000 }),
     ]);
 

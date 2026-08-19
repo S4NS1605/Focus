@@ -90,16 +90,19 @@ describe('campos táctiles', () => {
     for (const cuerpo of camposDe(fuente)) {
       // `campo`-style shared class strings are resolved by looking at the file's
       // own constants, so a field is judged on what it actually renders with.
-      const clases = cuerpo.includes('className={`') || cuerpo.includes('${campo}')
-        ? `${cuerpo} ${fuente.match(/const campo =\s*'([^']*)'/)?.[1] ?? ''}`
-        : cuerpo;
+      const clases =
+        cuerpo.includes('className={`') || cuerpo.includes('${campo}')
+          ? `${cuerpo} ${fuente.match(/const campo =\s*'([^']*)'/)?.[1] ?? ''}`
+          : cuerpo;
 
       const px = tamanoDe(clases);
       if (px !== null && px < MINIMO_IOS) {
         encontrados.push({
           archivo: ruta.replace(`${raiz}/`, ''),
           px,
-          extracto: (cuerpo.match(/(?:id|aria-label)="([^"]+)"/)?.[1] ?? cuerpo.slice(0, 40)).trim(),
+          extracto: (
+            cuerpo.match(/(?:id|aria-label)="([^"]+)"/)?.[1] ?? cuerpo.slice(0, 40)
+          ).trim(),
         });
       }
     }
@@ -111,8 +114,9 @@ describe('campos táctiles', () => {
 
   it('el barrido de verdad encuentra campos, no pasa por vacío', () => {
     // Sin esto el test anterior pasaría también si el regex dejara de casar.
-    const total = [...archivos('src/features/finanzas'), ...archivos('src/apps-dashboard')]
-      .flatMap((r) => camposDe(readFileSync(r, 'utf8')));
+    const total = [...archivos('src/features/finanzas'), ...archivos('src/apps-dashboard')].flatMap(
+      (r) => camposDe(readFileSync(r, 'utf8')),
+    );
     expect(total.length).toBeGreaterThan(10);
   });
 });

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { distanciaLevenshtein, buscarSimilar, calcularConfianzaGranular } from './inteligenciaAvanzada';
+import {
+  distanciaLevenshtein,
+  buscarSimilar,
+  calcularConfianzaGranular,
+} from './inteligenciaAvanzada';
 
 describe('distanciaLevenshtein', () => {
   it('distancia 0 para palabras idénticas', () => {

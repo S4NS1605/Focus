@@ -18,8 +18,10 @@ export const COPY = {
     speak: 'Dictar',
     stop: 'Detener',
     keyboardHint: 'Toca el campo y usa la tecla del micrófono del teclado para dictar.',
-    blocked: 'El dictado de un toque no funciona con la app instalada. Usa la tecla del micrófono del teclado.',
-    offline: 'El dictado de un toque necesita internet. La tecla del micrófono del teclado funciona sin conexión.',
+    blocked:
+      'El dictado de un toque no funciona con la app instalada. Usa la tecla del micrófono del teclado.',
+    offline:
+      'El dictado de un toque necesita internet. La tecla del micrófono del teclado funciona sin conexión.',
   },
 
   confirm: {
@@ -49,7 +51,10 @@ export const COPY = {
 
   list: {
     empty: 'Aún no hay movimientos.',
-    emptyHint: 'Dicta o escribe tu primer gasto arriba.',
+    // Sin la palabra "arriba": el botón de anotar ahora está ABAJO y fijo, así
+    // que esa instrucción señalaba al sitio equivocado. Un texto que dice dónde
+    // está algo se rompe en cuanto ese algo se mueve; mejor no decirlo.
+    emptyHint: 'Toca el micrófono y di en qué gastaste.',
     delete: 'Eliminar',
     edit: 'Editar',
   },
@@ -91,7 +96,8 @@ export const COPY = {
     nombre: 'Nombre',
     nombrePlaceholder: 'Ej: Vacaciones',
     saldoInicial: '¿Cuánto tienes ahí ahora?',
-    saldoInicialHint: 'Escribe el saldo que ves en tu app. Puedes dejarlo en 0 y agregarlo después.',
+    saldoInicialHint:
+      'Escribe el saldo que ves en tu app. Puedes dejarlo en 0 y agregarlo después.',
     metaOpcional: 'Meta a la que quieres llegar (opcional)',
     tasaOpcional: 'Rendimiento (opcional)',
     tasaHint:

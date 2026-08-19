@@ -32,6 +32,13 @@
   --fin-line: #ede9e3;
   --fin-scrim: rgb(28 25 23 / 0.4);
 
+  /* Estos tres se usaban en 9 sitios del código sin estar declarados en ninguna
+     parte, así que el navegador no pintaba nada: el fondo salía transparente y
+     el hover no hacía nada. Ahora existen. */
+  --fin-bg-soft: #f7f5f2;
+  --fin-surface: #ffffff;
+  --fin-card-hover: #efece7;
+
   /* Liquid-glass surfaces (iOS 26 "Liquid Glass" material): a blurred, saturated
      backdrop plus a bright top rim standing in for a specular highlight, and a
      soft floating shadow standing in for the lift. Kept as tokens rather than
@@ -76,6 +83,64 @@
   background-color: var(--fin-bg);
 }
 
+/* ------------------------------------------------------ escala tipográfica ---
+   Antes había 13 tamaños de letra sueltos (10, 11, 12, 13, 14, 15, 16, 18, 20,
+   24, 30, 36 y 44 px) y nadie sabía cuál usar: `text-[11px]` y `text-xs` se
+   usaban 127 y 120 veces sin ninguna diferencia real entre ellos.
+
+   Ahora son 7, y cada uno tiene un OFICIO, no una medida. Se elige por lo que
+   la cosa ES, no por lo grande que se quiere ver:
+
+     --fin-t-cifra       el número grande. UNO por pantalla. Solo uno.
+     --fin-t-titulo-xl   el título de una pantalla ("Configuración")
+     --fin-t-titulo      el título de una sección o de una tarjeta
+     --fin-t-cuerpo-b    texto normal pero destacado (la descripción, el monto)
+     --fin-t-cuerpo      el texto por defecto de toda la app
+     --fin-t-secundario  lo que va debajo y explica (la categoría, una nota)
+     --fin-t-pie         metadatos: fecha, porcentaje. Nada baja de aquí.
+
+   Y solo 2 pesos. Antes el 86% del texto estaba en negrita, así que la negrita
+   había dejado de significar nada. La regla nueva: si dos cosas pegadas
+   necesitan pesos distintos para distinguirse, es que están mal de tamaño. */
+.fin-html {
+  --fin-t-cifra: 700 44px/1 var(--font-sans);
+  --fin-t-titulo-xl: 600 28px/1.15 var(--font-sans);
+  --fin-t-titulo: 600 20px/1.2 var(--font-sans);
+  --fin-t-cuerpo-b: 600 17px/1.3 var(--font-sans);
+  --fin-t-cuerpo: 400 17px/1.4 var(--font-sans);
+  --fin-t-secundario: 400 15px/1.35 var(--font-sans);
+  --fin-t-pie: 400 13px/1.3 var(--font-sans);
+
+  /* El ajuste óptico de las letras. Cuanto más grande el texto, más hay que
+     apretarlo para que no se vea desparramado. */
+  --fin-track-cifra: -0.03em;
+  --fin-track-titulo-xl: -0.02em;
+  --fin-track-titulo: -0.01em;
+
+  /* ------------------------------------------------------------- radios ---
+     De 8 valores a 4. `rounded-2xl` (16px) y `rounded-3xl` (24px) convivían sin
+     motivo; los dos se juntan en 20px. */
+  --fin-r-control: 12px; /* inputs, botones, cuadritos de icono */
+  --fin-r-card: 20px; /* toda tarjeta y toda fila, sin excepción */
+  --fin-r-sheet: 32px; /* las hojas que suben desde abajo, y los modales */
+  --fin-r-pill: 9999px; /* pastillas, avatares, botones redondos */
+
+  /* --------------------------------------------------------- espaciado ---
+     Rejilla de 4. Se van los medios pasos (py-2.5, gap-1.5, px-3.5...) que
+     hacían que dos cosas iguales quedaran separadas por 6px en un lado y 10 en
+     el otro sin que nadie lo hubiera decidido. */
+  --fin-e-1: 4px;
+  --fin-e-2: 8px;
+  --fin-e-3: 12px;
+  --fin-e-4: 16px;
+  --fin-e-6: 24px;
+  --fin-e-8: 32px;
+
+  /* Lo mínimo que puede medir algo que se toca con el dedo. Debajo de esto la
+     gente falla el toque. Es el número que usa Apple. */
+  --fin-tap: 44px;
+}
+
 /* Dark. Warm near-black rather than pure #000: the light theme is a warm cream,
    and a neutral-cold dark would read as a different product. Surfaces step up in
    lightness as they come forward (bg < card < soft), the inverse of light mode,
@@ -90,6 +155,9 @@
     --fin-soft: #2c2a28;
     --fin-line: #35322f;
     --fin-scrim: rgb(0 0 0 / 0.6);
+    --fin-bg-soft: #221f1e;
+    --fin-surface: #2d2a28;
+    --fin-card-hover: #3a3734;
 
     /* Dimmer than the light theme's: a bright rim reads as a highlight against
        a dark glass surface, but the light-mode value would look like a stray
@@ -135,6 +203,9 @@
   --fin-soft: #2c2a28;
   --fin-line: #35322f;
   --fin-scrim: rgb(0 0 0 / 0.6);
+  --fin-bg-soft: #221f1e;
+  --fin-surface: #2d2a28;
+  --fin-card-hover: #3a3734;
 
   --fin-glass-highlight: rgb(255 255 255 / 0.12);
   --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
@@ -162,24 +233,24 @@
   --fin-baja-ink: #fde047;
 }
 
-/* Liquid glass, applied app-wide from one place instead of editing every card.
-   Every "big surface" container in this app already shares one of these three
-   Tailwind roundings paired with the --fin-card token -- rounded-3xl for
-   ordinary section cards, rounded-[1.75rem] for the login card, rounded-t-[2rem]
-   for the sheets that slide up from the bottom. An attribute selector matches
-   the literal class string, so this reaches all of them (including the
-   `hover:`, `lg:`, and `/95` variants already in use) without needing every
-   component to opt in individually, and without ever touching the small stuff
-   -- inputs, pills, badges -- that a real iOS form leaves solid so it stays
-   legible to type into.
-   Small text inputs are excluded on purpose: glass over a caret hurts more than
-   it helps. */
-.fin-page [class*="bg-[var(--fin-card)]"][class*="rounded-3xl"],
-.fin-page [class*="bg-[var(--fin-card)]"][class*="rounded-[1.75rem]"],
-.fin-page [class*="bg-[var(--fin-card)]"][class*="rounded-t-[2rem]"] {
+/* ------------------------------------------------------------ liquid glass ---
+   El vidrio se pide A MANO, con la clase `.fin-glass`.
+
+   Antes se enganchaba al NOMBRE de la clase del radio (buscaba el texto
+   "rounded-3xl" dentro del atributo class). Eso era una trampa: el día que
+   alguien cambiara un radio de 24px a 20px, el vidrio de esa tarjeta se apagaba
+   solo y ningún test se daba cuenta. Como justo aquí estamos cambiando todos
+   los radios, tenía que dejar de depender de ellos.
+
+   Y ahora hay que pedirlo, en vez de recibirlo por defecto. El vidrio es para
+   lo que FLOTA por encima del contenido — la barra de abajo, las hojas, los
+   modales — no para las 57 tarjetas que estaban planas sobre la página. */
+.fin-page .fin-glass {
   backdrop-filter: var(--fin-glass-filter);
   -webkit-backdrop-filter: var(--fin-glass-filter);
-  box-shadow: inset 0 1px 0 0 var(--fin-glass-highlight), var(--fin-glass-shadow);
+  box-shadow:
+    inset 0 1px 0 0 var(--fin-glass-highlight),
+    var(--fin-glass-shadow);
 }
 
 .fin-page {
@@ -244,8 +315,8 @@
 /* Emoji render through the system colour-emoji font. Naming it explicitly keeps
    a category chip from falling back to a monochrome glyph on Linux/Android. */
 .fin-emoji {
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji',
-    'Android Emoji', sans-serif;
+  font-family:
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', sans-serif;
   font-weight: 400;
   line-height: 1;
 }

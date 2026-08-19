@@ -25,7 +25,7 @@ export const TemaToggle: React.FC<TemaToggleProps> = ({ tema, onCambiar, classNa
   <div
     role="radiogroup"
     aria-label="Tema"
-    className={`inline-flex items-center gap-0.5 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] p-1 ${className}`}
+    className={`inline-flex items-center gap-0.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-1 ${className}`}
   >
     {TEMAS.map((opcion) => {
       const activo = tema === opcion.id;
@@ -37,7 +37,7 @@ export const TemaToggle: React.FC<TemaToggleProps> = ({ tema, onCambiar, classNa
           aria-checked={activo}
           onClick={() => onCambiar(opcion.id)}
           title={opcion.label}
-          className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] transition-colors ${
+          className={`flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-pill)] text-[13px] transition-colors ${
             activo ? 'bg-[var(--fin-soft)]' : 'opacity-45 hover:opacity-100'
           }`}
         >

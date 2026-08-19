@@ -17,10 +17,8 @@ export interface MonthTotals {
 }
 
 /** Transactions belonging to one 'YYYY-MM' month. */
-export const forMonth = (
-  transactions: readonly Transaction[],
-  month: string,
-): Transaction[] => transactions.filter((tx) => monthKey(tx.occurredOn) === month);
+export const forMonth = (transactions: readonly Transaction[], month: string): Transaction[] =>
+  transactions.filter((tx) => monthKey(tx.occurredOn) === month);
 
 export const monthTotals = (transactions: readonly Transaction[]): MonthTotals => {
   let ingresos = 0;
@@ -48,10 +46,7 @@ export const monthTotals = (transactions: readonly Transaction[]): MonthTotals =
  * sums to 100% of expenses — never of the net balance, which would let a
  * category exceed 100% whenever spending outran income.
  */
-export const byCategory = (
-  transactions: readonly Transaction[],
-  kind: TxKind,
-): CategorySlice[] => {
+export const byCategory = (transactions: readonly Transaction[], kind: TxKind): CategorySlice[] => {
   const totals = new Map<CategoriaClave, number>();
 
   for (const tx of transactions) {
@@ -68,11 +63,11 @@ export const byCategory = (
       total,
       pct: Math.round((total / grand) * 1000) / 10,
     }))
-    .sort((a, b) => (b.total !== a.total ? b.total - a.total : a.category.localeCompare(b.category)));
+    .sort((a, b) =>
+      b.total !== a.total ? b.total - a.total : a.category.localeCompare(b.category),
+    );
 };
 
 /** Every 'YYYY-MM' present in the data, newest first. */
 export const monthsPresent = (transactions: readonly Transaction[]): string[] =>
-  [...new Set(transactions.map((tx) => monthKey(tx.occurredOn)))].sort((a, b) =>
-    a < b ? 1 : -1,
-  );
+  [...new Set(transactions.map((tx) => monthKey(tx.occurredOn)))].sort((a, b) => (a < b ? 1 : -1));

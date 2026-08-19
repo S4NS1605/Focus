@@ -78,7 +78,12 @@ export const leerRespaldo = (texto: string): ResultadoLectura => {
   }
 
   if (typeof crudo !== 'object' || crudo === null) {
-    return { ok: false, respaldo: null, error: 'El archivo está vacío o no tiene datos.', resumen: null };
+    return {
+      ok: false,
+      respaldo: null,
+      error: 'El archivo está vacío o no tiene datos.',
+      resumen: null,
+    };
   }
 
   const obj = crudo as Partial<Respaldo>;

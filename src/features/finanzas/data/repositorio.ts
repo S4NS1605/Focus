@@ -131,9 +131,7 @@ export class RepositorioMemoria implements Repositorio {
     this.datos.cajitas = this.datos.cajitas.filter((c) => c.id !== id);
     // Movements outlive nothing: a pocket's history is meaningless without it,
     // and leaving them behind would silently skew any later balance rebuild.
-    this.datos.cajitaMovimientos = this.datos.cajitaMovimientos.filter(
-      (m) => m.cajitaId !== id,
-    );
+    this.datos.cajitaMovimientos = this.datos.cajitaMovimientos.filter((m) => m.cajitaId !== id);
     this.datos.metas = this.datos.metas.map((meta) =>
       meta.cajitaId === id ? { ...meta, cajitaId: null } : meta,
     );

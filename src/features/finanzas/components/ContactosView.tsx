@@ -80,10 +80,7 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
   const [claveAbierta, setClaveAbierta] = useState<string | null>(null);
 
   const partes = useMemo(() => partesDelLibro(transacciones), [transacciones]);
-  const filas = useMemo(
-    () => armarFilas(partes, contactos),
-    [partes, contactos],
-  );
+  const filas = useMemo(() => armarFilas(partes, contactos), [partes, contactos]);
   const dudas = useMemo(() => dudasDeUnion(partes, contactos), [partes, contactos]);
 
   // También por alias: poner el primer apodo CREA el contacto, y con eso la
@@ -102,37 +99,45 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
   return (
     // Mismo criterio que CajitasView: el resumen se queda angosto, la lista
     // de contactos usa una grilla ancha en vez de una sola columna larga.
-    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+    // `w-full` es obligatorio -- ver el comentario en TendenciasView.tsx
+    // sobre por qué un mx-auto sin w-full no llena dentro de un padre flex.
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
       <div className="mx-auto w-full max-w-3xl">
-      <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-        <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
-          <Users className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-          Con quién mueves la plata
-        </h2>
-        <p className="mt-1 font-display text-4xl font-extrabold tabular-nums text-[var(--fin-ink)]">
-          {filas.length}
-        </p>
-        <p className="mt-1 text-[11px] text-[var(--fin-ink-faint)]">
-          Salen solos de tus movimientos. No hay nada que escribir.
-        </p>
-
-        <DudaContacto
-          duda={dudas[0] ?? null}
-          onUnir={(d) => responder(d, true)}
-          onSeparar={(d) => responder(d, false)}
-        />
-      </section>
-
-      {filas.length === 0 ? (
-        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-10 text-center">
-          <Users className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]" strokeWidth={1.5} aria-hidden="true" />
-          <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">Todavía no hay contactos.</p>
-          <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">
-            Aparecen solos cuando un movimiento diga con quién fue — una transferencia, un
-            pago por BRE-B, un extracto que subas.
+        <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+            <Users className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+            Con quién mueves la plata
+          </h2>
+          <p className="mt-1 text-[44px] font-semibold tabular-nums text-[var(--fin-ink)]">
+            {filas.length}
           </p>
-        </div>
-      ) : null}
+          <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
+            Salen solos de tus movimientos. No hay nada que escribir.
+          </p>
+
+          <DudaContacto
+            duda={dudas[0] ?? null}
+            onUnir={(d) => responder(d, true)}
+            onSeparar={(d) => responder(d, false)}
+          />
+        </section>
+
+        {filas.length === 0 ? (
+          <div className="rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-10 text-center">
+            <Users
+              className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">
+              Todavía no hay contactos.
+            </p>
+            <p className="mt-1 text-[15px] text-[var(--fin-ink-faint)]">
+              Aparecen solos cuando un movimiento diga con quién fue — una transferencia, un pago
+              por BRE-B, un extracto que subas.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {filas.length > 0 ? (
@@ -140,7 +145,7 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
           {filas.map((fila) => (
             <li
               key={fila.clave}
-              className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3"
+              className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3"
             >
               {editando === fila.clave && fila.contacto ? (
                 <form
@@ -159,12 +164,12 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
                     onChange={(e) => setBorrador(e.target.value)}
                     aria-label={`Nombre de ${fila.nombre}`}
                     autoFocus
-                    className="w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-base font-medium text-[var(--fin-ink)] focus:outline-none"
+                    className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none"
                   />
                   <button
                     type="submit"
                     aria-label="Guardar nombre"
-                    className="rounded-xl p-2 text-[var(--fin-ink-soft)]"
+                    className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-soft)]"
                   >
                     <Check className="h-4 w-4" strokeWidth={3} />
                   </button>
@@ -172,17 +177,17 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
               ) : (
                 <div className="flex items-center gap-3">
                   {/* Toda la fila abre: "3 movimientos" no sirve para reconocer
-                      a nadie, y el nombre solo tampoco. Hay que poder ver
-                      cuáles fueron. */}
+ a nadie, y el nombre solo tampoco. Hay que poder ver
+ cuáles fueron. */}
                   <button
                     type="button"
                     onClick={() => setClaveAbierta(fila.clave)}
                     className="min-w-0 flex-1 text-left"
                   >
-                    <span className="block truncate text-sm font-bold text-[var(--fin-ink)]">
+                    <span className="block truncate text-[17px] font-semibold text-[var(--fin-ink)]">
                       {fila.nombre}
                     </span>
-                    <span className="block text-[11px] text-[var(--fin-ink-faint)]">
+                    <span className="block text-[13px] text-[var(--fin-ink-faint)]">
                       {fila.movimientos} movimiento{fila.movimientos === 1 ? '' : 's'} · último{' '}
                       {dayLabel(fila.ultimaFecha)}
                       {fila.alias.length > 1 ? ` · ${fila.alias.length} grafías` : ''}
@@ -198,18 +203,18 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
                           setBorrador(fila.nombre);
                         }}
                         aria-label={`Renombrar ${fila.nombre}`}
-                        className="rounded-xl p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
+                        className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
                       >
                         <Pencil className="h-4 w-4" strokeWidth={2.5} />
                       </button>
                       {/* Undoing a merge is the reason this screen exists at all:
-                          a wrong "sí" must not be permanent. */}
+ a wrong "sí" must not be permanent. */}
                       {fila.alias.length > 1 ? (
                         <button
                           type="button"
                           onClick={() => fila.contacto && onDeshacer(fila.contacto.id)}
                           aria-label={`Deshacer la unión de ${fila.nombre}`}
-                          className="rounded-xl p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-out)]"
+                          className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-out)]"
                         >
                           <Link2Off className="h-4 w-4" strokeWidth={2.5} />
                         </button>

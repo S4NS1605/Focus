@@ -29,18 +29,18 @@ export const DudaContacto: React.FC<DudaContactoProps> = ({ duda, onUnir, onSepa
   return (
     <section
       aria-label="Contactos parecidos"
-      className="mt-3 rounded-2xl border border-dashed border-[var(--fin-line)] bg-[var(--fin-bg)] px-3.5 py-3"
+      className="mt-3 rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] bg-[var(--fin-bg)] px-3.5 py-3"
     >
-      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
+      <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-[var(--fin-ink-faint)]">
         <Users className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
         ¿Son la misma persona?
       </p>
 
       <div className="mt-2 flex flex-col gap-1">
         {[duda.a, duda.b].map((parte) => (
-          <p key={parte.clave} className="text-[12px] font-bold text-[var(--fin-ink)]">
+          <p key={parte.clave} className="text-[15px] font-semibold text-[var(--fin-ink)]">
             {parte.nombre}{' '}
-            <span className="font-medium text-[var(--fin-ink-faint)]">
+            <span className="font-normal text-[var(--fin-ink-faint)]">
               · {veces(parte.movimientos)}
             </span>
           </p>
@@ -51,7 +51,7 @@ export const DudaContacto: React.FC<DudaContactoProps> = ({ duda, onUnir, onSepa
         <button
           type="button"
           onClick={() => onUnir(duda)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[var(--fin-accent)] px-3 py-2 text-[11px] font-bold text-[var(--fin-on-accent)]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]"
         >
           <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
           Sí, únelos
@@ -59,7 +59,7 @@ export const DudaContacto: React.FC<DudaContactoProps> = ({ duda, onUnir, onSepa
         <button
           type="button"
           onClick={() => onSeparar(duda)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[var(--fin-line)] px-3 py-2 text-[11px] font-bold text-[var(--fin-ink-soft)]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
         >
           <X className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
           No, son distintos

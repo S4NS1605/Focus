@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, X, Pencil, History, Plus } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forMonth, monthTotals } from './lib/aggregate';
+import { totalVisible } from './lib/cajitas';
+import { formatCop } from './lib/formatCop';
 import { bogotaDate, monthKey, shiftMonth } from './lib/localDate';
 import { nuevoId } from './lib/id';
 import { movimientoEnBlanco, parseTransaction } from './lib/parseTransaction';
@@ -17,8 +19,6 @@ import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { AsesorView } from './components/AsesorView';
-import { CajitasView } from './components/CajitasView';
-import { BienvenidaCard } from './components/BienvenidaCard';
 import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
@@ -29,32 +29,36 @@ import { RecurrentesView } from './components/RecurrentesView';
 import { useAjustesGmf } from './data/usePreferencias';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
-import { DudaContacto } from './components/DudaContacto';
-import { contactoPorApodo, dudasDeUnion, partesDelLibro } from './lib/contactos';
-import { useMostrarAhorro } from './data/usePreferencias';
-import { DeudasView } from './components/DeudasView';
+import { contactoPorApodo } from './lib/contactos';
+import { useMostrarAhorro, useOnboarding } from './data/usePreferencias';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { CategoriasEditor } from './components/CategoriasEditor';
-import { PatrimonioCard } from './components/PatrimonioCard';
-import { EstadoDelMes } from './components/EstadoDelMes';
-import { DetalleMes } from './components/DetalleMes';
 import { AnalisisMovimiento } from './components/AnalisisMovimiento';
 import { crearIndiceSenales, senalesConIndice } from './lib/senales';
-import { CategoryBreakdown } from './components/CategoryBreakdown';
+import { analizarAnomalias } from './lib/senalesAvanzadas';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import type { ConfirmDraft } from './components/ConfirmSheet';
 import { CatalogoProvider } from './catalogoContexto';
 import { hacerCatalogo } from './categorias';
-import { DictationInput } from './components/DictationInput';
-import { FinanzasShell } from './components/FinanzasShell';
-import { TemaToggle } from './components/TemaToggle';
+import { CajitasView } from './components/CajitasView';
+import { DeudasView } from './components/DeudasView';
 import { MetasView } from './components/MetasView';
-import { PESTANAS_AHORRO, PESTANAS_CONFIGURACION } from './sections';
-import type { PestanaAhorro, PestanaConfiguracion, SectionId } from './sections';
+import { FinanzasShell } from './components/FinanzasShell';
+import { InicioView } from './components/InicioView';
+import { DineroView } from './components/DineroView';
+import { MesView } from './components/MesView';
+import { AjustesView } from './components/AjustesView';
+import { HojaPanel } from './components/HojaPanel';
+import { Captura } from './components/Captura';
+import { BotonAnotar } from './components/BotonAnotar';
+import { DetalleMovimiento } from './components/DetalleMovimiento';
+import { AvisoGuardado } from './components/AvisoGuardado';
+import type { Guardado } from './components/AvisoGuardado';
+import { Onboarding } from './components/Onboarding';
+import { PANELES_AJUSTES } from './sections';
+import type { PanelAjustes, SectionId } from './sections';
+import { TemaToggle } from './components/TemaToggle';
 import type { Tema } from './data/useTema';
-import { KpiRow } from './components/KpiRow';
-import { MonthNav } from './components/MonthNav';
-import { TendenciasView } from './components/TendenciasView';
 import { TransactionList } from './components/TransactionList';
 import './finanzas.css';
 
@@ -76,10 +80,12 @@ const comoParseado = (tx: Transaction): ParsedTransaction => ({
     tipo: 1,
     categoria: 1,
     cuenta: 1,
-    metodo: 1
+    metodo: 1,
   },
   needsReview: false,
-  suggestedCategories: [tx.category, 'otros', 'comida', 'transporte'].filter((v, i, a) => a.indexOf(v) === i).slice(0, 3),
+  suggestedCategories: [tx.category, 'otros', 'comida', 'transporte']
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .slice(0, 3),
   signals: {
     amountSource: 'digits',
     kindSource: 'keyword',
@@ -93,6 +99,9 @@ const comoParseado = (tx: Transaction): ParsedTransaction => ({
     tags: [],
   },
 });
+
+/** Las cosas que se abren encima de la pantalla actual. */
+type Capa = 'buscar' | null;
 
 /**
  * Chooses how the app is reached before it renders anything.
@@ -112,7 +121,9 @@ export const FinanzasApp: React.FC<FinanzasAppProps> = ({ onBack }) => {
   if (sesion.estado.modo === 'cargando') {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
-        <p className="text-sm font-bold text-[var(--fin-ink-faint)]">{COPY.almacen.cargando}</p>
+        <p className="text-[17px] font-semibold text-[var(--fin-ink-faint)]">
+          {COPY.almacen.cargando}
+        </p>
       </div>
     );
   }
@@ -149,7 +160,13 @@ interface FinanzasPanelProps {
   onBack?: () => void;
 }
 
-const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onCambiarTema, onBack }) => {
+const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
+  userId,
+  cuenta,
+  tema,
+  onCambiarTema,
+  onBack,
+}) => {
   const repositorio = useMemo(() => {
     if (!userId) return undefined;
     const cliente = obtenerSupabase();
@@ -158,18 +175,18 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
   const almacen = useAlmacen(repositorio);
   const { mostrarAhorro, setMostrarAhorro } = useMostrarAhorro();
+  const onboarding = useOnboarding();
   const gmf = useAjustesGmf();
-  const { transacciones, cajitas, cajitaMovimientos, metas, categorias } = almacen.datos;
+  const { transacciones, cajitas, cajitaMovimientos, categorias } = almacen.datos;
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
   const [editando, setEditando] = useState<Transaction | null>(null);
   const [analizando, setAnalizando] = useState<Transaction | null>(null);
-  const [section, setSection] = useState<SectionId>('resumen');
-  const [pestanaAhorro, setPestanaAhorro] = useState<PestanaAhorro>('cajitas');
-  // Solo importa en escritorio -- en el celular la barra de pestañas está
-  // oculta y esto nunca cambia de 'ajustes', que es lo único que Configuración
-  // muestra ahí, igual que siempre.
-  const [pestanaConfiguracion, setPestanaConfiguracion] = useState<PestanaConfiguracion>('ajustes');
+  // Una sola variable de navegación. Antes eran tres a la vez (la sección, la
+  // pestaña de Ahorro y la de Configuración), y de ahí salían estados
+  // imposibles: quedarte en una pestaña que en ese ancho de pantalla ni
+  // siquiera se dibujaba, sin forma de volver.
+  const [section, setSection] = useState<SectionId>('inicio');
   const [mostrarReporte, setMostrarReporte] = useState(false);
 
   const today = bogotaDate();
@@ -217,9 +234,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   // every movement on screen.
   const conSenal = useMemo(() => {
     const indice = crearIndiceSenales(transacciones);
-    return new Set(
-      delMes.filter((t) => senalesConIndice(t, indice).length > 0).map((t) => t.id),
-    );
+    return new Set(delMes.filter((t) => senalesConIndice(t, indice).length > 0).map((t) => t.id));
   }, [delMes, transacciones]);
 
   // Aprendido de todo el libro, no del mes visible: lo que archivaste en junio
@@ -236,7 +251,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     for (const tx of transacciones) {
       if (!tx.cuentaId) continue;
       const haciaArriba = tx.kind === 'ingreso';
-      const sube = ES_PASIVO[cajitas.find(c => c.id === tx.cuentaId)?.tipo ?? 'cuenta'] ? !haciaArriba : haciaArriba;
+      const sube = ES_PASIVO[cajitas.find((c) => c.id === tx.cuentaId)?.tipo ?? 'cuenta']
+        ? !haciaArriba
+        : haciaArriba;
       balances[tx.cuentaId] = (balances[tx.cuentaId] || 0) + (sube ? tx.amountCop : -tx.amountCop);
     }
     return balances;
@@ -253,8 +270,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
   };
 
   const handleSave = (draft: ConfirmDraft) => {
+    const id = nuevoId('tx');
     void almacen.agregarTransaccion({
-      id: nuevoId('tx'),
+      id,
       kind: draft.kind,
       amountCop: draft.amountCop,
       category: draft.category,
@@ -269,6 +287,23 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     const finalDate = draft.occurredOn || bogotaDate();
     setMonth(finalDate.slice(0, 7));
     setPending(null);
+
+    // El aviso de "quedó guardado", con Deshacer. Antes guardar no decía nada:
+    // la hoja se cerraba y uno se quedaba sin saber si había quedado.
+    //
+    // Y aquí es donde va el aviso de "esto es más caro de lo normal". Antes
+    // salía JUSTO ENCIMA del botón de guardar, o sea frenando a la persona en
+    // el último segundo por algo que casi siempre estaba bien. Es un dato útil,
+    // pero no es motivo para parar: se cuenta después, al lado del Deshacer,
+    // que es lo único que sirve de verdad si resultó estar mal.
+    const anomalia = analizarAnomalias(transacciones, draft.category, draft.amountCop);
+    setGuardado({
+      id,
+      texto: `${draft.description} · ${formatCop(draft.amountCop)}`,
+      aviso: anomalia?.esAnomalía
+        ? `Más de lo normal — sueles gastar ${formatCop(anomalia.promedio)} aquí.`
+        : null,
+    });
   };
 
   const handleUpdate = (draft: ConfirmDraft) => {
@@ -292,17 +327,6 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     setEditando(null);
   };
 
-  const monthNav = (
-    <MonthNav month={month} onChange={setMonth} maxMonth={thisMonth} shift={shiftMonth} />
-  );
-
-  // Computed from the whole ledger, not the visible month: a spelling seen in
-  // June and another in August are exactly the pair worth asking about.
-  const dudaActual = useMemo(
-    () => dudasDeUnion(partesDelLibro(transacciones), almacen.datos.contactos)[0] ?? null,
-    [transacciones, almacen.datos.contactos],
-  );
-
   const [filtro, setFiltro] = useState<Filtro>(FILTRO_VACIO);
   // Built here as well as in the provider: the filter runs outside the tree the
   // provider wraps, and searching by category name needs the same resolution the
@@ -319,444 +343,455 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
     [sinFiltro, delMes, transacciones, filtro, catalogoActual],
   );
 
-  const registrar = (
-    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-      <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
-        <Pencil className="h-4 w-4" strokeWidth={2.5} /> Registrar un movimiento
-      </h2>
-      <div className="mt-3">
-        <DictationInput onSubmit={handleSubmit} />
-      </div>
+  // ---------------------------------------------------------------- capas ---
+  // Las cosas que se abren ENCIMA de la pantalla, no en vez de ella. Antes casi
+  // todas eran secciones con su propio puesto en el menú; ahora son capas, que
+  // es lo que siempre fueron: sitios de los que uno sale, no en los que vive.
+  const [capa, setCapa] = useState<Capa>(null);
+  const [panelAjustes, setPanelAjustes] = useState<PanelAjustes | null>(null);
+  // Qué grupo de "Dinero" se abrió. La lista de Dinero es solo el resumen; las
+  // acciones de verdad (crear, transferir, aportar, abonar) siguen viviendo en
+  // las vistas de siempre, que se abren desde aquí. Así la pantalla nueva es
+  // más limpia sin que se pierda nada de lo que la app sabía hacer.
+  const [panelDinero, setPanelDinero] = useState<'cuenta' | 'cajita' | 'deuda' | null>(null);
+  const [detalle, setDetalle] = useState<Transaction | null>(null);
+  const [guardado, setGuardado] = useState<Guardado | null>(null);
 
-      {/* Deliberately small and below: dictating is the fast path this screen is
-          built around, and a form of equal weight beside it would turn every
-          entry into a choice. This is the way out for the movement the parser
-          would fight — an odd amount, a date that is not today, nothing worth
-          saying out loud. */}
-      <button
-        type="button"
-        onClick={() => setPending(movimientoEnBlanco())}
-        className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-2 py-1.5 text-[11px] font-bold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
-      >
-        <Plus className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
-        O añádelo a mano
-      </button>
+  const nombreDeCuenta = (id: string | null) =>
+    id === null ? null : (cajitas.find((c) => c.id === id)?.nombre ?? null);
 
-      {/* One question at a time, right where movements get entered, and only
-          when the app genuinely cannot tell. Answering either way settles it
-          for good — a "no" is what stops the pair coming back. */}
-      <DudaContacto
-        duda={dudaActual}
-        onUnir={(d) => void almacen.unirContactos(d.a.clave, d.b.clave, d.a.nombre)}
-        onSeparar={(d) => void almacen.separarContactos(d.a.clave, d.b.clave, d.a.nombre)}
-      />
-    </section>
+  // La cuenta que se usa cuando no dices ninguna. Antes esto era un desplegable
+  // de 117px en el formulario, y la respuesta era la misma el 95% de las veces.
+  const cuentaPorDefecto = cuentasParaElegir[0]?.id ?? null;
+
+  // Un aviso solo si de verdad te pasaste de un tope. Nunca "te quedan $X" por
+  // cada uno de los cuatro topes: eso es ruido con forma de dato.
+  const topePasado = useMemo(() => {
+    for (const p of almacen.datos.presupuestos) {
+      const gastado = gastos.find((g) => g.category === p.categoria)?.total ?? 0;
+      if (gastado > p.montoCop) {
+        return {
+          texto: `Te pasaste ${formatCop(gastado - p.montoCop)} en ${catalogoActual.de(p.categoria).nombre}`,
+          onTocar: () => setSection('mes'),
+        };
+      }
+    }
+    return null;
+  }, [almacen.datos.presupuestos, gastos, catalogoActual]);
+
+  const patrimonioCop = useMemo(
+    () => totalVisible(cajitas, cajitaMovimientos, transacciones, mostrarAhorro),
+    [cajitas, cajitaMovimientos, transacciones, mostrarAhorro],
   );
-
-  const conBarraDeMes = section === 'resumen' || section === 'movimientos';
 
   if (almacen.cargando) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
-        <p className="text-sm font-bold text-[var(--fin-ink-faint)]">{COPY.almacen.cargando}</p>
+        <p className="text-[15px] text-[var(--fin-ink-faint)]">{COPY.almacen.cargando}</p>
       </div>
     );
   }
 
   return (
     <CatalogoProvider categorias={categorias}>
-    <FinanzasShell
-      section={section}
-      onSectionChange={setSection}
-      toolbar={conBarraDeMes ? monthNav : undefined}
-      cuenta={cuenta}
-      temaToggle={<TemaToggle tema={tema} onCambiar={onCambiarTema} />}
-      onBack={onBack}
-    >
-      {/* Storage that cannot remember has to say so — silently losing a month of
-          entries is far worse than an ugly banner. */}
-      {!almacen.persistente ? (
-        <div className="mx-auto mb-4 flex max-w-6xl items-start gap-2.5 rounded-2xl bg-[var(--fin-warn-bg)] px-4 py-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn)]" strokeWidth={3} />
-          <p className="text-[11px] leading-relaxed text-[var(--fin-warn-ink)]">
-            {COPY.almacen.sinPersistencia}
-          </p>
-        </div>
-      ) : null}
-
-      {almacen.error ? (
-        <div className="mx-auto mb-4 flex max-w-6xl items-start gap-2.5 rounded-2xl bg-[var(--fin-out-bg)] px-4 py-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" strokeWidth={3} />
-          <p className="flex-1 text-[11px] leading-relaxed text-[var(--fin-out-ink)]">{almacen.error}</p>
-          <button
-            type="button"
-            onClick={almacen.descartarError}
-            aria-label={COPY.almacen.descartar}
-            className="shrink-0 rounded-lg p-1 text-[var(--fin-out-ink)]"
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={3} />
-          </button>
-        </div>
-      ) : null}
-
-      {section === 'resumen' ? (
-        // Mobile stacks; from `lg` the same blocks become a two-column dashboard
-        // with the KPI row spanning the full width above them.
-        <div className="mx-auto flex max-w-7xl flex-col gap-5">
-          <div className="lg:hidden">{monthNav}</div>
-
-          {/* Solo para un libro totalmente en blanco. No se mira `cajitas`
-              porque useAlmacen siempre siembra una cuenta "Efectivo" para
-              cada usuario nuevo -- ese arranque no cuenta como actividad, así
-              que el único indicador real de "nunca ha usado la app" es que no
-              haya un solo movimiento registrado. */}
-          {transacciones.length === 0 ? (
-            <BienvenidaCard onEmpezar={() => setSection('cuentas')} />
-          ) : null}
-
-          <PatrimonioCard
-            cajitas={cajitas}
-            transacciones={transacciones}
-            movimientos={cajitaMovimientos}
-            onAgregar={() => setSection('cuentas')}
-            mostrarAhorro={mostrarAhorro}
+      <FinanzasShell
+        section={section}
+        onSectionChange={setSection}
+        onBack={onBack}
+        accion={
+          <BotonAnotar
+            onDictado={handleSubmit}
+            onManual={() => setPending(movimientoEnBlanco())}
+            onBuscar={() => setCapa('buscar')}
           />
-
-          <EstadoDelMes totals={totals} delMes={delMes} mes={month} hoy={today} />
-
-          <PresupuestosView
-            presupuestos={almacen.datos.presupuestos}
-            transacciones={transacciones}
-            mes={month}
-            hoy={today}
-            onFijar={(cat, monto) => void almacen.fijarPresupuesto(cat, monto)}
-            onQuitar={(cat) => void almacen.quitarPresupuesto(cat)}
-          />
-
-          <KpiRow totals={totals} />
-
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="flex flex-col gap-5 min-w-0">
-              {registrar}
-              <CategoryBreakdown slices={gastos} title="En qué se te va" />
-            </div>
-
-            <div className="flex flex-col gap-5 min-w-0">
-              <CategoryBreakdown slices={ingresos} title="De dónde entra" />
-
-              <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-                <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
-                  <History className="h-4 w-4" strokeWidth={2.5} /> Últimos movimientos
-                </h2>
-                <div className="mt-3">
-                  <TransactionList
-                    transactions={delMes.slice(0, 5)}
-                    conSenal={conSenal}
-                    onAnalizar={setAnalizando}
-                    onDelete={(id) => void almacen.borrarTransaccion(id)}
-                    onEdit={setEditando}
-                  />
-                </div>
-              </section>
-            </div>
+        }
+      >
+        {/* Storage that cannot remember has to say so — silently losing a month of
+ entries is far worse than an ugly banner. */}
+        {!almacen.persistente ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] px-4 py-3">
+            <AlertTriangle
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn)]"
+              strokeWidth={2.5}
+            />
+            <p className="text-[13px] leading-relaxed text-[var(--fin-warn-ink)]">
+              {COPY.almacen.sinPersistencia}
+            </p>
           </div>
+        ) : null}
 
-          <DetalleMes delMes={delMes} transacciones={transacciones} mes={month} />
-        </div>
-      ) : null}
+        {almacen.error ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3">
+            <AlertTriangle
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]"
+              strokeWidth={2.5}
+            />
+            <p className="flex-1 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
+              {almacen.error}
+            </p>
+            <button
+              type="button"
+              onClick={almacen.descartarError}
+              aria-label={COPY.almacen.descartar}
+              className="shrink-0 rounded-[var(--fin-r-control)] p-1 text-[var(--fin-out-ink)]"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+            </button>
+          </div>
+        ) : null}
 
-      {section === 'movimientos' ? (
-        <div className="mx-auto flex max-w-4xl flex-col gap-5">
-          {/* The month navigator disappears while a filter is on: it would be
-              lying about what the list below shows, which is the whole ledger. */}
-          {sinFiltro ? <div className="lg:hidden">{monthNav}</div> : null}
-          {registrar}
-          <BuscadorMovimientos
-            filtro={filtro}
-            onCambiar={setFiltro}
-            resultados={visibles}
-            cuentas={cuentasParaElegir}
-          />
-          <TransactionList
-            transactions={visibles}
+        {/* ------------------------------------------------------- 1. Inicio --- */}
+        {section === 'inicio' ? (
+          <InicioView
+            month={month}
+            onCambiarMes={() => setSection('mes')}
+            onBuscar={() => setCapa('buscar')}
+            onAjustes={() => setSection('ajustes')}
+            patrimonioCop={patrimonioCop}
+            gastosCop={totals.gastos}
+            ingresosCop={totals.ingresos}
+            onVerMes={() => setSection('mes')}
+            movimientos={delMes}
             conSenal={conSenal}
-            onAnalizar={setAnalizando}
-            onDelete={(id) => void almacen.borrarTransaccion(id)}
-            onEdit={setEditando}
+            onAbrirMovimiento={setDetalle}
+            aviso={topePasado}
           />
-        </div>
-      ) : null}
+        ) : null}
 
-      {section === 'tendencias' ? (
-        <TendenciasView transacciones={transacciones} mes={month} />
-      ) : null}
+        {/* ------------------------------------------------------- 2. Dinero --- */}
+        {section === 'dinero' ? (
+          <DineroView
+            transacciones={transacciones}
+            cajitas={cajitas}
+            movimientos={cajitaMovimientos}
+            mostrarAhorro={mostrarAhorro}
+            onAbrir={(cajita) =>
+              setPanelDinero(
+                ES_PASIVO[cajita.tipo] ? 'deuda' : cajita.tipo === 'cajita' ? 'cajita' : 'cuenta',
+              )
+            }
+            onCrear={() => setPanelDinero('cuenta')}
+          />
+        ) : null}
 
-      {section === 'ahorro' ? (
-        // Sin max-w aquí -- CajitasView/MetasView ya deciden su propio ancho
-        // por dentro (ver el comentario en la sección 'configuracion' más
-        // abajo sobre por qué un max-w exterior anularía el suyo).
-        <div className="flex flex-col gap-5">
-          <div className="mx-auto grid w-full max-w-3xl grid-cols-2 gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5">
-            {PESTANAS_AHORRO.map((pestana) => {
-              const activa = pestanaAhorro === pestana.id;
-              return (
-                <button
-                  key={pestana.id}
-                  type="button"
-                  onClick={() => setPestanaAhorro(pestana.id)}
-                  aria-pressed={activa}
-                  className={`flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors ${
-                    activa ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]' : 'text-[var(--fin-ink-soft)]'
-                  }`}
-                >
-                  <pestana.icon className={`h-4 w-4 shrink-0 ${activa ? pestana.color : ''}`} aria-hidden="true" />
-                  {pestana.label}
-                </button>
-              );
-            })}
-          </div>
+        {/* ---------------------------------------------------------- 3. Mes --- */}
+        {section === 'mes' ? (
+          <MesView
+            month={month}
+            maxMonth={thisMonth}
+            onCambiarMes={setMonth}
+            shift={shiftMonth}
+            totals={totals}
+            gastos={gastos}
+            ingresos={ingresos}
+            delMes={delMes}
+            transacciones={transacciones}
+            topes={
+              <PresupuestosView
+                presupuestos={almacen.datos.presupuestos}
+                transacciones={transacciones}
+                mes={month}
+                hoy={today}
+                onFijar={(categoria, montoCop) =>
+                  void almacen.fijarPresupuesto(categoria, montoCop)
+                }
+                onQuitar={(categoria) => void almacen.quitarPresupuesto(categoria)}
+              />
+            }
+          />
+        ) : null}
 
-          {pestanaAhorro === 'cajitas' ? (
-            <CajitasView
-              tipo="cajita"
-              cajitas={cajitas}
-              transacciones={transacciones}
-              movimientos={cajitaMovimientos}
-              onCrear={(datos) => void almacen.crearCajita(datos)}
-              onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
-              onMovimiento={(cajitaId, kind, deltaCop) =>
-                void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
+        {/* ------------------------------------------------------ 4. Ajustes --- */}
+        {section === 'ajustes' ? (
+          <AjustesView
+            onAbrir={setPanelAjustes}
+            temaToggle={<TemaToggle tema={tema} onCambiar={onCambiarTema} />}
+            cuenta={cuenta}
+            mostrarAhorro={mostrarAhorro}
+            onMostrarAhorro={setMostrarAhorro}
+          />
+        ) : null}
+
+        {panelDinero !== null ? (
+          <HojaPanel
+            titulo={
+              panelDinero === 'deuda'
+                ? 'Tarjetas y deudas'
+                : panelDinero === 'cajita'
+                  ? 'Ahorros'
+                  : 'Cuentas'
+            }
+            onCerrar={() => setPanelDinero(null)}
+          >
+            {panelDinero === 'deuda' ? (
+              <DeudasView
+                cajitas={cajitas}
+                movimientos={cajitaMovimientos}
+                onCrear={(datos) => void almacen.crearCajita(datos)}
+                onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+                onMovimiento={(cajitaId, kind, deltaCop, categoria) =>
+                  void almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria })
+                }
+                onEliminar={(id) => void almacen.borrarCajita(id)}
+                cuentas={cuentasParaElegir}
+                onAbonar={(datos) => void almacen.abonarDeuda(datos)}
+              />
+            ) : (
+              <CajitasView
+                tipo={panelDinero}
+                cajitas={cajitas}
+                transacciones={transacciones}
+                movimientos={cajitaMovimientos}
+                onCrear={(datos) => void almacen.crearCajita(datos)}
+                onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+                onMovimiento={(cajitaId, kind, deltaCop) =>
+                  void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
+                }
+                onEliminar={(id) => void almacen.borrarCajita(id)}
+                destinos={destinosDeTransferencia}
+                cuentasBancarias={cuentasParaElegir}
+                onTransferir={(d) => void almacen.transferirEntreCuentas(d)}
+              />
+            )}
+          </HojaPanel>
+        ) : null}
+
+        {/* ------------------------------------------- los paneles de Ajustes ---
+ Cada uno se abre a pantalla completa encima de la lista. Antes eran
+ pestañas escondidas tras `hidden lg:grid`, y por eso cuatro de ellos
+ no existían en el celular. */}
+        {panelAjustes !== null ? (
+          <HojaPanel
+            titulo={PANELES_AJUSTES.find((p) => p.id === panelAjustes)?.label ?? ''}
+            onCerrar={() => setPanelAjustes(null)}
+          >
+            {panelAjustes === 'cuentas' ? (
+              <ConfiguracionView
+                cajitas={cajitas}
+                transacciones={transacciones}
+                movimientos={cajitaMovimientos}
+                onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
+                onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+              />
+            ) : panelAjustes === 'categorias' ? (
+              <CategoriasEditor
+                categorias={categorias}
+                transacciones={transacciones}
+                onCrear={(datos) => void almacen.crearCategoria(datos)}
+                onActualizar={(c) => void almacen.actualizarCategoria(c)}
+                onArchivar={(id) => void almacen.archivarCategoria(id)}
+                onBorrar={(id) => void almacen.borrarCategoria(id)}
+              />
+            ) : panelAjustes === 'topes' ? (
+              <PresupuestosView
+                presupuestos={almacen.datos.presupuestos}
+                transacciones={transacciones}
+                mes={month}
+                hoy={today}
+                onFijar={(categoria, montoCop) =>
+                  void almacen.fijarPresupuesto(categoria, montoCop)
+                }
+                onQuitar={(categoria) => void almacen.quitarPresupuesto(categoria)}
+              />
+            ) : panelAjustes === 'metas' ? (
+              <MetasView
+                metas={almacen.datos.metas}
+                cajitas={cajitas}
+                movimientos={cajitaMovimientos}
+                onCrear={(datos) => void almacen.crearMeta(datos)}
+                onActualizar={(meta) => void almacen.actualizarMeta(meta)}
+                onEliminar={(id) => void almacen.borrarMeta(id)}
+              />
+            ) : panelAjustes === 'recurrentes' ? (
+              <RecurrentesView
+                recurrentes={almacen.datos.recurrentes}
+                transacciones={transacciones}
+                cuentas={cuentasParaElegir}
+                mes={month}
+                hoy={today}
+                onCrear={(d) => void almacen.crearRecurrente(d)}
+                onBorrar={(id) => void almacen.borrarRecurrente(id)}
+                onConfirmar={(p) => void almacen.confirmarRecurrente(p)}
+              />
+            ) : panelAjustes === 'preguntar' ? (
+              <AsesorView
+                transacciones={transacciones}
+                cajitas={cajitas}
+                cajitasBalances={cajitasBalances}
+                categorias={categorias}
+                lexico={lexico}
+                onCrearTransaccion={(tx) => {
+                  setPanelAjustes(null);
+                  setPending(tx);
+                }}
+              />
+            ) : panelAjustes === 'extractos' ? (
+              <AnalistaView
+                existentes={transacciones}
+                onImportar={(nuevos) => void almacen.importarTransacciones(nuevos)}
+              />
+            ) : panelAjustes === 'gmf' ? (
+              <PanelGmf
+                transacciones={transacciones}
+                mes={month}
+                anioActual={Number(bogotaDate().slice(0, 4))}
+                cuentas={cuentasParaElegir}
+                uvt={gmf.uvt}
+                onCambiarUvt={gmf.setUvt}
+                cuentasGmf={gmf.cuentasGmf}
+                onCambiarCuentas={gmf.setCuentasGmf}
+                regimen={gmf.regimen}
+                onCambiarRegimen={gmf.setRegimen}
+                cuentaExentaId={gmf.cuentaExentaId}
+                onCambiarCuentaExenta={gmf.setCuentaExentaId}
+              />
+            ) : panelAjustes === 'nombres' ? (
+              <ContactosView
+                transacciones={transacciones}
+                contactos={almacen.datos.contactos}
+                onUnir={(a, b, nombre) => void almacen.unirContactos(a, b, nombre)}
+                onSeparar={(a, b, nombre) => void almacen.separarContactos(a, b, nombre)}
+                onRenombrar={(c) => void almacen.actualizarContacto(c)}
+                onDeshacer={(id) => void almacen.borrarContacto(id)}
+                onApodar={(clave, nombre, apodo, quitar) =>
+                  void almacen.apodarParte(clave, nombre, apodo, quitar)
+                }
+              />
+            ) : (
+              <PanelRespaldo
+                datos={almacen.datos}
+                hoy={today}
+                onRestaurar={(d) => void almacen.restaurar(d)}
+                onGenerarInforme={() => {
+                  setPanelAjustes(null);
+                  setMostrarReporte(true);
+                }}
+              />
+            )}
+          </HojaPanel>
+        ) : null}
+
+        {/* ------------------------------------------------------- el buscador --- */}
+        {capa === 'buscar' ? (
+          <HojaPanel
+            titulo="Buscar"
+            onCerrar={() => {
+              setCapa(null);
+              setFiltro(FILTRO_VACIO);
+            }}
+          >
+            <div className="flex flex-col gap-5">
+              <BuscadorMovimientos
+                filtro={filtro}
+                onCambiar={setFiltro}
+                resultados={visibles}
+                cuentas={cuentasParaElegir}
+              />
+              <TransactionList transactions={visibles} conSenal={conSenal} onAbrir={setDetalle} />
+            </div>
+          </HojaPanel>
+        ) : null}
+
+        {/* ------------------------------------------------------------ capas --- */}
+
+        {/* La pantalla de anotar. Sigue siendo obligatorio ver el número antes de
+ que se guarde — eso no cambió. Lo que cambió es que dejó de parecer un
+ formulario. */}
+        {pending ? (
+          <Captura
+            parsed={pending}
+            cuentaPorDefecto={cuentaPorDefecto}
+            onSave={handleSave}
+            onCancel={() => setPending(null)}
+          />
+        ) : null}
+
+        {detalle ? (
+          <DetalleMovimiento
+            tx={detalle}
+            nombreCuenta={nombreDeCuenta(detalle.cuentaId)}
+            onCerrar={() => setDetalle(null)}
+            onEditar={(tx) => {
+              setDetalle(null);
+              setEditando(tx);
+            }}
+            onAnalizar={(tx) => {
+              setDetalle(null);
+              setAnalizando(tx);
+            }}
+            onBorrar={(id) => {
+              setDetalle(null);
+              void almacen.borrarTransaccion(id);
+            }}
+          />
+        ) : null}
+
+        {analizando ? (
+          <AnalisisMovimiento
+            tx={analizando}
+            historial={transacciones}
+            onCerrar={() => setAnalizando(null)}
+          />
+        ) : null}
+
+        {/* Editar sigue usando el formulario completo de siempre, con sus seis
+ campos. Es lo correcto: al corregir algo uno SÍ quiere ver todo y
+ poder tocarlo. Lo que se adelgazó fue el camino de crear, no el de
+ arreglar. */}
+        {editando ? (
+          <ConfirmSheet
+            modo="editar"
+            parsed={comoParseado(editando)}
+            cuentas={cuentasParaElegir}
+            cuentaInicial={editando.cuentaId}
+            fechaInicial={editando.occurredOn}
+            fechaMax={today}
+            onSave={handleUpdate}
+            onCancel={() => setEditando(null)}
+          />
+        ) : null}
+
+        <AvisoGuardado
+          guardado={guardado}
+          onDeshacer={(id) => {
+            void almacen.borrarTransaccion(id);
+            setGuardado(null);
+          }}
+          onCerrar={() => setGuardado(null)}
+        />
+
+        {/* La bienvenida, una pregunta a la vez. Se decide con una bandera que se
+ guarda de verdad, no con `transacciones.length === 0`: así no vuelve a
+ aparecer el día que alguien borre su único movimiento. */}
+        {!onboarding.terminado ? (
+          <Onboarding
+            onTerminar={({ nombre, banco, saldoCop }) => {
+              if (nombre) onboarding.guardarNombre(nombre);
+              if (banco) {
+                void almacen.crearCajita({
+                  nombre: banco,
+                  icon: 'wallet',
+                  tipo: 'cuenta',
+                  metaCop: null,
+                  tasaEaPct: null,
+                  saldoInicialCop: saldoCop ?? 0,
+                });
               }
-              onEliminar={(id) => void almacen.borrarCajita(id)}
-              destinos={destinosDeTransferencia}
-              cuentasBancarias={cuentasParaElegir}
-              onTransferir={(d) => void almacen.transferirEntreCuentas(d)}
-              mostrarEnResumen={mostrarAhorro}
-              onMostrarEnResumen={setMostrarAhorro}
-            />
-          ) : (
-            <MetasView
-              metas={metas}
-              cajitas={cajitas}
-              movimientos={cajitaMovimientos}
-              onCrear={(datos) => void almacen.crearMeta(datos)}
-              onActualizar={(meta) => void almacen.actualizarMeta(meta)}
-              onEliminar={(id) => void almacen.borrarMeta(id)}
-            />
-          )}
-        </div>
-      ) : null}
+              onboarding.terminar();
+            }}
+            onAnotarHablando={() => setPending(movimientoEnBlanco())}
+          />
+        ) : null}
 
-      {section === 'cuentas' ? (
-        <CajitasView
-          tipo="cuenta"
-          cajitas={cajitas}
-          transacciones={transacciones}
-          movimientos={cajitaMovimientos}
-          onCrear={(datos) => void almacen.crearCajita(datos)}
-          onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
-          onMovimiento={(cajitaId, kind, deltaCop) =>
-            void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
-          }
-          onEliminar={(id) => void almacen.borrarCajita(id)}
-          destinos={destinosDeTransferencia}
-          cuentasBancarias={cuentasParaElegir}
-          onTransferir={(d) => void almacen.transferirEntreCuentas(d)}
-        />
-      ) : null}
-
-      {section === 'deudas' ? (
-        <DeudasView
-          cajitas={cajitas}
-          movimientos={cajitaMovimientos}
-          onCrear={(datos) => void almacen.crearCajita(datos)}
-          onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
-          onMovimiento={(cajitaId, kind, deltaCop, categoria) =>
-            void almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria })
-          }
-          onEliminar={(id) => void almacen.borrarCajita(id)}
-          cuentas={cuentasParaElegir}
-          onAbonar={(datos) => void almacen.abonarDeuda(datos)}
-        />
-      ) : null}
-
-      {section === 'recurrentes' ? (
-        <RecurrentesView
-          recurrentes={almacen.datos.recurrentes}
-          transacciones={transacciones}
-          cuentas={cuentasParaElegir}
+        <ReporteFinancieroModal
+          abierto={mostrarReporte}
+          onCerrar={() => setMostrarReporte(false)}
           mes={month}
-          hoy={today}
-          onCrear={(d) => void almacen.crearRecurrente(d)}
-          onBorrar={(id) => void almacen.borrarRecurrente(id)}
-          onConfirmar={(p) => void almacen.confirmarRecurrente(p)}
-        />
-      ) : null}
-
-      {section === 'contactos' ? (
-        <ContactosView
-          transacciones={transacciones}
-          contactos={almacen.datos.contactos}
-          onUnir={(a, b, nombre) => void almacen.unirContactos(a, b, nombre)}
-          onSeparar={(a, b, nombre) => void almacen.separarContactos(a, b, nombre)}
-          onRenombrar={(c) => void almacen.actualizarContacto(c)}
-          onDeshacer={(id) => void almacen.borrarContacto(id)}
-          onApodar={(clave, nombre, apodo, quitar) =>
-            void almacen.apodarParte(clave, nombre, apodo, quitar)
-          }
-        />
-      ) : null}
-
-      {section === 'configuracion' ? (
-        // Sin max-w aquí a propósito: ese límite vivía en ESTE contenedor y
-        // envolvía tanto la barra de pestañas como el contenido de abajo, así
-        // que por más que TendenciasView pidiera más ancho por su cuenta,
-        // nunca podía superar al de su padre -- un max-w anidado jamás gana
-        // al de afuera. Ahora la barra conserva su propio ancho cómodo de
-        // fila de botones, y cada pestaña decide el suyo sin que nada la frene.
-        <div className="flex flex-col gap-5">
-          {/* Solo en escritorio: en el celular esta sección siempre fue solo
-              Ajustes, y Contactos/Tendencias se alcanzan por su propio botón
-              en "Más" -- no tiene sentido esconder la pestaña detrás de otra
-              pestaña ahí. `pestanaConfiguracion` nunca cambia de 'ajustes' en
-              el celular porque esta barra, la única forma de cambiarlo, está
-              oculta. */}
-          <div className="mx-auto hidden w-full max-w-3xl gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5 lg:grid lg:grid-cols-3">
-            {PESTANAS_CONFIGURACION.map((pestana) => {
-              const activa = pestanaConfiguracion === pestana.id;
-              return (
-                <button
-                  key={pestana.id}
-                  type="button"
-                  onClick={() => setPestanaConfiguracion(pestana.id)}
-                  aria-pressed={activa}
-                  className={`flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors ${
-                    activa ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]' : 'text-[var(--fin-ink-soft)]'
-                  }`}
-                >
-                  <pestana.icon className={`h-4 w-4 shrink-0 ${activa ? pestana.color : ''}`} aria-hidden="true" />
-                  {pestana.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {pestanaConfiguracion === 'contactos' ? (
-            <ContactosView
-              transacciones={transacciones}
-              contactos={almacen.datos.contactos}
-              onUnir={(a, b, nombre) => void almacen.unirContactos(a, b, nombre)}
-              onSeparar={(a, b, nombre) => void almacen.separarContactos(a, b, nombre)}
-              onRenombrar={(c) => void almacen.actualizarContacto(c)}
-              onDeshacer={(id) => void almacen.borrarContacto(id)}
-              onApodar={(clave, nombre, apodo, quitar) =>
-                void almacen.apodarParte(clave, nombre, apodo, quitar)
-              }
-            />
-          ) : pestanaConfiguracion === 'tendencias' ? (
-            <TendenciasView transacciones={transacciones} mes={month} />
-          ) : pestanaConfiguracion === 'categorias' ? (
-            <CategoriasEditor
-              categorias={categorias}
-              transacciones={transacciones}
-              onCrear={(datos) => void almacen.crearCategoria(datos)}
-              onActualizar={(c) => void almacen.actualizarCategoria(c)}
-              onArchivar={(id) => void almacen.archivarCategoria(id)}
-              onBorrar={(id) => void almacen.borrarCategoria(id)}
-            />
-          ) : pestanaConfiguracion === 'gmf' ? (
-            <PanelGmf
-              transacciones={transacciones}
-              mes={month}
-              anioActual={Number(bogotaDate().slice(0, 4))}
-              cuentas={cuentasParaElegir}
-              uvt={gmf.uvt}
-              onCambiarUvt={gmf.setUvt}
-              cuentasGmf={gmf.cuentasGmf}
-              onCambiarCuentas={gmf.setCuentasGmf}
-              regimen={gmf.regimen}
-              onCambiarRegimen={gmf.setRegimen}
-              cuentaExentaId={gmf.cuentaExentaId}
-              onCambiarCuentaExenta={gmf.setCuentaExentaId}
-            />
-          ) : pestanaConfiguracion === 'respaldo' ? (
-            <PanelRespaldo
-              datos={almacen.datos}
-              hoy={today}
-              onRestaurar={(d) => void almacen.restaurar(d)}
-              onGenerarInforme={() => setMostrarReporte(true)}
-            />
-          ) : (
-            <ConfiguracionView
-              cajitas={cajitas}
-              transacciones={transacciones}
-              movimientos={cajitaMovimientos}
-              onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
-              onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
-            />
-          )}
-        </div>
-      ) : null}
-
-      {section === 'analista' ? (
-        <AnalistaView
-          existentes={transacciones}
-          onImportar={(nuevos) => void almacen.importarTransacciones(nuevos)}
-        />
-      ) : null}
-
-      {section === 'asesor' ? (
-        <AsesorView 
-          transacciones={transacciones}
-          cajitas={cajitas}
+          datos={almacen.datos}
           cajitasBalances={cajitasBalances}
-          categorias={categorias}
-          lexico={lexico}
-          onCrearTransaccion={(tx) => setPending(tx)}
+          emailUsuario={cuenta?.email}
         />
-      ) : null}
-
-      {/* Confirmation always gates the write — see ConfirmSheet for why. */}
-      {pending ? (
-        <ConfirmSheet
-          parsed={pending}
-          cuentas={cuentasParaElegir}
-          transacciones={transacciones}
-          onSave={handleSave}
-          onCancel={() => setPending(null)}
-        />
-      ) : null}
-
-      {analizando ? (
-        <AnalisisMovimiento
-          tx={analizando}
-          historial={transacciones}
-          onCerrar={() => setAnalizando(null)}
-        />
-      ) : null}
-
-      {editando ? (
-        <ConfirmSheet
-          modo="editar"
-          parsed={comoParseado(editando)}
-          cuentas={cuentasParaElegir}
-          cuentaInicial={editando.cuentaId}
-          fechaInicial={editando.occurredOn}
-          fechaMax={today}
-          onSave={handleUpdate}
-          onCancel={() => setEditando(null)}
-        />
-      ) : null}
-
-      <ReporteFinancieroModal
-        abierto={mostrarReporte}
-        onCerrar={() => setMostrarReporte(false)}
-        mes={month}
-        datos={almacen.datos}
-        cajitasBalances={cajitasBalances}
-        emailUsuario={cuenta?.email}
-      />
-    </FinanzasShell>
+      </FinanzasShell>
     </CatalogoProvider>
   );
 };

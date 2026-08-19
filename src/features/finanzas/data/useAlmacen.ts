@@ -86,7 +86,9 @@ export interface Almacen {
   actualizarMeta: (meta: Meta) => Promise<void>;
   borrarMeta: (id: string) => Promise<void>;
 
-  crearCategoria: (datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>) => Promise<void>;
+  crearCategoria: (
+    datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>,
+  ) => Promise<void>;
   actualizarCategoria: (categoria: CategoriaPersonal) => Promise<void>;
   /** Archives it. The movements filed under it keep pointing here. */
   archivarCategoria: (id: string) => Promise<void>;
@@ -210,7 +212,14 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         // like every other account: it holds a balance, appears in Configuración,
         // and can be renamed or archived. Keyed uniquely per user so multiple accounts
         // do not collide on the primary key in Postgres.
-        if (!cargado.cajitas.some((c) => c.id === ID_EFECTIVO || c.id === ID_EFECTIVO_VIEJO || c.nombre.toLowerCase() === 'efectivo')) {
+        if (
+          !cargado.cajitas.some(
+            (c) =>
+              c.id === ID_EFECTIVO ||
+              c.id === ID_EFECTIVO_VIEJO ||
+              c.nombre.toLowerCase() === 'efectivo',
+          )
+        ) {
           const efectivo = cuentaEfectivo(new Date().toISOString(), nuevoId('caj'));
           cargado.cajitas = [...cargado.cajitas, efectivo];
           try {
@@ -417,9 +426,8 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         categoria: categoria ?? null,
         createdAt: new Date().toISOString(),
       };
-      await aplicar(
-        { ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, movimiento] },
-        () => repo.guardarCajitaMovimientos([movimiento]),
+      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, movimiento] }, () =>
+        repo.guardarCajitaMovimientos([movimiento]),
       );
     },
     [aplicar, datos, repo],
@@ -794,7 +802,10 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
   const actualizarRecurrente = useCallback(
     async (recurrente: Recurrente) => {
       await aplicar(
-        { ...datos, recurrentes: datos.recurrentes.map((r) => (r.id === recurrente.id ? recurrente : r)) },
+        {
+          ...datos,
+          recurrentes: datos.recurrentes.map((r) => (r.id === recurrente.id ? recurrente : r)),
+        },
         () => repo.guardarRecurrente(recurrente),
       );
     },

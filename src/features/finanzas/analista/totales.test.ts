@@ -24,7 +24,12 @@ describe('totalesDelAnalisis', () => {
       mov('gasto', 180_000, 'mercado'),
       mov('gasto', 45_000, 'transporte'),
     ]);
-    expect(t).toMatchObject({ ingresos: 2_000_000, gastos: 225_000, balance: 1_775_000, contados: 3 });
+    expect(t).toMatchObject({
+      ingresos: 2_000_000,
+      gastos: 225_000,
+      balance: 1_775_000,
+      contados: 3,
+    });
   });
 
   // The whole reason this module exists.
@@ -71,7 +76,12 @@ describe('totalesDelAnalisis', () => {
   });
 
   it('is all zeros for an empty statement', () => {
-    expect(totalesDelAnalisis([])).toMatchObject({ ingresos: 0, gastos: 0, balance: 0, contados: 0 });
+    expect(totalesDelAnalisis([])).toMatchObject({
+      ingresos: 0,
+      gastos: 0,
+      balance: 0,
+      contados: 0,
+    });
   });
 
   it('is all zeros when every row is excluded', () => {

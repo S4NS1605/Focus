@@ -104,8 +104,14 @@ export class RepositorioIndexedDB implements Repositorio {
     // Issued together on one transaction so every list is read from the same
     // consistent point, then awaited.
     const [
-      transacciones, cajitas, cajitaMovimientos, metas,
-      categorias, contactos, presupuestos, recurrentes,
+      transacciones,
+      cajitas,
+      cajitaMovimientos,
+      metas,
+      categorias,
+      contactos,
+      presupuestos,
+      recurrentes,
     ] = await Promise.all([
       pedir<Transaction[]>(tx.objectStore(STORES.transacciones).getAll()),
       pedir<Cajita[]>(tx.objectStore(STORES.cajitas).getAll()),
@@ -118,8 +124,14 @@ export class RepositorioIndexedDB implements Repositorio {
     ]);
 
     return {
-      transacciones, cajitas, cajitaMovimientos, metas,
-      categorias, contactos, presupuestos, recurrentes,
+      transacciones,
+      cajitas,
+      cajitaMovimientos,
+      metas,
+      categorias,
+      contactos,
+      presupuestos,
+      recurrentes,
     };
   }
 
@@ -146,28 +158,25 @@ export class RepositorioIndexedDB implements Repositorio {
   async borrarCajita(id: string): Promise<void> {
     // All three stores join one transaction: a pocket that vanished while its
     // movements survived would resurrect as a phantom balance on next load.
-    await this.escribir(
-      [STORES.cajitas, STORES.cajitaMovimientos, STORES.metas],
-      (tx) => {
-        tx.objectStore(STORES.cajitas).delete(id);
+    await this.escribir([STORES.cajitas, STORES.cajitaMovimientos, STORES.metas], (tx) => {
+      tx.objectStore(STORES.cajitas).delete(id);
 
-        const movimientos = tx.objectStore(STORES.cajitaMovimientos);
-        const cursor = movimientos.index('porCajita').openCursor(IDBKeyRange.only(id));
-        cursor.onsuccess = () => {
-          const actual = cursor.result;
-          if (!actual) return;
-          actual.delete();
-          actual.continue();
-        };
+      const movimientos = tx.objectStore(STORES.cajitaMovimientos);
+      const cursor = movimientos.index('porCajita').openCursor(IDBKeyRange.only(id));
+      cursor.onsuccess = () => {
+        const actual = cursor.result;
+        if (!actual) return;
+        actual.delete();
+        actual.continue();
+      };
 
-        const metas = tx.objectStore(STORES.metas);
-        metas.getAll().onsuccess = function () {
-          for (const meta of this.result as Meta[]) {
-            if (meta.cajitaId === id) metas.put({ ...meta, cajitaId: null });
-          }
-        };
-      },
-    );
+      const metas = tx.objectStore(STORES.metas);
+      metas.getAll().onsuccess = function () {
+        for (const meta of this.result as Meta[]) {
+          if (meta.cajitaId === id) metas.put({ ...meta, cajitaId: null });
+        }
+      };
+    });
   }
 
   async guardarCajitaMovimientos(movimientos: readonly CajitaMovimiento[]): Promise<void> {

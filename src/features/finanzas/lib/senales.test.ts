@@ -149,8 +149,18 @@ describe('creciendo', () => {
   it('reports a counterparty taking noticeably more than before', () => {
     const agosto = tx({ id: 'ago', description: 'Para ANA GOMEZ', amountCop: 300_000 });
     const historial = [
-      tx({ id: 'jun', description: 'Para ANA GOMEZ', amountCop: 100_000, occurredOn: '2026-06-05' }),
-      tx({ id: 'jul', description: 'Para ANA GOMEZ', amountCop: 100_000, occurredOn: '2026-07-05' }),
+      tx({
+        id: 'jun',
+        description: 'Para ANA GOMEZ',
+        amountCop: 100_000,
+        occurredOn: '2026-06-05',
+      }),
+      tx({
+        id: 'jul',
+        description: 'Para ANA GOMEZ',
+        amountCop: 100_000,
+        occurredOn: '2026-07-05',
+      }),
       agosto,
     ];
 
@@ -161,8 +171,18 @@ describe('creciendo', () => {
   it('says nothing when the level is steady', () => {
     const agosto = tx({ id: 'ago', description: 'Para ANA GOMEZ', amountCop: 100_000 });
     const historial = [
-      tx({ id: 'jun', description: 'Para ANA GOMEZ', amountCop: 100_000, occurredOn: '2026-06-05' }),
-      tx({ id: 'jul', description: 'Para ANA GOMEZ', amountCop: 100_000, occurredOn: '2026-07-05' }),
+      tx({
+        id: 'jun',
+        description: 'Para ANA GOMEZ',
+        amountCop: 100_000,
+        occurredOn: '2026-06-05',
+      }),
+      tx({
+        id: 'jul',
+        description: 'Para ANA GOMEZ',
+        amountCop: 100_000,
+        occurredOn: '2026-07-05',
+      }),
       agosto,
     ];
 

@@ -101,9 +101,7 @@ export const planearImportacion = (
   const reclamarExacto = (clave: string): void => {
     const [fecha, tipo, monto] = clave.split('|');
     const lista = porAproximada.get([fecha, tipo, monto].join('|'));
-    const yaVisto = lista?.find(
-      (t) => !reclamados.has(t.id) && claveDeTransaccion(t) === clave,
-    );
+    const yaVisto = lista?.find((t) => !reclamados.has(t.id) && claveDeTransaccion(t) === clave);
     if (yaVisto) reclamados.add(yaVisto.id);
   };
 

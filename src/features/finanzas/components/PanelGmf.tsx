@@ -28,7 +28,7 @@ interface PanelGmfProps {
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 /**
  * El 4x1000, explicado y estimado.
@@ -57,53 +57,53 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
 
   const cubiertas = new Set(cuentasGmf);
   const bajoMontoIds = new Set(cuentas.filter((c) => c.esBajoMonto).map((c) => c.id));
-  const consumo = consumoDelMes(transacciones, mes, uvt, cubiertas, { regimen, cuentaExentaId, bajoMontoIds });
+  const consumo = consumoDelMes(transacciones, mes, uvt, cubiertas, {
+    regimen,
+    cuentaExentaId,
+    bajoMontoIds,
+  });
   const vieja = uvtDesactualizada(uvt, anioActual);
 
   const alternar = (id: string) =>
-    onCambiarCuentas(
-      cubiertas.has(id) ? cuentasGmf.filter((x) => x !== id) : [...cuentasGmf, id],
-    );
+    onCambiarCuentas(cubiertas.has(id) ? cuentasGmf.filter((x) => x !== id) : [...cuentasGmf, id]);
 
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="flex items-center gap-1.5 px-1 text-xs font-bold text-[var(--fin-ink-soft)]">
+        <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
           <Scale className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
           El 4x1000
         </h2>
         {/* Arriba, no al final: si la cifra de abajo no es oficial, decirlo
-            después de que ya la leyó no sirve de nada. */}
-        <p className="mt-2 rounded-2xl bg-[var(--fin-soft)] px-3.5 py-3 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
+ después de que ya la leyó no sirve de nada. */}
+        <p className="mt-2 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
           {ADVERTENCIA_GMF}
         </p>
       </div>
 
       {/* Cómo te lo aplica TU banco. Los dos esquemas conviven en la práctica:
-          la norma dice el nuevo, pero el reparto automático depende de que la
-          entidad haya montado su sistema. */}
-      <fieldset className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
-        <legend className="px-1 text-[11px] font-bold text-[var(--fin-ink-soft)]">
+ la norma dice el nuevo, pero el reparto automático depende de que la
+ entidad haya montado su sistema. */}
+      <fieldset className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+        <legend className="px-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
           ¿Cómo te lo aplica tu banco?
         </legend>
         <div className="mt-1 flex flex-col gap-1.5">
-          {(
-            [
-              {
-                id: 'distribuido' as const,
-                titulo: 'Repartido entre mis cuentas',
-                nota: 'Lo que dice la norma desde diciembre de 2024. El cupo es tuyo, no de una cuenta.',
-              },
-              {
-                id: 'marcada' as const,
-                titulo: 'Solo una cuenta marcada',
-                nota: 'El esquema viejo. Úsalo si tu banco todavía te cobra en las demás cuentas.',
-              },
-            ]
-          ).map((op) => (
+          {[
+            {
+              id: 'distribuido' as const,
+              titulo: 'Repartido entre mis cuentas',
+              nota: 'Lo que dice la norma desde diciembre de 2024. El cupo es tuyo, no de una cuenta.',
+            },
+            {
+              id: 'marcada' as const,
+              titulo: 'Solo una cuenta marcada',
+              nota: 'El esquema viejo. Úsalo si tu banco todavía te cobra en las demás cuentas.',
+            },
+          ].map((op) => (
             <label
               key={op.id}
-              className={`flex cursor-pointer items-start gap-2.5 rounded-xl border-2 px-3 py-2.5 transition-colors ${
+              className={`flex cursor-pointer items-start gap-2.5 rounded-[var(--fin-r-control)] border-2 px-3 py-2.5 transition-colors ${
                 regimen === op.id
                   ? 'border-[var(--fin-ink)] bg-[var(--fin-bg)]'
                   : 'border-[var(--fin-line)]'
@@ -117,10 +117,10 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
                 className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
               />
               <span className="min-w-0">
-                <span className="block text-[12px] font-bold text-[var(--fin-ink)]">
+                <span className="block text-[15px] font-semibold text-[var(--fin-ink)]">
                   {op.titulo}
                 </span>
-                <span className="mt-0.5 block text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
+                <span className="mt-0.5 block text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
                   {op.nota}
                 </span>
               </span>
@@ -132,7 +132,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
           <div className="mt-3">
             <label
               htmlFor="cuenta-exenta"
-              className="block text-[11px] font-bold text-[var(--fin-ink-soft)]"
+              className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]"
             >
               ¿Cuál marcaste en el banco?
             </label>
@@ -154,31 +154,32 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
       </fieldset>
 
       {/* Cupo del mes */}
-      <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
-        <p className="text-[11px] font-bold text-[var(--fin-ink-soft)]">Tu cupo exento este mes</p>
-        <p className="mt-1 font-display text-3xl font-extrabold tabular-nums text-[var(--fin-ink)]">
+      <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+        <p className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+          Tu cupo exento este mes
+        </p>
+        <p className="mt-1 text-[28px] font-semibold tabular-nums text-[var(--fin-ink)]">
           {formatCop(consumo.disponibleCop)}
         </p>
-        <p className="mt-0.5 text-[11px] text-[var(--fin-ink-faint)]">
+        <p className="mt-0.5 text-[13px] text-[var(--fin-ink-faint)]">
           libres de {formatCop(consumo.topeCop)} ({TOPE_EXENTO_UVT} UVT)
         </p>
 
         <div
-          className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--fin-soft)]"
+          className="mt-3 h-2 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
           role="img"
           aria-label={`Has usado el ${consumo.pctUsado}% del cupo`}
         >
           <div
-            className="h-full rounded-full transition-[width]"
+            className="h-full rounded-[var(--fin-r-pill)] transition-[width]"
             style={{
               width: `${consumo.pctUsado}%`,
-              backgroundColor:
-                consumo.pctUsado >= 100 ? 'var(--fin-out)' : 'var(--fin-in)',
+              backgroundColor: consumo.pctUsado >= 100 ? 'var(--fin-out)' : 'var(--fin-in)',
             }}
           />
         </div>
 
-        <p className="mt-2 text-[11px] text-[var(--fin-ink-soft)]">
+        <p className="mt-2 text-[13px] text-[var(--fin-ink-soft)]">
           Han salido <b className="text-[var(--fin-ink)]">{formatCop(consumo.baseCop)}</b> de las
           cuentas que marcaste.
           {consumo.sinCupoCop > 0 ? (
@@ -191,7 +192,11 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
           {consumo.bajoMonto.totalGravadoCop > 0 ? (
             <>
               {' '}
-              Se excedió el tope de depósitos de bajo monto por <b className="text-[var(--fin-out)]">{formatCop(consumo.bajoMonto.totalGravadoCop)}</b>, que también pagan.
+              Se excedió el tope de depósitos de bajo monto por{' '}
+              <b className="text-[var(--fin-out)]">
+                {formatCop(consumo.bajoMonto.totalGravadoCop)}
+              </b>
+              , que también pagan.
             </>
           ) : null}
           {consumo.gravadoCop > 0 ? (
@@ -206,25 +211,25 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
       </div>
 
       {/* Cuentas que cuentan */}
-      <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
-        <p className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]">
+      <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+        <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
           <Landmark className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
           ¿Cuáles están en una entidad financiera?
         </p>
-        <p className="mt-1 text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
+        <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
           Solo lo que sale de un banco, billetera o cooperativa consume cupo. El efectivo no.
         </p>
 
         {cuentas.length === 0 ? (
-          <p className="mt-2.5 text-[11px] text-[var(--fin-ink-faint)]">
+          <p className="mt-2.5 text-[13px] text-[var(--fin-ink-faint)]">
             Todavía no tienes cuentas registradas.
           </p>
         ) : (
           <ul className="mt-2.5 flex flex-col gap-1">
             {cuentas.map((c) => (
               <li key={c.id}>
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl bg-[var(--fin-bg)] px-3 py-2.5">
-                  <span className="min-w-0 truncate text-[12px] font-bold text-[var(--fin-ink)]">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2.5">
+                  <span className="min-w-0 truncate text-[15px] font-semibold text-[var(--fin-ink)]">
                     {c.nombre}
                   </span>
                   <input
@@ -242,8 +247,8 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
       </div>
 
       {/* La UVT */}
-      <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
-        <p className="text-[11px] font-bold text-[var(--fin-ink-soft)]">
+      <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+        <p className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
           Valor de la UVT ({uvt.anio})
         </p>
 
@@ -269,14 +274,14 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
             />
             <button
               type="submit"
-              className="shrink-0 rounded-xl bg-[var(--fin-accent)] px-4 py-2.5 text-xs font-bold text-[var(--fin-on-accent)]"
+              className="shrink-0 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
             >
               Guardar
             </button>
           </form>
         ) : (
           <div className="mt-1 flex items-baseline justify-between gap-3">
-            <p className="font-display text-2xl font-extrabold tabular-nums text-[var(--fin-ink)]">
+            <p className="text-[28px] font-semibold tabular-nums text-[var(--fin-ink)]">
               {formatCop(uvt.pesos)}
             </p>
             <button
@@ -285,7 +290,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
                 setBorrador(formatAmountInput(uvt.pesos));
                 setEditandoUvt(true);
               }}
-              className="shrink-0 rounded-full bg-[var(--fin-soft)] px-3 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]"
+              className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
             >
               Cambiar
             </button>
@@ -293,14 +298,18 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         )}
 
         {uvt.fuente ? (
-          <p className="mt-1 text-[10px] text-[var(--fin-ink-faint)]">{uvt.fuente}</p>
+          <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">{uvt.fuente}</p>
         ) : null}
 
         {/* La UVT cambia cada enero. Calcular en silencio con la del año pasado
-            daría un tope equivocado sin que nadie se entere. */}
+ daría un tope equivocado sin que nadie se entere. */}
         {vieja ? (
-          <p className="mt-2 flex items-start gap-1.5 rounded-xl bg-[var(--fin-warn-bg)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--fin-warn-ink)]">
-            <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={3} aria-hidden="true" />
+          <p className="mt-2 flex items-start gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fin-warn-ink)]">
+            <AlertTriangle
+              className="mt-px h-3.5 w-3.5 shrink-0"
+              strokeWidth={3}
+              aria-hidden="true"
+            />
             Este valor es de {uvt.anio} y estamos en {anioActual}. La DIAN publica uno nuevo cada
             diciembre — actualízalo o el cupo de arriba estará mal.
           </p>
@@ -312,15 +321,15 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         {NOTAS_GMF.map((nota) => (
           <details
             key={nota.id}
-            className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3"
+            className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3"
           >
-            <summary className="cursor-pointer text-[12px] font-bold text-[var(--fin-ink)]">
+            <summary className="cursor-pointer text-[15px] font-semibold text-[var(--fin-ink)]">
               {nota.titulo}
             </summary>
-            <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
               {nota.cuerpo}
             </p>
-            <p className="mt-2 text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               {nota.fundamento} · verificado el {nota.verificado}
             </p>
           </details>

@@ -30,9 +30,7 @@ const ETIQUETA_EXCLUSION: Record<string, string> = {
  * The exclusions are returned rather than dropped, so the user can see exactly
  * what was left out and disagree with it.
  */
-export const totalesDelAnalisis = (
-  movimientos: readonly MovimientoExtraido[],
-): TotalesAnalisis => {
+export const totalesDelAnalisis = (movimientos: readonly MovimientoExtraido[]): TotalesAnalisis => {
   let ingresos = 0;
   let gastos = 0;
   let contados = 0;
@@ -104,14 +102,9 @@ export const rebanadasDelAnalisis = (
  * against numbers the movement list does not support, so the movements — which
  * are auditable line by line — are the ones to trust.
  */
-export const metricasCoherentes = (
-  resultado: AnalisisResultado,
-  tolerancia = 0.02,
-): boolean => {
+export const metricasCoherentes = (resultado: AnalisisResultado, tolerancia = 0.02): boolean => {
   const propios = totalesDelAnalisis(resultado.movimientos);
-  const declarado = resultado.metricas.find((m) =>
-    /gasto total|total de gastos/i.test(m.etiqueta),
-  );
+  const declarado = resultado.metricas.find((m) => /gasto total|total de gastos/i.test(m.etiqueta));
   if (!declarado || propios.gastos === 0) return true;
 
   const desvio = Math.abs(declarado.valorCop - propios.gastos) / propios.gastos;

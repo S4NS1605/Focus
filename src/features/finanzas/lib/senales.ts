@@ -38,7 +38,6 @@ const mediana = (valores: readonly number[]): number => {
 const claveDeParte = (tx: Transaction): string =>
   (extraerContraparte(tx.description) ?? tx.description).trim().toLowerCase();
 
-
 /**
  * Everything the checks need, gathered in one pass.
  *

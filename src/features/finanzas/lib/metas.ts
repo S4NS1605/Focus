@@ -51,10 +51,7 @@ export const progresoDeMeta = (
   return {
     ahorradoCop,
     objetivoCop,
-    pct:
-      objetivoCop > 0
-        ? Math.min(100, Math.round((ahorradoCop / objetivoCop) * 1000) / 10)
-        : 0,
+    pct: objetivoCop > 0 ? Math.min(100, Math.round((ahorradoCop / objetivoCop) * 1000) / 10) : 0,
     faltaCop,
     completada,
     diasRestantes,

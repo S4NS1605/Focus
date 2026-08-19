@@ -193,7 +193,18 @@ describe('purity', () => {
 
 describe('NUMERAL_WORDS', () => {
   it('covers every word the reader can consume', () => {
-    for (const w of ['mil', 'millon', 'lucas', 'palo', 'medio', 'quince', 'veinte', 'cien', 'y', 'k']) {
+    for (const w of [
+      'mil',
+      'millon',
+      'lucas',
+      'palo',
+      'medio',
+      'quince',
+      'veinte',
+      'cien',
+      'y',
+      'k',
+    ]) {
       expect(NUMERAL_WORDS.has(w)).toBe(true);
     }
   });

@@ -60,7 +60,7 @@ const calzaTexto = (
   tx: Transaction,
   consulta: string,
   catalogo: Catalogo | null,
-  parsedIntent?: ReturnType<typeof parseTransaction>
+  parsedIntent?: ReturnType<typeof parseTransaction>,
 ): boolean => {
   const q = normalizarNombre(consulta);
   if (q === '') return true;
@@ -82,13 +82,17 @@ const calzaTexto = (
     let magicMatch = false;
 
     // Si la consulta implica una categoría específica de forma confiable
-    if (parsedIntent.signals.categorySource !== 'default' && parsedIntent.signals.categorySource !== 'aprendida') {
+    if (
+      parsedIntent.signals.categorySource !== 'default' &&
+      parsedIntent.signals.categorySource !== 'aprendida'
+    ) {
       if (tx.category === parsedIntent.category) magicMatch = true;
     }
-    
+
     // Si implica un tipo específico de manera explícita (ej. "ingresos")
     if (parsedIntent.signals.kindSource !== 'default') {
-      if (tx.kind === parsedIntent.kind && consulta.trim().split(' ').length === 1) magicMatch = true;
+      if (tx.kind === parsedIntent.kind && consulta.trim().split(' ').length === 1)
+        magicMatch = true;
     }
 
     // Si detectó una fecha exacta (ej. "de ayer")
@@ -125,7 +129,7 @@ export const filtrarMovimientos = (
     // object, and therefore no timezone to get wrong.
     if (filtro.desde !== null && tx.occurredOn < filtro.desde) return false;
     if (filtro.hasta !== null && tx.occurredOn > filtro.hasta) return false;
-    
+
     return calzaTexto(tx, filtro.texto, catalogo, parsedIntent);
   });
 };

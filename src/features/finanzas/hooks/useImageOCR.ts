@@ -19,18 +19,18 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
       // toca "escanear".
       const { default: Tesseract } = await import('tesseract.js');
       const result = await Tesseract.recognize(file, 'spa', {
-        logger: m => {
+        logger: (m) => {
           if (m.status === 'recognizing text') {
             setProgress(m.progress);
           }
-        }
+        },
       });
-      
+
       const text = result.data.text;
-      
+
       // 2. Replace newlines with spaces so it looks like a continuous sentence
       const cleanText = text.replace(/\n/g, ' ').trim();
-      
+
       onSuccess(`[OCR] ${cleanText}`);
     } catch (err) {
       console.error(err);

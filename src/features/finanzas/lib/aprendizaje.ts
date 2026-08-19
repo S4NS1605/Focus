@@ -38,9 +38,7 @@ const palabrasContenido = (raw: string): string[] => {
   const out: string[] = [];
 
   for (const piece of raw.split(/\s+/)) {
-    const trimmed = piece
-      .replace(/^[^\p{L}\p{N}$]+/u, '')
-      .replace(/[^\p{L}\p{N}]+$/u, '');
+    const trimmed = piece.replace(/^[^\p{L}\p{N}$]+/u, '').replace(/[^\p{L}\p{N}]+$/u, '');
     if (!trimmed) continue;
 
     const norm = normalizeWord(trimmed);

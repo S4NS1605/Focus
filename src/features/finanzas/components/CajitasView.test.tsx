@@ -32,7 +32,11 @@ const AMBOS: Cajita[] = [
   caj({ id: 'pote', nombre: 'Vacaciones', tipo: 'cajita' }),
 ];
 
-const montar = (tipo: CajitaTipo, cajitas: Cajita[] = AMBOS, movimientos: CajitaMovimiento[] = []) => {
+const montar = (
+  tipo: CajitaTipo,
+  cajitas: Cajita[] = AMBOS,
+  movimientos: CajitaMovimiento[] = [],
+) => {
   const onCrear = vi.fn();
   render(
     <CajitasView

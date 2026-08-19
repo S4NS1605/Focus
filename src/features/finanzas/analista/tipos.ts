@@ -67,8 +67,7 @@ export interface AnalisisResultado {
 /** What `analizar-extracto` returns — a single synchronous response, since
  *  template parsing takes milliseconds and needs no polling. */
 export type RespuestaAnalisis =
-  | { ok: true; resultado: AnalisisResultado }
-  | { ok: false; codigo: CodigoError; mensaje: string };
+  { ok: true; resultado: AnalisisResultado } | { ok: false; codigo: CodigoError; mensaje: string };
 
 export type CodigoError =
   | 'sin-autorizacion'

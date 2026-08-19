@@ -3,34 +3,98 @@
 // path — there is no second code path to keep in sync.
 
 const UNITS: Record<string, number> = {
-  cero: 0, un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
-  seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
-  trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17,
-  dieciocho: 18, diecinueve: 19, veintiuno: 21, veintiun: 21, veintiuna: 21,
-  veintidos: 22, veintitres: 23, veinticuatro: 24, veinticinco: 25,
-  veintiseis: 26, veintisiete: 27, veintiocho: 28, veintinueve: 29,
+  cero: 0,
+  un: 1,
+  uno: 1,
+  una: 1,
+  dos: 2,
+  tres: 3,
+  cuatro: 4,
+  cinco: 5,
+  seis: 6,
+  siete: 7,
+  ocho: 8,
+  nueve: 9,
+  diez: 10,
+  once: 11,
+  doce: 12,
+  trece: 13,
+  catorce: 14,
+  quince: 15,
+  dieciseis: 16,
+  diecisiete: 17,
+  dieciocho: 18,
+  diecinueve: 19,
+  veintiuno: 21,
+  veintiun: 21,
+  veintiuna: 21,
+  veintidos: 22,
+  veintitres: 23,
+  veinticuatro: 24,
+  veinticinco: 25,
+  veintiseis: 26,
+  veintisiete: 27,
+  veintiocho: 28,
+  veintinueve: 29,
 };
 
 const TENS: Record<string, number> = {
-  veinte: 20, treinta: 30, cuarenta: 40, cincuenta: 50,
-  sesenta: 60, setenta: 70, ochenta: 80, noventa: 90,
+  veinte: 20,
+  treinta: 30,
+  cuarenta: 40,
+  cincuenta: 50,
+  sesenta: 60,
+  setenta: 70,
+  ochenta: 80,
+  noventa: 90,
 };
 
 const HUNDREDS: Record<string, number> = {
-  cien: 100, ciento: 100,
-  doscientos: 200, doscientas: 200, trescientos: 300, trescientas: 300,
-  cuatrocientos: 400, cuatrocientas: 400, quinientos: 500, quinientas: 500,
-  seiscientos: 600, seiscientas: 600, setecientos: 700, setecientas: 700,
-  ochocientos: 800, ochocientas: 800, novecientos: 900, novecientas: 900,
+  cien: 100,
+  ciento: 100,
+  doscientos: 200,
+  doscientas: 200,
+  trescientos: 300,
+  trescientas: 300,
+  cuatrocientos: 400,
+  cuatrocientas: 400,
+  quinientos: 500,
+  quinientas: 500,
+  seiscientos: 600,
+  seiscientas: 600,
+  setecientos: 700,
+  setecientas: 700,
+  ochocientos: 800,
+  ochocientas: 800,
+  novecientos: 900,
+  novecientas: 900,
 };
 
 // Colombian money slang folds in as just another scale word: a "luca" is a
 // thousand pesos, a "palo"/"melón" a million.
-const THOUSAND_WORDS = ['mil', 'miles', 'luca', 'lucas', 'luquita', 'luquitas', 'barra', 'barras', 'k'] as const;
+const THOUSAND_WORDS = [
+  'mil',
+  'miles',
+  'luca',
+  'lucas',
+  'luquita',
+  'luquitas',
+  'barra',
+  'barras',
+  'k',
+] as const;
 const MILLION_WORDS = ['millon', 'millones', 'palo', 'palos', 'melon', 'melones'] as const;
 const SLANG_WORDS: ReadonlySet<string> = new Set([
-  'luca', 'lucas', 'luquita', 'luquitas', 'barra', 'barras',
-  'palo', 'palos', 'melon', 'melones',
+  'luca',
+  'lucas',
+  'luquita',
+  'luquitas',
+  'barra',
+  'barras',
+  'palo',
+  'palos',
+  'melon',
+  'melones',
 ]);
 
 const SCALES: Record<string, number> = {};
@@ -60,8 +124,7 @@ export const stripAccents = (value: string): string =>
   value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 /** Lowercase + de-accent. Applied per token so offsets never drift. */
-export const normalizeWord = (value: string): string =>
-  stripAccents(value.toLowerCase());
+export const normalizeWord = (value: string): string => stripAccents(value.toLowerCase());
 
 /**
  * Rewrites es-CO numeric notation inside a single already-lowercased,
@@ -77,7 +140,10 @@ export const normalizeNumericToken = (token: string): string[] => {
   if (t === '') return [];
 
   // 1'200.000 -> 1200000 (apostrophe is the Colombian millions separator)
-  t = t.replace(/(\d+)'(\d{3})(?:\.(\d{3}))?/g, (_m, mill, thou, units) => `${mill}${thou}${units ?? ''}`);
+  t = t.replace(
+    /(\d+)'(\d{3})(?:\.(\d{3}))?/g,
+    (_m, mill, thou, units) => `${mill}${thou}${units ?? ''}`,
+  );
 
   // 45.000 -> 45000, 1.250.000 -> 1250000
   t = t.replace(/\d{1,3}(?:\.\d{3})+(?!\d)/g, (m) => m.replace(/\./g, ''));
@@ -86,7 +152,9 @@ export const normalizeNumericToken = (token: string): string[] => {
   t = t.replace(/(\d),(\d)/g, '$1.$2');
 
   // 20mil -> 20 mil, 45k -> 45 k
-  const split = t.match(/^(\d+(?:\.\d+)?)(mil|miles|millon|millones|lucas?|luquitas?|palos?|melones?|barras?|k)$/);
+  const split = t.match(
+    /^(\d+(?:\.\d+)?)(mil|miles|millon|millones|lucas?|luquitas?|palos?|melones?|barras?|k)$/,
+  );
   if (split) return [split[1], split[2]];
 
   return [t];
@@ -196,7 +264,7 @@ export const readNumberAt = (tokens: readonly string[], start: number): NumberMa
 
       if (scale === 1_000) groupTotal += (current || 1) * 1_000;
       else {
-        result += ((groupTotal + current) || 1) * 1_000_000;
+        result += (groupTotal + current || 1) * 1_000_000;
         groupTotal = 0;
       }
 

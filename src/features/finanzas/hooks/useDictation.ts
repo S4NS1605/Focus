@@ -2,13 +2,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Minimal structural types. The webkit-prefixed constructor is not in the DOM lib,
 // and we only ever touch these few members.
-interface RecognitionAlternative { transcript: string }
-interface RecognitionResult { 0: RecognitionAlternative; isFinal: boolean }
+interface RecognitionAlternative {
+  transcript: string;
+}
+interface RecognitionResult {
+  0: RecognitionAlternative;
+  isFinal: boolean;
+}
 interface RecognitionEvent {
   resultIndex: number;
   results: { length: number; [index: number]: RecognitionResult };
 }
-interface RecognitionErrorEvent { error: string }
+interface RecognitionErrorEvent {
+  error: string;
+}
 
 interface Recognition {
   lang: string;

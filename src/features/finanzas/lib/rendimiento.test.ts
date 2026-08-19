@@ -57,12 +57,17 @@ describe('rendimientoEstimado', () => {
     expect(r!.dias).toBe(365);
   });
 
-  it('does not pretend today\'s balance was there all along', () => {
+  it("does not pretend today's balance was there all along", () => {
     // 1M sat for a year; another 1M arrived only yesterday.
     const r = rendimientoEstimado(
       [
         mov({ id: 'viejo', deltaCop: 1_000_000, occurredOn: '2026-01-01' }),
-        mov({ id: 'nuevo', deltaCop: 1_000_000, occurredOn: '2026-12-31', createdAt: '2026-12-31T00:00:00.000Z' }),
+        mov({
+          id: 'nuevo',
+          deltaCop: 1_000_000,
+          occurredOn: '2026-12-31',
+          createdAt: '2026-12-31T00:00:00.000Z',
+        }),
       ],
       'c1',
       13,
@@ -86,7 +91,13 @@ describe('rendimientoEstimado', () => {
     const r = rendimientoEstimado(
       [
         mov({ id: 'in', deltaCop: 1_000_000, occurredOn: '2026-01-01' }),
-        mov({ id: 'out', kind: 'retiro', deltaCop: -1_000_000, occurredOn: '2026-01-31', createdAt: '2026-01-31T00:00:00.000Z' }),
+        mov({
+          id: 'out',
+          kind: 'retiro',
+          deltaCop: -1_000_000,
+          occurredOn: '2026-01-31',
+          createdAt: '2026-01-31T00:00:00.000Z',
+        }),
       ],
       'c1',
       13,

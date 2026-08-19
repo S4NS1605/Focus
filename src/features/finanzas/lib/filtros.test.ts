@@ -1,12 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
 import { hacerCatalogo } from '../categorias';
-import {
-  FILTRO_VACIO,
-  filtrarMovimientos,
-  filtroActivo,
-  resumirFiltrado,
-} from './filtros';
+import { FILTRO_VACIO, filtrarMovimientos, filtroActivo, resumirFiltrado } from './filtros';
 import type { Filtro } from './filtros';
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
@@ -32,12 +27,29 @@ const LIBRO: Transaction[] = [
     occurredOn: '2026-03-04',
     cuentaId: 'nequi',
   }),
-  tx({ id: 'c', kind: 'ingreso', description: 'Salario', category: 'ingreso', amountCop: 2_500_000, occurredOn: '2026-07-30' }),
-  tx({ id: 'd', description: 'Mercado del mes', category: 'mercado', amountCop: 300_000, occurredOn: '2026-06-15', cuentaId: 'banco' }),
+  tx({
+    id: 'c',
+    kind: 'ingreso',
+    description: 'Salario',
+    category: 'ingreso',
+    amountCop: 2_500_000,
+    occurredOn: '2026-07-30',
+  }),
+  tx({
+    id: 'd',
+    description: 'Mercado del mes',
+    category: 'mercado',
+    amountCop: 300_000,
+    occurredOn: '2026-06-15',
+    cuentaId: 'banco',
+  }),
 ];
 
 const con = (over: Partial<Filtro>): Filtro => ({ ...FILTRO_VACIO, ...over });
-const ids = (filtro: Filtro) => filtrarMovimientos(LIBRO, filtro).map((t) => t.id).sort();
+const ids = (filtro: Filtro) =>
+  filtrarMovimientos(LIBRO, filtro)
+    .map((t) => t.id)
+    .sort();
 
 describe('filtroActivo', () => {
   it('un filtro sin tocar no filtra nada', () => {

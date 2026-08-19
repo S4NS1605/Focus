@@ -17,7 +17,7 @@ export interface CategoriasEditorProps {
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-base font-medium text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 const SelectorIcono: React.FC<{ valor: string; onCambiar: (v: string) => void }> = ({
   valor,
@@ -35,7 +35,7 @@ const SelectorIcono: React.FC<{ valor: string; onCambiar: (v: string) => void }>
           aria-checked={activo}
           aria-label={nombre}
           onClick={() => onCambiar(nombre)}
-          className={`flex h-9 w-9 items-center justify-center rounded-xl border-2 transition-colors ${
+          className={`flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-control)] border-2 transition-colors ${
             activo
               ? 'border-[var(--fin-ink)] text-[var(--fin-ink)]'
               : 'border-[var(--fin-line)] text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink-soft)]'
@@ -65,7 +65,7 @@ const SelectorColor: React.FC<{ valor: string; onCambiar: (v: string) => void }>
           // also what a screen reader gets — a row of "botón" would be useless.
           aria-label={`Color ${color}`}
           onClick={() => onCambiar(color)}
-          className={`h-9 w-9 rounded-xl border-2 transition-transform ${
+          className={`h-9 w-9 rounded-[var(--fin-r-control)] border-2 transition-transform ${
             activo ? 'scale-110 border-[var(--fin-ink)]' : 'border-transparent'
           }`}
           style={{ backgroundColor: color }}
@@ -95,9 +95,12 @@ const Formulario: React.FC<{
         if (!listo) return;
         onGuardar({ nombre: nombre.trim(), icon, color });
       }}
-      className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4"
+      className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"
     >
-      <label htmlFor="cat-nombre" className="block text-xs font-bold text-[var(--fin-ink-soft)]">
+      <label
+        htmlFor="cat-nombre"
+        className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+      >
         Nombre
       </label>
       <input
@@ -110,12 +113,12 @@ const Formulario: React.FC<{
         className={`mt-1.5 ${CAMPO}`}
       />
 
-      <p className="mt-4 text-xs font-bold text-[var(--fin-ink-soft)]">Ícono</p>
+      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Ícono</p>
       <div className="mt-1.5">
         <SelectorIcono valor={icon} onCambiar={setIcon} />
       </div>
 
-      <p className="mt-4 text-xs font-bold text-[var(--fin-ink-soft)]">Color</p>
+      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Color</p>
       <div className="mt-1.5">
         <SelectorColor valor={color} onCambiar={setColor} />
       </div>
@@ -124,14 +127,14 @@ const Formulario: React.FC<{
         <button
           type="submit"
           disabled={!listo}
-          className="flex-1 rounded-xl bg-[var(--fin-accent)] px-4 py-3 text-sm font-bold text-[var(--fin-on-accent)] disabled:opacity-30"
+          className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
         >
           {inicial ? 'Guardar cambios' : 'Crear categoría'}
         </button>
         <button
           type="button"
           onClick={onCancelar}
-          className="rounded-xl border border-[var(--fin-line)] px-4 py-3 text-sm font-bold text-[var(--fin-ink-soft)]"
+          className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
         >
           Cancelar
         </button>
@@ -172,12 +175,12 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
   return (
     <section>
       <div className="flex items-center justify-between gap-3 px-1">
-        <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">Categorías</h2>
+        <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">Categorías</h2>
         {!creando && editando === null ? (
           <button
             type="button"
             onClick={() => setCreando(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-[var(--fin-line)] px-3 py-2 text-xs font-bold text-[var(--fin-ink)]"
+            className="flex items-center gap-1.5 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-3 py-2 text-[15px] font-semibold text-[var(--fin-ink)]"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
             Nueva
@@ -221,26 +224,24 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
           return (
             <li
               key={cat.id}
-              className={`flex items-center gap-3 rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 ${
+              className={`flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-3 py-3 ${
                 archivada ? 'opacity-55' : ''
               }`}
             >
               <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-control)]"
                 style={{ backgroundColor: tint(cat.color, 0.16), color: cat.color }}
               >
                 <Icono className="h-4 w-4" aria-hidden="true" />
               </span>
 
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-[var(--fin-ink)]">
+                <span className="block truncate text-[17px] font-semibold text-[var(--fin-ink)]">
                   {cat.nombre}
                 </span>
-                <span className="block text-[11px] text-[var(--fin-ink-faint)]">
+                <span className="block text-[13px] text-[var(--fin-ink-faint)]">
                   {archivada ? 'Archivada · ' : ''}
-                  {enUso === 0
-                    ? 'sin movimientos'
-                    : `${enUso} movimiento${enUso === 1 ? '' : 's'}`}
+                  {enUso === 0 ? 'sin movimientos' : `${enUso} movimiento${enUso === 1 ? '' : 's'}`}
                 </span>
               </span>
 
@@ -249,7 +250,7 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
                   type="button"
                   onClick={() => onActualizar({ ...cat, archivedAt: null })}
                   aria-label={`Reactivar ${cat.nombre}`}
-                  className="rounded-xl p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
+                  className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
                 >
                   <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
                 </button>
@@ -258,25 +259,23 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
                   type="button"
                   onClick={() => setEditando(cat.id)}
                   aria-label={`Editar ${cat.nombre}`}
-                  className="rounded-xl p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
+                  className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
                 >
                   <Pencil className="h-4 w-4" strokeWidth={2.5} />
                 </button>
               )}
 
               {/* Deleting is only offered when nothing points here. With
-                  movements attached the row has to survive, or last month's
-                  spending loses the only thing that explains it — so the
-                  action becomes "archive", which takes it out of the pickers
-                  and leaves the history intact. */}
+ movements attached the row has to survive, or last month's
+ spending loses the only thing that explains it — so the
+ action becomes "archive", which takes it out of the pickers
+ and leaves the history intact. */}
               <button
                 type="button"
                 onClick={() => (enUso === 0 ? onBorrar(cat.id) : onArchivar(cat.id))}
                 disabled={archivada && enUso > 0}
-                aria-label={
-                  enUso === 0 ? `Eliminar ${cat.nombre}` : `Archivar ${cat.nombre}`
-                }
-                className="rounded-xl p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-out)] disabled:opacity-30"
+                aria-label={enUso === 0 ? `Eliminar ${cat.nombre}` : `Archivar ${cat.nombre}`}
+                className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-out)] disabled:opacity-30"
               >
                 {enUso === 0 ? (
                   <Trash2 className="h-4 w-4" strokeWidth={2.5} />
@@ -289,19 +288,25 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
         })}
       </ul>
 
-      <p className="mt-5 px-1 text-xs font-bold text-[var(--fin-ink-soft)]">Las que trae la app</p>
+      <p className="mt-5 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+        Las que trae la app
+      </p>
       <ul className="mt-2 flex flex-wrap gap-1.5">
         {basicas.map((cat) => (
           <li
             key={cat.clave}
-            className="flex items-center gap-1.5 rounded-full border border-[var(--fin-line)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]"
+            className="flex items-center gap-1.5 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)] px-2.5 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
           >
-            <cat.Icono className="h-3.5 w-3.5 shrink-0" style={{ color: cat.color }} aria-hidden="true" />
+            <cat.Icono
+              className="h-3.5 w-3.5 shrink-0"
+              style={{ color: cat.color }}
+              aria-hidden="true"
+            />
             {cat.nombre}
           </li>
         ))}
       </ul>
-      <p className="mt-2 flex items-start gap-1.5 px-1 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
+      <p className="mt-2 flex items-start gap-1.5 px-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
         <Lock className="mt-0.5 h-3 w-3 shrink-0" strokeWidth={3} aria-hidden="true" />
         Estas no se editan: el dictado y las plantillas de extracto las reconocen por su nombre.
       </p>

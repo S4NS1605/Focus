@@ -32,7 +32,7 @@ export const analizarAnomalias = (
   desv = Math.sqrt(desv / montos.length);
 
   const percentil = Math.round(
-    (montos.filter((m) => m <= montoActual).length / montos.length) * 100
+    (montos.filter((m) => m <= montoActual).length / montos.length) * 100,
   );
 
   // Anomalia si está fuera de ±2σ (95% de confianza)
