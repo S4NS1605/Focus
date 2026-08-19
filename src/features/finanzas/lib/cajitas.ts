@@ -190,8 +190,9 @@ export const patrimonio = (
 ): Patrimonio => {
   const cuentasCop = totalPorTipo(cajitas, movimientos, 'cuenta', transacciones);
   const cajitasCop = totalPorTipo(cajitas, movimientos, 'cajita', transacciones);
+  // Las deudas y tarjetas tienen saldos negativos. Convertir a positivo para reportar "lo que debes"
   const deudasCop =
-    totalPorTipo(cajitas, movimientos, 'deuda', transacciones) +
+    -totalPorTipo(cajitas, movimientos, 'deuda', transacciones) -
     totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones);
   const totalCop = cuentasCop + cajitasCop;
 
