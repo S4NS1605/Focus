@@ -1,0 +1,143 @@
+/* Efectos visuales premium para PWA */
+
+/* Glassmorphism: fondo translúcido con blur */
+.fin-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.fin-glass-dark {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Sombras suaves y elegantes (no rectangulares como Android) */
+.shadow-soft {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-medium {
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+}
+
+.shadow-large {
+  box-shadow: 0 20px 64px rgba(0, 0, 0, 0.16);
+}
+
+/* Sombras internas para profundidad */
+.shadow-inset {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Gradientes sutiles */
+.gradient-accent {
+  background: linear-gradient(135deg, var(--fin-accent) 0%, rgba(var(--fin-accent-rgb), 0.8) 100%);
+}
+
+.gradient-subtle {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+}
+
+/* Bordes suaves y redondeados */
+.border-smooth {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.border-smooth-light {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Transiciones suaves para todos los elementos interactivos */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.transition-smooth-fast {
+  transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Efecto de brillo sutil en hover (premium feel) */
+.shine-effect::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.shine-effect:hover::after {
+  opacity: 1;
+}
+
+/* Backdrop para modales (más elegante) */
+.backdrop-premium {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Esquinas con radio variable para micro-interacciones */
+.rounded-smart {
+  border-radius: max(12px, env(safe-area-inset-top));
+}
+
+/* Scroll suave */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Desactiva el zoom en double tap en iOS (mejor UX) */
+html {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea,
+button,
+select {
+  -webkit-user-select: text;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Animación suave para aparición de elementos */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}

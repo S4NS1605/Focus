@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import './styles/premium-effects.css';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
