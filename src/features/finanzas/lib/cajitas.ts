@@ -190,10 +190,13 @@ export const patrimonio = (
 ): Patrimonio => {
   const cuentasCop = totalPorTipo(cajitas, movimientos, 'cuenta', transacciones);
   const cajitasCop = totalPorTipo(cajitas, movimientos, 'cajita', transacciones);
-  // Las deudas y tarjetas tienen saldos negativos. Convertir a positivo para reportar "lo que debes"
-  const deudasCop =
-    -totalPorTipo(cajitas, movimientos, 'deuda', transacciones) -
-    totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones);
+  // El signo del saldo crudo de una deuda/tarjeta depende de cómo se fijó (a
+  // mano o por movimientos atribuidos), así que no se puede asumir uno solo.
+  // Lo único que importa para "lo que debes" es la magnitud.
+  const deudasCop = Math.abs(
+    totalPorTipo(cajitas, movimientos, 'deuda', transacciones) +
+      totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones),
+  );
   const totalCop = cuentasCop + cajitasCop;
 
   return { cuentasCop, cajitasCop, deudasCop, totalCop, netoCop: totalCop - deudasCop };

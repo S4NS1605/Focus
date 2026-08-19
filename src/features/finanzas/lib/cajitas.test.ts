@@ -266,6 +266,22 @@ describe('patrimonio', () => {
 
     expect(r.netoCop).toBe(-800_000);
   });
+
+  it('still subtracts the debt when its raw balance was set as a negative number', () => {
+    // "Fijar saldo" lets someone type the debt as "-41.000" instead of
+    // "41.000" — both spellings mean the same thing to a person. Whichever
+    // sign ends up stored, it must always be SUBTRACTED, never added.
+    const r = patrimonio(
+      [caj({ id: 'c1', tipo: 'cuenta' }), caj({ id: 't1', tipo: 'tarjeta' })],
+      [
+        mov({ id: 'a', cajitaId: 'c1', deltaCop: 137_690 }),
+        mov({ id: 'b', cajitaId: 't1', deltaCop: -41_000 }),
+      ],
+    );
+
+    expect(r.deudasCop).toBe(41_000);
+    expect(r.netoCop).toBe(96_690);
+  });
 });
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
