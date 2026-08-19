@@ -11,6 +11,7 @@ import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { TecladoNumerico } from './TecladoNumerico';
 import { AnimatedNumber } from './AnimatedNumber';
+import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import type { ConfirmDraft } from './ConfirmSheet';
 
 interface CapturaProps {
@@ -60,9 +61,19 @@ export const Captura: React.FC<CapturaProps> = ({
   const [editandoTexto, setEditandoTexto] = useState(false);
 
   const descRef = useRef<HTMLTextAreaElement>(null);
+  const capturaRef = useRef<HTMLDivElement>(null);
   const catalogo = useCatalogo();
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
+
+  useSwipeGesture(capturaRef as React.RefObject<HTMLElement>, {
+    onSwipeRight: () => {
+      haptic.trigger('light');
+      audio.play('click');
+      onCancel();
+    },
+  });
+
   useBloqueoScroll(true);
 
   const amountCop = digitos === '' ? null : Number(digitos);
@@ -110,6 +121,7 @@ export const Captura: React.FC<CapturaProps> = ({
 
   return (
     <motion.div
+      ref={capturaRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.15 }}
