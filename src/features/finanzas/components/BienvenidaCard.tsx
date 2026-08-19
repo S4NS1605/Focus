@@ -1,6 +1,5 @@
 import React from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { WavingHand } from './WavingHand';
 
 interface BienvenidaCardProps {
   onEmpezar: () => void;
@@ -30,7 +29,10 @@ export const BienvenidaCard: React.FC<BienvenidaCardProps> = ({ onEmpezar }) => 
     />
 
     <p className="relative flex items-center gap-2 font-display text-2xl font-extrabold text-white">
-      Hola <WavingHand className="h-7 w-7 shrink-0 -mb-1" />
+      {/* Emoji del sistema a propósito: en un iPhone esto YA es el dibujo real
+          de Apple, dibujado por el propio SO -- nada que empaquetar ni copiar.
+          En Android se ve con el emoji de ese sistema, que es lo esperable. */}
+      Hola <span className="fin-emoji" aria-hidden="true">👋🏻</span>
     </p>
     <p className="relative mt-0.5 text-xl font-extrabold text-white">Empecemos por lo básico</p>
     <p className="relative mt-1.5 max-w-xs text-[13px] leading-relaxed text-white/85">
