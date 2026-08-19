@@ -1,18 +1,11 @@
 /* Efectos visuales premium para PWA */
 
-/* Glassmorphism: fondo translúcido con blur */
+/* Glassmorphism: fondo translúcido con blur, según el tema activo */
 .fin-glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--fin-glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.fin-glass-dark {
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--fin-glass-border);
 }
 
 /* Sombras suaves y elegantes (no rectangulares como Android) */
@@ -157,6 +150,8 @@ html {
   --fin-ink-soft: #666666;
   --fin-ink-faint: #999999;
   --fin-line: #e0e0e0;
+  --fin-glass-bg: rgba(255, 255, 255, 0.7);
+  --fin-glass-border: rgba(255, 255, 255, 0.2);
 }
 
 /* Tema oscuro - por preferencia de sistema */
@@ -168,6 +163,8 @@ html {
     --fin-ink-soft: #b0b0b0;
     --fin-ink-faint: #666666;
     --fin-line: #333333;
+    --fin-glass-bg: rgba(26, 26, 26, 0.7);
+    --fin-glass-border: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -179,6 +176,8 @@ html[data-tema='oscuro'] {
   --fin-ink-soft: #b0b0b0;
   --fin-ink-faint: #666666;
   --fin-line: #333333;
+  --fin-glass-bg: rgba(26, 26, 26, 0.7);
+  --fin-glass-border: rgba(255, 255, 255, 0.1);
 }
 
 /* Tema claro - forzado manualmente */
@@ -189,4 +188,6 @@ html[data-tema='claro'] {
   --fin-ink-soft: #666666;
   --fin-ink-faint: #999999;
   --fin-line: #e0e0e0;
+  --fin-glass-bg: rgba(255, 255, 255, 0.7);
+  --fin-glass-border: rgba(255, 255, 255, 0.2);
 }
