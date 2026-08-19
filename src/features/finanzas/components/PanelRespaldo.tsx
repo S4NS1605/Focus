@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { AlertTriangle, Download, HardDriveDownload, Upload } from 'lucide-react';
+import { AlertTriangle, Download, FileText, HardDriveDownload, Upload } from 'lucide-react';
 import type { Instantanea } from '../data/repositorio';
 import {
   aCsv,
@@ -15,6 +15,7 @@ interface PanelRespaldoProps {
   datos: Instantanea;
   hoy: string;
   onRestaurar: (datos: Instantanea) => void;
+  onGenerarInforme: () => void;
 }
 
 const descargar = (contenido: string, nombre: string, tipo: string) => {
@@ -34,7 +35,7 @@ const descargar = (contenido: string, nombre: string, tipo: string) => {
  * de tocar nada y pide una confirmación aparte. Nadie debería descubrir lo que
  * había dentro de un respaldo después de que ya reemplazó su contabilidad.
  */
-export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({ datos, hoy, onRestaurar }) => {
+export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({ datos, hoy, onRestaurar, onGenerarInforme }) => {
   const archivoRef = useRef<HTMLInputElement>(null);
   const [porRestaurar, setPorRestaurar] = useState<{ datos: Instantanea; resumen: string } | null>(
     null,
@@ -73,8 +74,20 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({ datos, hoy, onRest
       <div className="flex flex-col gap-2 rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
         <button
           type="button"
+          onClick={onGenerarInforme}
+          className="flex items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm font-bold text-blue-600 hover:bg-blue-500/20 dark:text-blue-400"
+        >
+          <FileText className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+          Generar informe / PDF
+        </button>
+        <p className="text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">
+          Un reporte del mes, listo para imprimir o guardar como PDF.
+        </p>
+
+        <button
+          type="button"
           onClick={() => descargar(json, nombreDeArchivo(hoy), 'application/json')}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[var(--fin-accent)] px-4 py-3 text-sm font-bold text-[var(--fin-on-accent)]"
+          className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-[var(--fin-accent)] px-4 py-3 text-sm font-bold text-[var(--fin-on-accent)]"
         >
           <Download className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
           Descargar respaldo completo

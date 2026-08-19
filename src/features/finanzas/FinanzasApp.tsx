@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, X, Pencil, History, Plus, FileText } from 'lucide-react';
+import { AlertTriangle, X, Pencil, History, Plus } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forMonth, monthTotals } from './lib/aggregate';
@@ -414,22 +414,6 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
             <BienvenidaCard onEmpezar={() => setSection('cuentas')} />
           ) : null}
 
-          {/* "Resumen Ejecutivo" -- redundante con el título "Resumen" que ya
-              pone el encabezado de la sección, y en un registro más
-              corporativo que el resto de la app ("Vas bien este mes",
-              "Sin contar $X en ahorros"). Se quita en vez de reescribirla:
-              el botón de al lado no necesita una etiqueta para tener sentido. */}
-          <div className="flex items-center justify-end px-1">
-            <button
-              type="button"
-              onClick={() => setMostrarReporte(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-1.5 text-xs font-bold text-[var(--fin-ink)] shadow-sm transition-all hover:bg-[var(--fin-soft)]"
-            >
-              <FileText className="h-3.5 w-3.5 text-blue-500" />
-              Generar Informe / PDF
-            </button>
-          </div>
-
           <PatrimonioCard
             cajitas={cajitas}
             transacciones={transacciones}
@@ -700,6 +684,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
               datos={almacen.datos}
               hoy={today}
               onRestaurar={(d) => void almacen.restaurar(d)}
+              onGenerarInforme={() => setMostrarReporte(true)}
             />
           ) : (
             <ConfiguracionView
