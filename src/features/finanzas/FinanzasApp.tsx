@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, CloudOff, X } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forMonth, monthTotals } from './lib/aggregate';
@@ -17,6 +17,9 @@ import { useSesion } from './data/useSesion';
 import { useTema } from './data/useTema';
 import { obtenerSupabase } from './data/supabase';
 import { RepositorioSupabase } from './data/repositorioSupabase';
+import { RepositorioIndexedDB, soportaIndexedDB } from './data/indexeddb';
+import { RepositorioConCola } from './data/repositorioConCola';
+import { ColaCambios } from './data/colaCambios';
 import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { AsesorView } from './components/AsesorView';
@@ -171,7 +174,24 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   const repositorio = useMemo(() => {
     if (!userId) return undefined;
     const cliente = obtenerSupabase();
-    return cliente ? new RepositorioSupabase(cliente, userId) : undefined;
+    if (!cliente) return undefined;
+    const remoto = new RepositorioSupabase(cliente, userId);
+
+    // Sin IndexedDB (Firefox en modo privado lo rechaza de plano) no hay dónde
+    // guardar una cola: se sigue hablando con Supabase directo, como siempre.
+    // Sin conexión, eso vuelve a fallar como antes de este cambio — no hay
+    // forma de hacerlo mejor sin un sitio persistente donde anotar lo pendiente.
+    if (!soportaIndexedDB()) return remoto;
+
+    // Nombre propio POR USUARIO: nunca el mismo `finanzas` del modo local, y
+    // nunca compartido entre dos cuentas distintas en el mismo aparato. Si hoy
+    // usas la app sin cuenta y mañana entras con una, o si otra persona entra
+    // con la suya en este mismo computador, cada quien tiene su propia base y
+    // ninguna ve ni un dato de la otra.
+    const nombreDeCache = `finanzas-nube-${userId}`;
+    const local = new RepositorioIndexedDB(nombreDeCache);
+    const cola = new ColaCambios(nombreDeCache);
+    return new RepositorioConCola(local, remoto, cola);
   }, [userId]);
 
   const almacen = useAlmacen(repositorio);
@@ -427,6 +447,23 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             />
             <p className="text-[13px] leading-relaxed text-[var(--fin-warn-ink)]">
               {COPY.almacen.sinPersistencia}
+            </p>
+          </div>
+        ) : null}
+
+        {/* Anotaste algo sin señal: se ve de una en el aparato, pero le falta
+            subir. El aviso desaparece solo en cuanto vuelve la conexión y la
+            cola se vacía — no hace falta que la persona haga nada. */}
+        {almacen.cambiosPendientes > 0 ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] px-4 py-3">
+            <CloudOff
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn)]"
+              strokeWidth={2.5}
+            />
+            <p className="text-[13px] leading-relaxed text-[var(--fin-warn-ink)]">
+              {almacen.cambiosPendientes === 1
+                ? 'Tienes 1 cambio sin subir. Se sube solo en cuanto vuelva la conexión.'
+                : `Tienes ${almacen.cambiosPendientes} cambios sin subir. Se suben solos en cuanto vuelva la conexión.`}
             </p>
           </div>
         ) : null}

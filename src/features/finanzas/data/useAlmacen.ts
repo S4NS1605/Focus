@@ -13,6 +13,7 @@ import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
 import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, cuentaEfectivo } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
+import { tieneSincronizacion } from './repositorioConCola';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
 
@@ -28,6 +29,12 @@ export interface Almacen {
    * Lo llama `useSincronizacion` cuando vuelves a la app.
    */
   recargar: () => Promise<void>;
+  /**
+   * Cuántos cambios hechos sin conexión siguen esperando subir. Cero con
+   * cualquier repositorio que no sea `RepositorioConCola` — no hay nada que
+   * esperar cuando no hay una cola de por medio.
+   */
+  cambiosPendientes: number;
 
   agregarTransaccion: (tx: Transaction) => Promise<void>;
   importarTransacciones: (txs: readonly Transaction[]) => Promise<void>;
@@ -156,6 +163,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [persistente, setPersistente] = useState(elegido.persistente);
+  const [cambiosPendientes, setCambiosPendientes] = useState(0);
 
   // Held in a ref so the recovery path can re-read storage without every action
   // callback depending on the latest snapshot.
@@ -175,6 +183,21 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
    * vez (guardar un movimiento que además ajusta el saldo de una cuenta).
    */
   const escrituras = useRef(0);
+
+  /**
+   * Vuelve a preguntarle al repositorio cuántos cambios sin subir tiene. No
+   * pasa nada si `repo` no lo soporta (todo lo que no sea `RepositorioConCola`
+   * — sin cola no hay nada que contar) ni si falla la propia pregunta.
+   */
+  const actualizarPendientes = useCallback(async () => {
+    if (!tieneSincronizacion(repo)) return;
+    try {
+      const n = await repo.cambiosPendientes();
+      if (montado.current) setCambiosPendientes(n);
+    } catch {
+      // No es grave: el número solo se queda desactualizado un momento.
+    }
+  }, [repo]);
 
   useEffect(() => {
     montado.current = true;
@@ -205,7 +228,11 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       // Sin internet o con el servidor caído se sigue viendo lo que ya había,
       // que es correcto: son datos de verdad, solo que de hace un rato.
     }
-  }, [repo]);
+    // `cargarTodo()` de `RepositorioConCola` intenta subir la cola antes de
+    // leer, así que este es también el momento natural de refrescar cuántos
+    // cambios quedaron pendientes después de ese intento.
+    await actualizarPendientes();
+  }, [repo, actualizarPendientes]);
 
   useEffect(() => {
     let cancelado = false;
@@ -273,6 +300,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         }
 
         setDatos(cargado);
+        await actualizarPendientes();
       } catch (e) {
         if (!cancelado) {
           setError(mensajeDeError(e));
@@ -287,7 +315,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     return () => {
       cancelado = true;
     };
-  }, [repo]);
+  }, [repo, actualizarPendientes]);
 
   /**
    * Applies a change to the screen first, then writes it.
@@ -318,8 +346,13 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       } finally {
         escrituras.current -= 1;
       }
+      // Si la escritura no pudo subir y quedó en cola, o si al reintentar el
+      // resto de la cola alguna terminó de subir, el número visible cambia
+      // aquí mismo — no hay que esperar a la siguiente vez que vuelvas a la
+      // app para verlo.
+      await actualizarPendientes();
     },
-    [datos, repo],
+    [datos, repo, actualizarPendientes],
   );
 
   const agregarTransaccion = useCallback(
@@ -925,6 +958,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     error,
     descartarError: useCallback(() => setError(null), []),
     recargar,
+    cambiosPendientes,
     agregarTransaccion,
     importarTransacciones,
     actualizarTransaccion,

@@ -7,11 +7,22 @@ import type { Recurrente } from '../lib/recurrentes';
 import type { Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 
-const DB_NOMBRE = 'finanzas';
+/**
+ * Nombre por defecto: el libro local de quien no tiene cuenta.
+ *
+ * Cuando SÍ hay cuenta, el caché para modo sin conexión usa un nombre propio
+ * por usuario (`data/repositorioConCola.ts` arma ese nombre) en vez de este.
+ * Es a propósito: si dos personas comparten el mismo computador con cuentas
+ * distintas, sus datos no pueden acabar en la misma base — la una vería lo de
+ * la otra, o peor, un cambio guardado sin conexión podría subirse a la cuenta
+ * equivocada. Nombres de base distintos hacen esa mezcla imposible aunque el
+ * código tenga un error en otro lado.
+ */
+const DB_NOMBRE_LOCAL = 'finanzas';
 // Bumped when a store is added: `onupgradeneeded` only fires on a version
 // change, so a device that already opened the database at v1 would otherwise
 // never get the new store.
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 const STORES = {
   transacciones: 'transacciones',
@@ -22,6 +33,13 @@ const STORES = {
   contactos: 'contactos',
   presupuestos: 'presupuestos',
   recurrentes: 'recurrentes',
+  /**
+   * Cambios hechos sin conexión, a la espera de subirse. Solo lo usa
+   * `ColaCambios` (`data/colaCambios.ts`); vive en el mismo archivo de base de
+   * datos que el resto porque siempre viaja junto con su caché: si algún día
+   * se borra uno, tiene que borrarse el otro.
+   */
+  colaPendiente: 'colaPendiente',
 } as const;
 
 type StoreNombre = (typeof STORES)[keyof typeof STORES];
@@ -49,19 +67,36 @@ const completar = (tx: IDBTransaction): Promise<void> =>
 export const soportaIndexedDB = (): boolean =>
   typeof indexedDB !== 'undefined' && indexedDB !== null;
 
-const abrir = (): Promise<IDBDatabase> =>
+/**
+ * Abre la base de datos indicada, con el mismo esquema siempre.
+ *
+ * Exportada porque `ColaCambios` (`data/colaCambios.ts`) necesita abrir la
+ * MISMA base que el caché de un usuario con cuenta, para que el respaldo y su
+ * cola de pendientes vivan siempre juntos. Tener dos funciones que abrieran la
+ * base por separado sería arriesgarse a que un día se les olvide mantener el
+ * mismo número de versión y el mismo esquema entre las dos.
+ */
+export const abrirBase = (nombre: string): Promise<IDBDatabase> =>
   new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NOMBRE, DB_VERSION);
+    const request = indexedDB.open(nombre, DB_VERSION);
 
     request.onupgradeneeded = () => {
       const db = request.result;
-      for (const nombre of Object.values(STORES)) {
-        if (!db.objectStoreNames.contains(nombre)) {
-          // Los presupuestos se identifican por su categoría: hay como máximo
-          // uno por cada una, y un id aparte permitiría dos topes en disputa.
-          const clave = nombre === STORES.presupuestos ? 'categoria' : 'id';
-          db.createObjectStore(nombre, { keyPath: clave });
+      for (const nombreDeTienda of Object.values(STORES)) {
+        if (db.objectStoreNames.contains(nombreDeTienda)) continue;
+        if (nombreDeTienda === STORES.colaPendiente) {
+          // Sin keyPath: la clave la genera IndexedDB sola con cada `add()`, en
+          // orden ascendente. Ese orden es lo que garantiza que los cambios se
+          // reintenten en el mismo orden en que se hicieron — editar y luego
+          // borrar el mismo movimiento tiene que aplicarse en ese orden, o el
+          // borrado llegaría antes que la edición que borra.
+          db.createObjectStore(nombreDeTienda, { autoIncrement: true });
+          continue;
         }
+        // Los presupuestos se identifican por su categoría: hay como máximo
+        // uno por cada una, y un id aparte permitiría dos topes en disputa.
+        const clave = nombreDeTienda === STORES.presupuestos ? 'categoria' : 'id';
+        db.createObjectStore(nombreDeTienda, { keyPath: clave });
       }
       // Pocket history is always read one pocket at a time; without this index
       // that read is a full scan of every movement ever recorded.
@@ -82,8 +117,20 @@ const abrir = (): Promise<IDBDatabase> =>
 export class RepositorioIndexedDB implements Repositorio {
   private db: IDBDatabase | null = null;
 
+  private readonly nombreDeBase: string;
+
+  /**
+   * `nombreDeBase` por defecto es la base de quien no tiene cuenta. Cuando esta
+   * clase se usa como caché de una cuenta con sesión (`RepositorioConCola`), se
+   * le da un nombre propio de ese usuario para que nunca comparta base con el
+   * modo local ni con la cuenta de otra persona en el mismo aparato.
+   */
+  constructor(nombreDeBase: string = DB_NOMBRE_LOCAL) {
+    this.nombreDeBase = nombreDeBase;
+  }
+
   private async conexion(): Promise<IDBDatabase> {
-    if (!this.db) this.db = await abrir();
+    if (!this.db) this.db = await abrirBase(this.nombreDeBase);
     return this.db;
   }
 

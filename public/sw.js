@@ -1,13 +1,19 @@
 /*
  * Service worker for the finance app.
  *
- * Its job is narrow on purpose: make the app OPEN without a connection. It does
- * not make the app WORK offline — the data lives in Supabase, so a signed-in
- * session with no network gets the shell and an error, not stale figures.
+ * Its own job is still narrow: make the app OPEN without a connection, by
+ * caching the shell and static assets. It never caches a Supabase response or
+ * an API call — see NUNCA_CACHEAR below — because a stale HTTP cache showing
+ * yesterday's balance as if it were current would be a bug this file could
+ * silently cause.
  *
- * That restraint is the whole design. A finance tool that serves a cached
- * balance is worse than one that says it cannot reach the server: the number
- * looks authoritative and is wrong, and the user has no way to tell.
+ * Working offline with real, live data is handled elsewhere, deliberately not
+ * here: `data/repositorioConCola.ts` keeps a per-account copy in IndexedDB and
+ * a queue of writes made without a connection, uploaded once the network is
+ * back. That split matters — a service worker caching HTTP responses and an
+ * app-level queue replaying database writes are different tools solving
+ * different problems, and mixing the two into one mechanism is how a cache
+ * quietly becomes a second source of truth that disagrees with the first.
  */
 
 const VERSION = 'v1';
