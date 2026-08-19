@@ -8,6 +8,7 @@ import type { ParsedTransaction } from '../lib/parseTransaction';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { useCatalogo } from '../catalogoContexto';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { TecladoNumerico } from './TecladoNumerico';
 import type { ConfirmDraft } from './ConfirmSheet';
 
@@ -60,6 +61,7 @@ export const Captura: React.FC<CapturaProps> = ({
   const descRef = useRef<HTMLTextAreaElement>(null);
   const catalogo = useCatalogo();
   const haptic = useHapticFeedback();
+  const audio = useAudioFeedback();
   useBloqueoScroll(true);
 
   const amountCop = digitos === '' ? null : Number(digitos);
@@ -85,9 +87,11 @@ export const Captura: React.FC<CapturaProps> = ({
   const guardar = () => {
     if (amountCop === null || amountCop === 0) {
       haptic.trigger('error');
+      audio.play('error');
       return;
     }
     haptic.trigger('success');
+    audio.play('success');
     onSave({
       kind,
       amountCop,
@@ -127,6 +131,7 @@ export const Captura: React.FC<CapturaProps> = ({
             type="button"
             onClick={() => {
               haptic.trigger('selection');
+              audio.play('selection');
               setKind(esGasto ? 'ingreso' : 'gasto');
             }}
             className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold transition-colors"
@@ -197,6 +202,7 @@ export const Captura: React.FC<CapturaProps> = ({
                 type="button"
                 onClick={() => {
                   haptic.trigger('selection');
+                  audio.play('selection');
                   setCategory(entrada.clave);
                 }}
                 aria-pressed={activa}

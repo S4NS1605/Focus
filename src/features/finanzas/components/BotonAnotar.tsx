@@ -2,6 +2,7 @@ import React from 'react';
 import { Mic, Plus, Search, Square } from 'lucide-react';
 import { useDictation } from '../hooks/useDictation';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useAudioFeedback } from '../hooks/useAudioFeedback';
 
 interface BotonAnotarProps {
   /** Se llama con lo que la persona dijo, ya transcrito. */
@@ -32,19 +33,23 @@ interface BotonAnotarProps {
 export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, onBuscar }) => {
   const dictation = useDictation(onDictado);
   const haptic = useHapticFeedback();
+  const audio = useAudioFeedback();
   const escuchando = dictation.status === 'listening';
 
   const alTocarMicrofono = () => {
     haptic.trigger('medium');
+    audio.play('click');
     if (!dictation.supported) {
       onManual();
       return;
     }
     if (escuchando) {
       haptic.trigger('light');
+      audio.play('click');
       dictation.stop();
     } else {
       haptic.trigger('heavy');
+      audio.play('warning');
       dictation.start();
     }
   };
@@ -57,6 +62,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
             type="button"
             onClick={() => {
               haptic.trigger('light');
+              audio.play('click');
               onManual();
             }}
             aria-label="Anotar a mano"
@@ -68,6 +74,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
             type="button"
             onClick={() => {
               haptic.trigger('light');
+              audio.play('click');
               onBuscar();
             }}
             aria-label="Buscar un movimiento"
