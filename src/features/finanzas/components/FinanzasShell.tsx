@@ -46,7 +46,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
   return (
   <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased lg:flex">
     {/* ---------- Desktop: persistent sidebar ---------- */}
-    <aside className="hidden lg:flex lg:h-[100dvh] lg:w-60 lg:shrink-0 lg:flex-col lg:justify-between lg:border-r lg:border-[var(--fin-line)] lg:bg-[var(--fin-card)] lg:px-4 lg:py-6 lg:sticky lg:top-0">
+    <aside className="hidden lg:flex lg:h-[100dvh] lg:w-60 lg:shrink-0 lg:flex-col lg:justify-between lg:border-r lg:border-[var(--fin-line)] lg:bg-[var(--fin-card)] lg:px-4 lg:py-6 lg:sticky lg:top-0 lg:backdrop-blur-xl">
       <div>
         <div className="flex items-center gap-2.5 px-2">
           {onBack && (
@@ -106,7 +106,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
     {/* ---------- Content ---------- */}
     <div className="flex min-w-0 flex-1 flex-col">
       {/* Mobile header. Hidden on desktop, where the sidebar carries the brand. */}
-      <header className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-[var(--fin-line)] bg-[var(--fin-bg-blur)] px-4 pt-[calc(env(safe-area-inset-top)+0.875rem)] pb-3.5 backdrop-blur-md lg:hidden">
+      <header className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-[var(--fin-line)] bg-[var(--fin-bg-blur)] px-4 pt-[calc(env(safe-area-inset-top)+0.875rem)] pb-3.5 backdrop-blur-xl backdrop-saturate-150 lg:hidden">
         {onBack && (
           <button 
             onClick={onBack}
@@ -147,7 +147,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
 
     {/* ---------- Mobile: fixed bottom tab bar ---------- */}
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-[var(--fin-line)] bg-[var(--fin-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-[var(--fin-line)] bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-150 shadow-[inset_0_1px_0_0_var(--fin-glass-highlight)] lg:hidden"
       aria-label="Secciones"
     >
       {SECTIONS.filter((item) => SECCIONES_BARRA.includes(item.id)).map((item) => {

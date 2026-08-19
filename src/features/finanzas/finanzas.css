@@ -24,10 +24,23 @@
   /* Surfaces */
   --fin-bg: #fbf9f6;
   --fin-bg-blur: rgb(251 249 246 / 0.85);
-  --fin-card: #ffffff;
+  /* Translucent rather than solid white: every card sits on --fin-glass-filter
+     below, so this alpha is what lets that blur actually read as glass instead
+     of a flat colour with a fancy name. */
+  --fin-card: rgb(255 255 255 / 0.72);
   --fin-soft: #f5f3f0;
   --fin-line: #ede9e3;
   --fin-scrim: rgb(28 25 23 / 0.4);
+
+  /* Liquid-glass surfaces (iOS 26 "Liquid Glass" material): a blurred, saturated
+     backdrop plus a bright top rim standing in for a specular highlight, and a
+     soft floating shadow standing in for the lift. Kept as tokens rather than
+     baked into each card's Tailwind classes because the same three values are
+     reused verbatim by every glass surface in the app — see the attribute
+     selectors near the bottom of this file. */
+  --fin-glass-filter: blur(28px) saturate(180%);
+  --fin-glass-highlight: rgb(255 255 255 / 0.55);
+  --fin-glass-shadow: 0 20px 45px -20px rgb(28 25 23 / 0.28);
 
   /* Text, darkest to lightest */
   --fin-ink: #1c1917;
@@ -73,10 +86,17 @@
 
     --fin-bg: #1a1817;
     --fin-bg-blur: rgb(26 24 23 / 0.85);
-    --fin-card: #232120;
+    --fin-card: rgb(45 42 40 / 0.6);
     --fin-soft: #2c2a28;
     --fin-line: #35322f;
     --fin-scrim: rgb(0 0 0 / 0.6);
+
+    /* Dimmer than the light theme's: a bright rim reads as a highlight against
+       a dark glass surface, but the light-mode value would look like a stray
+       white line here. The shadow goes the other way, deeper, so a card still
+       visibly lifts off a background that is nearly as dark as it is. */
+    --fin-glass-highlight: rgb(255 255 255 / 0.12);
+    --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
 
     --fin-ink: #f5f3f0;
     --fin-ink-soft: #a8a29e;
@@ -111,10 +131,13 @@
 
   --fin-bg: #1a1817;
   --fin-bg-blur: rgb(26 24 23 / 0.85);
-  --fin-card: #232120;
+  --fin-card: rgb(45 42 40 / 0.6);
   --fin-soft: #2c2a28;
   --fin-line: #35322f;
   --fin-scrim: rgb(0 0 0 / 0.6);
+
+  --fin-glass-highlight: rgb(255 255 255 / 0.12);
+  --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
 
   --fin-ink: #f5f3f0;
   --fin-ink-soft: #a8a29e;
@@ -137,6 +160,26 @@
   --fin-media-ink: #fdba74;
   --fin-baja-bg: rgb(250 204 21 / 0.12);
   --fin-baja-ink: #fde047;
+}
+
+/* Liquid glass, applied app-wide from one place instead of editing every card.
+   Every "big surface" container in this app already shares one of these three
+   Tailwind roundings paired with the --fin-card token -- rounded-3xl for
+   ordinary section cards, rounded-[1.75rem] for the login card, rounded-t-[2rem]
+   for the sheets that slide up from the bottom. An attribute selector matches
+   the literal class string, so this reaches all of them (including the
+   `hover:`, `lg:`, and `/95` variants already in use) without needing every
+   component to opt in individually, and without ever touching the small stuff
+   -- inputs, pills, badges -- that a real iOS form leaves solid so it stays
+   legible to type into.
+   Small text inputs are excluded on purpose: glass over a caret hurts more than
+   it helps. */
+.fin-page [class*="bg-[var(--fin-card)]"][class*="rounded-3xl"],
+.fin-page [class*="bg-[var(--fin-card)]"][class*="rounded-[1.75rem]"],
+.fin-page [class*="bg-[var(--fin-card)]"][class*="rounded-t-[2rem]"] {
+  backdrop-filter: var(--fin-glass-filter);
+  -webkit-backdrop-filter: var(--fin-glass-filter);
+  box-shadow: inset 0 1px 0 0 var(--fin-glass-highlight), var(--fin-glass-shadow);
 }
 
 .fin-page {

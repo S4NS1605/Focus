@@ -59,7 +59,7 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[88dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[2rem] bg-[var(--fin-bg)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        className="max-h-[88dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[2rem] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
