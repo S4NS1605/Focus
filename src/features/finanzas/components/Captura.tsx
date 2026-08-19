@@ -10,6 +10,7 @@ import { useCatalogo } from '../catalogoContexto';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { TecladoNumerico } from './TecladoNumerico';
+import { AnimatedNumber } from './AnimatedNumber';
 import type { ConfirmDraft } from './ConfirmSheet';
 
 interface CapturaProps {
@@ -155,7 +156,7 @@ export const Captura: React.FC<CapturaProps> = ({
  son lo único que hay en pantalla — no hace falta decir "Monto" encima
  de un número gigante. */}
       <div className="mt-8 min-h-0 flex-1">
-        <p
+        <div
           className="tabular-nums"
           style={{
             font: 'var(--fin-t-cifra)',
@@ -163,8 +164,12 @@ export const Captura: React.FC<CapturaProps> = ({
             color: amountCop === null ? 'var(--fin-ink-ghost)' : colorMonto,
           }}
         >
-          {esGasto ? '−' : '+'}${digitos === '' ? '0' : formatAmountInput(amountCop)}
-        </p>
+          {esGasto ? '−' : '+'}$
+          <AnimatedNumber
+            value={amountCop}
+            format={(n) => formatAmountInput(n)}
+          />
+        </div>
 
         {editandoTexto ? (
           <textarea
