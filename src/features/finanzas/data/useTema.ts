@@ -39,8 +39,19 @@ export const useTema = () => {
 
   useEffect(() => {
     const raiz = document.documentElement;
+
+    // Agregar clase de transición
+    raiz.classList.add('theme-transitioning');
+
     if (tema === 'sistema') raiz.removeAttribute('data-tema');
     else raiz.setAttribute('data-tema', tema);
+
+    // Remover clase de transición después de que termine
+    const timer = setTimeout(() => {
+      raiz.classList.remove('theme-transitioning');
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [tema]);
 
   const setTema = useCallback((siguiente: Tema) => {
