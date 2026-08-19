@@ -29,7 +29,11 @@ export const BienvenidaCard: React.FC<BienvenidaCardProps> = ({ onEmpezar }) => 
     />
 
     <p className="relative flex items-center gap-2 font-display text-2xl font-extrabold text-white">
-      Hola <span aria-hidden="true">👋</span>
+      {/* Light skin tone via the U+1F3FB modifier. The glyph itself still comes
+          from whatever emoji font the OS ships -- Apple's on an iPhone, Noto on
+          Android -- since embedding Apple's actual artwork would mean shipping
+          copyrighted assets this app has no licence to redistribute. */}
+      Hola <span className="fin-emoji" aria-hidden="true">👋🏻</span>
     </p>
     <p className="relative mt-0.5 text-xl font-extrabold text-white">Empecemos por lo básico</p>
     <p className="relative mt-1.5 max-w-xs text-[13px] leading-relaxed text-white/85">
@@ -39,7 +43,7 @@ export const BienvenidaCard: React.FC<BienvenidaCardProps> = ({ onEmpezar }) => 
     <button
       type="button"
       onClick={onEmpezar}
-      className="group relative mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-neutral-900 shadow-sm transition-transform hover:scale-[1.02]"
+      className="group relative mt-5 inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/80 px-5 py-2.5 text-xs font-bold text-neutral-900 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),0_8px_20px_-6px_rgba(0,0,0,0.35)] backdrop-blur-md backdrop-saturate-150 transition-all hover:scale-[1.02] hover:bg-white/90"
     >
       <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
       Empezar
