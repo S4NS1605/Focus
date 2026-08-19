@@ -12,6 +12,7 @@ import type { ParsedTransaction } from './lib/parseTransaction';
 import { ReporteFinancieroModal } from './components/ReporteFinancieroModal';
 import { aprenderDe } from './lib/aprendizaje';
 import { useAlmacen } from './data/useAlmacen';
+import { useSincronizacion } from './data/useSincronizacion';
 import { useSesion } from './data/useSesion';
 import { useTema } from './data/useTema';
 import { obtenerSupabase } from './data/supabase';
@@ -174,6 +175,16 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   }, [userId]);
 
   const almacen = useAlmacen(repositorio);
+
+  // Vuelve a leer cada vez que regresas a la app. Sin esto, la app instalada en
+  // la pantalla de inicio se queda con la foto del momento en que se abrió, y
+  // lo que anotaste en el computador no aparece hasta cerrarla del todo.
+  //
+  // Va activo SIEMPRE, también sin cuenta. Con cuenta, el otro escritor es otro
+  // aparato; sin cuenta, es otra pestaña del mismo navegador, que comparte la
+  // misma base local. Dos pestañas abiertas mostrando saldos distintos es el
+  // mismo problema, y leer de la base local no cuesta ni un viaje a internet.
+  useSincronizacion({ activo: true, recargar: almacen.recargar });
   const { mostrarAhorro, setMostrarAhorro } = useMostrarAhorro();
   const onboarding = useOnboarding();
   const gmf = useAjustesGmf();

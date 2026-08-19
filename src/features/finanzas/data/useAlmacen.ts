@@ -23,6 +23,11 @@ export interface Almacen {
   persistente: boolean;
   error: string | null;
   descartarError: () => void;
+  /**
+   * Vuelve a leer todo del almacenamiento, en silencio y de fondo.
+   * Lo llama `useSincronizacion` cuando vuelves a la app.
+   */
+  recargar: () => Promise<void>;
 
   agregarTransaccion: (tx: Transaction) => Promise<void>;
   importarTransacciones: (txs: readonly Transaction[]) => Promise<void>;
@@ -157,12 +162,50 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
   const repo = elegido.repositorio;
   const montado = useRef(true);
 
+  /**
+   * Cuántas escrituras hay ahora mismo en el aire.
+   *
+   * Sirve para una cosa muy concreta: `recargar()` no puede pisar un cambio que
+   * se acaba de hacer. Si guardas un gasto y justo en ese instante llega una
+   * recarga, el servidor todavía no conoce ese gasto, así que su respuesta
+   * llegaría SIN él y lo borraría de la pantalla — el movimiento parecería
+   * haberse perdido aunque sí se guardó.
+   *
+   * Es un contador y no un booleano porque puede haber varias escrituras a la
+   * vez (guardar un movimiento que además ajusta el saldo de una cuenta).
+   */
+  const escrituras = useRef(0);
+
   useEffect(() => {
     montado.current = true;
     return () => {
       montado.current = false;
     };
   }, []);
+
+  /**
+   * Vuelve a leerlo todo del almacenamiento.
+   *
+   * La app lee al abrirse y a partir de ahí solo escribe, así que sin esto un
+   * dispositivo se queda con la foto del momento en que se abrió. Eso se nota
+   * sobre todo con la app instalada en la pantalla de inicio: volver a ella no
+   * la vuelve a montar, así que puede llevar horas mostrando saldos viejos
+   * mientras en otro aparato ya cambiaron.
+   *
+   * No avisa de que está cargando a propósito: esto ocurre de fondo y poner la
+   * pantalla en "cargando…" cada vez que vuelves a la app sería peor que el
+   * problema que arregla.
+   */
+  const recargar = useCallback(async () => {
+    if (escrituras.current > 0) return;
+    try {
+      const fresco = await repo.cargarTodo();
+      if (montado.current && escrituras.current === 0) setDatos(fresco);
+    } catch {
+      // Sin internet o con el servidor caído se sigue viendo lo que ya había,
+      // que es correcto: son datos de verdad, solo que de hace un rato.
+    }
+  }, [repo]);
 
   useEffect(() => {
     let cancelado = false;
@@ -257,6 +300,11 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     async (siguiente: Instantanea, escribir: () => Promise<void>) => {
       const anterior = datos;
       setDatos(siguiente);
+      // Se apunta ANTES de escribir y se descuenta en el finally, pase lo que
+      // pase. Mientras esté por encima de cero, `recargar` se abstiene: una
+      // respuesta del servidor pedida antes de esta escritura no la conoce, y
+      // aplicarla borraría de la pantalla algo que sí se guardó.
+      escrituras.current += 1;
       try {
         await escribir();
       } catch (e) {
@@ -267,6 +315,8 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         } catch {
           setDatos(anterior);
         }
+      } finally {
+        escrituras.current -= 1;
       }
     },
     [datos, repo],
@@ -874,6 +924,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     persistente,
     error,
     descartarError: useCallback(() => setError(null), []),
+    recargar,
     agregarTransaccion,
     importarTransacciones,
     actualizarTransaccion,

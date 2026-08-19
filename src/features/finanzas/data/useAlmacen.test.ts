@@ -629,3 +629,83 @@ describe('useAlmacen', () => {
     expect(result.current.datos.cajitas.filter((c) => c.nombre === 'Efectivo')).toHaveLength(1);
   });
 });
+
+describe('useAlmacen — recargar', () => {
+  it('trae lo que otro dispositivo escribió mientras esta app estaba abierta', async () => {
+    const repo = new RepositorioMemoria({ transacciones: [tx({ id: 'vieja' })] });
+    const { result } = await montar(repo);
+    expect(result.current.datos.transacciones).toHaveLength(1);
+
+    // Otro aparato guarda algo. Esta app no se entera de nada por su cuenta:
+    // lee al abrirse y desde ahí solo escribe.
+    await repo.guardarTransacciones([tx({ id: 'desde-el-pc' })]);
+    expect(result.current.datos.transacciones).toHaveLength(1);
+
+    await act(async () => {
+      await result.current.recargar();
+    });
+
+    expect(result.current.datos.transacciones.map((t) => t.id).sort()).toEqual([
+      'desde-el-pc',
+      'vieja',
+    ]);
+  });
+
+  it('NO borra de la pantalla algo que se acaba de guardar', async () => {
+    // La condición delicada de todo esto. Si una recarga pedida antes de una
+    // escritura llega después de ella, el servidor todavía no conocía ese
+    // movimiento: aplicar su respuesta lo haría desaparecer de la pantalla
+    // aunque sí se guardó. Para quien lo anotó, es un movimiento perdido.
+    let soltarEscritura: () => void = () => {};
+    const bloqueo = new Promise<void>((res) => {
+      soltarEscritura = res;
+    });
+
+    const base = new RepositorioMemoria();
+    const repo: Repositorio = {
+      ...base,
+      cargarTodo: () => base.cargarTodo(),
+      guardarTransacciones: async (txs) => {
+        await bloqueo;
+        await base.guardarTransacciones(txs);
+      },
+    } as Repositorio;
+
+    const { result } = await montar(repo);
+
+    // Se guarda algo, pero la escritura se queda colgada a propósito.
+    let guardando: Promise<void>;
+    act(() => {
+      guardando = result.current.agregarTransaccion(tx({ id: 'recien-anotada' }));
+    });
+    expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['recien-anotada']);
+
+    // Y justo entonces vuelves a la app, que dispara una recarga.
+    await act(async () => {
+      await result.current.recargar();
+    });
+
+    // Sigue en pantalla. Sin el contador de escrituras en vuelo, aquí habría 0.
+    expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['recien-anotada']);
+
+    soltarEscritura();
+    await act(async () => {
+      await guardando!;
+    });
+    expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['recien-anotada']);
+  });
+
+  it('si no hay conexión, se queda con lo que ya tenía en vez de vaciarse', async () => {
+    const repo = new RepositorioMemoria({ transacciones: [tx()] });
+    const { result } = await montar(repo);
+
+    const caido = vi.spyOn(repo, 'cargarTodo').mockRejectedValue(new Error('sin red'));
+    await act(async () => {
+      await result.current.recargar();
+    });
+
+    expect(result.current.datos.transacciones).toHaveLength(1);
+    expect(result.current.error).toBeNull();
+    caido.mockRestore();
+  });
+});
