@@ -149,32 +149,44 @@ html.theme-transitioning * {
     border-color 0.3s ease, box-shadow 0.3s ease !important;
 }
 
-/* Color variables que transicionan automáticamente */
+/* Color variables que transicionan automáticamente - Tema claro por defecto */
 html {
-  --fin-bg: var(--fin-bg-light, #ffffff);
-  --fin-card: var(--fin-card-light, #f7f7f7);
-  --fin-ink: var(--fin-ink-light, #1a1a1a);
-  --fin-ink-soft: var(--fin-ink-soft-light, #666666);
-  --fin-ink-faint: var(--fin-ink-faint-light, #999999);
-  --fin-line: var(--fin-line-light, #e0e0e0);
+  --fin-bg: #ffffff;
+  --fin-card: #f7f7f7;
+  --fin-ink: #1a1a1a;
+  --fin-ink-soft: #666666;
+  --fin-ink-faint: #999999;
+  --fin-line: #e0e0e0;
 }
 
+/* Tema oscuro - por preferencia de sistema */
 @media (prefers-color-scheme: dark) {
   html:not([data-tema='claro']) {
-    --fin-bg: var(--fin-bg-dark, #0a0a0a);
-    --fin-card: var(--fin-card-dark, #1a1a1a);
-    --fin-ink: var(--fin-ink-dark, #ffffff);
-    --fin-ink-soft: var(--fin-ink-soft-dark, #b0b0b0);
-    --fin-ink-faint: var(--fin-ink-faint-dark, #666666);
-    --fin-line: var(--fin-line-dark, #333333);
+    --fin-bg: #0a0a0a;
+    --fin-card: #1a1a1a;
+    --fin-ink: #ffffff;
+    --fin-ink-soft: #b0b0b0;
+    --fin-ink-faint: #666666;
+    --fin-line: #333333;
   }
 }
 
+/* Tema oscuro - forzado manualmente */
 html[data-tema='oscuro'] {
-  --fin-bg: var(--fin-bg-dark, #0a0a0a);
-  --fin-card: var(--fin-card-dark, #1a1a1a);
-  --fin-ink: var(--fin-ink-dark, #ffffff);
-  --fin-ink-soft: var(--fin-ink-soft-dark, #b0b0b0);
-  --fin-ink-faint: var(--fin-ink-faint-dark, #666666);
-  --fin-line: var(--fin-line-dark, #333333);
+  --fin-bg: #0a0a0a;
+  --fin-card: #1a1a1a;
+  --fin-ink: #ffffff;
+  --fin-ink-soft: #b0b0b0;
+  --fin-ink-faint: #666666;
+  --fin-line: #333333;
+}
+
+/* Tema claro - forzado manualmente */
+html[data-tema='claro'] {
+  --fin-bg: #ffffff;
+  --fin-card: #f7f7f7;
+  --fin-ink: #1a1a1a;
+  --fin-ink-soft: #666666;
+  --fin-ink-faint: #999999;
+  --fin-line: #e0e0e0;
 }
