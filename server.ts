@@ -1076,15 +1076,15 @@ Reglas clave:
     // falló" devuelven lo mismo desde fuera y no hay forma de distinguirlos.
     const fallos: string[] = [];
 
-    // 1. Groq (rápido y sin costo en el plan gratuito).
+    // 1. Groq (rápido y SIN COSTO en plan gratuito) — PRIORITARIO
     if (groqKey) {
-      proveedor = 'Groq (GPT-OSS 120B)';
-      modelo = 'openai/gpt-oss-120b';
+      proveedor = 'Groq (Llama 3.1 70B)';
+      modelo = 'llama-3.1-70b-versatile';
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
         body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
+          model: 'llama-3.1-70b-versatile',
           messages: [
             { role: 'system', content: systemPrompt },
             ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
@@ -1094,7 +1094,7 @@ Reglas clave:
             { role: 'user', content: prompt },
           ],
           temperature: 0.6,
-          max_tokens: 600,
+          max_tokens: 450,
         }),
       });
       if (groqRes.ok) {
@@ -1107,89 +1107,7 @@ Reglas clave:
       }
     }
 
-    // 2. OpenAI (GPT-4o mini)
-    if (!respuestaTexto && openaiKey) {
-      proveedor = 'OpenAI (GPT-4o)';
-      modelo = 'gpt-4o-mini';
-      const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
-              role: m.role === 'bot' ? 'assistant' : 'user',
-              content: m.text || m.content || '',
-            })) : []),
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.6,
-          max_tokens: 600,
-        }),
-      });
-      if (oaiRes.ok) {
-        const data = await oaiRes.json();
-        respuestaTexto = data.choices?.[0]?.message?.content || '';
-      }
-    }
-
-    // 3. Google Gemini (1.5 Flash)
-    if (!respuestaTexto && geminiKey) {
-      proveedor = 'Google Gemini';
-      modelo = 'gemini-1.5-flash';
-      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [
-            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
-              role: m.role === 'bot' ? 'model' : 'user',
-              parts: [{ text: m.text || m.content || '' }],
-            })) : []),
-            { role: 'user', parts: [{ text: prompt }] },
-          ],
-          generationConfig: { maxOutputTokens: 600, temperature: 0.6 },
-        }),
-      });
-      if (geminiRes.ok) {
-        const data = await geminiRes.json();
-        respuestaTexto = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      }
-    }
-
-    // 4. Anthropic Claude
-    if (!respuestaTexto && anthropicKey) {
-      proveedor = 'Claude 3.5';
-      modelo = 'claude-3-5-sonnet-20241022';
-      const clRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': anthropicKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          system: systemPrompt,
-          messages: [
-            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
-              role: m.role === 'bot' ? 'assistant' : 'user',
-              content: m.text || m.content || '',
-            })) : []),
-            { role: 'user', content: prompt },
-          ],
-          max_tokens: 600,
-        }),
-      });
-      if (clRes.ok) {
-        const data = await clRes.json();
-        respuestaTexto = data.content?.[0]?.text || '';
-      }
-    }
-
-    // 5. DeepSeek
+    // 2. DeepSeek (MUY económico, excelente relación precio-rendimiento)
     if (!respuestaTexto && deepseekKey) {
       proveedor = 'DeepSeek V3';
       modelo = 'deepseek-chat';
@@ -1206,12 +1124,67 @@ Reglas clave:
             })) : []),
             { role: 'user', content: prompt },
           ],
-          max_tokens: 600,
+          max_tokens: 450,
         }),
       });
       if (dsRes.ok) {
         const data = await dsRes.json();
         respuestaTexto = data.choices?.[0]?.message?.content || '';
+      }
+    }
+
+    // 3. Google Gemini Flash (económico)
+    if (!respuestaTexto && geminiKey) {
+      proveedor = 'Google Gemini Flash';
+      modelo = 'gemini-1.5-flash';
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [
+            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
+              role: m.role === 'bot' ? 'model' : 'user',
+              parts: [{ text: m.text || m.content || '' }],
+            })) : []),
+            { role: 'user', parts: [{ text: prompt }] },
+          ],
+          generationConfig: { maxOutputTokens: 450, temperature: 0.6 },
+        }),
+      });
+      if (geminiRes.ok) {
+        const data = await geminiRes.json();
+        respuestaTexto = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      }
+    }
+
+    // 4. Anthropic Claude Haiku (model económico)
+    if (!respuestaTexto && anthropicKey) {
+      proveedor = 'Claude Haiku';
+      modelo = 'claude-3-5-haiku-20241022';
+      const clRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-haiku-20241022',
+          system: systemPrompt,
+          messages: [
+            ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
+              role: m.role === 'bot' ? 'assistant' : 'user',
+              content: m.text || m.content || '',
+            })) : []),
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 450,
+        }),
+      });
+      if (clRes.ok) {
+        const data = await clRes.json();
+        respuestaTexto = data.content?.[0]?.text || '';
       }
     }
 
