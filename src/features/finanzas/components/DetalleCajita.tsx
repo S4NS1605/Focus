@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Trash2, X } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
+import { TIPO_LABELS } from '../data/modelos';
 import type { Transaction } from '../types';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { saldoDeCajita } from '../lib/cajitas';
 import { iconoDeCajita } from '../cajitaIconos';
-import { useCatalogo } from '../catalogoContexto';
 
 interface DetalleCajitaProps {
   cajita: Cajita;
@@ -42,7 +42,6 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   onTransferir,
   destinos = [],
 }) => {
-  const catalogo = useCatalogo();
   const [editandoSaldo, setEditandoSaldo] = useState(false);
   const [nuevoSaldoTexto, setNuevoSaldoTexto] = useState('');
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
@@ -122,7 +121,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         <div>
           <h1 className="text-[24px] font-semibold text-[var(--fin-ink)]">{cajita.nombre}</h1>
           <p className="text-[13px] text-[var(--fin-ink-faint)]">
-            {catalogo.de(cajita.tipo as any).nombre}
+            {TIPO_LABELS[cajita.tipo]}
           </p>
         </div>
       </div>
