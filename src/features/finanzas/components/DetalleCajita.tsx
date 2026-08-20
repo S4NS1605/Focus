@@ -250,7 +250,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
 
       {/* Modal de transferir */}
       {transfiriendo ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 px-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <h2 className="text-[17px] font-semibold text-[var(--fin-ink)]">
               Transferir desde {cajita.nombre}
