@@ -1,0 +1,298 @@
+/* Quick Start Guide — Finanzas
+   Usa la paleta beige/verde/rojo de la app */
+
+.quick-start-finanzas {
+  background: var(--fin-card);
+  backdrop-filter: var(--fin-glass-filter);
+  border: 1px solid var(--fin-line);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--fin-glass-shadow);
+}
+
+/* HEADER */
+.qs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.qs-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.qs-title .icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.qs-title h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+  color: var(--fin-ink);
+}
+
+.qs-title p {
+  font-size: 0.875rem;
+  color: var(--fin-ink-soft);
+  margin: 0;
+}
+
+.dismiss-btn {
+  background: none;
+  border: none;
+  color: var(--fin-ink-soft);
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.dismiss-btn:hover {
+  background: var(--fin-soft);
+  color: var(--fin-ink);
+}
+
+/* STEPS */
+.qs-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.qs-step {
+  background: var(--fin-bg);
+  border: 1px solid var(--fin-line);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.qs-step:hover {
+  background: var(--fin-bg-soft);
+  border-color: var(--fin-ink-faint);
+}
+
+.qs-step.expanded {
+  background: var(--fin-surface);
+  border-color: var(--fin-ink-faint);
+}
+
+.step-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.step-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.step-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-info h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+  color: var(--fin-ink);
+}
+
+.step-info p {
+  font-size: 0.8rem;
+  color: var(--fin-ink-soft);
+  margin: 0;
+}
+
+.toggle-icon {
+  color: var(--fin-ink-soft);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.qs-step.expanded .toggle-icon {
+  transform: rotate(180deg);
+}
+
+/* DETAIL */
+.step-detail {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--fin-line);
+  animation: slideDown 0.2s ease forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-content p {
+  font-size: 0.875rem;
+  color: var(--fin-ink-soft);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.detail-content .hint {
+  font-size: 0.8rem;
+  color: var(--fin-ink-faint);
+  font-style: italic;
+}
+
+.example {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--fin-bg);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+}
+
+.example code {
+  font-family: 'Menlo', 'Monaco', monospace;
+  color: var(--fin-ink);
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.example .arrow {
+  color: var(--fin-ink-faint);
+  flex-shrink: 0;
+}
+
+.parsed {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.parsed .monto {
+  color: var(--fin-out);
+  font-weight: 600;
+}
+
+.parsed .categoria {
+  color: var(--fin-ink-soft);
+}
+
+/* TIPS */
+.qs-tips {
+  background: var(--fin-soft);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.qs-tips h4 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fin-ink-soft);
+  margin: 0 0 0.75rem;
+}
+
+.qs-tips ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.qs-tips li {
+  font-size: 0.8rem;
+  color: var(--fin-ink-soft);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  line-height: 1.4;
+}
+
+.qs-tips .bullet {
+  color: var(--fin-ink-faint);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .quick-start-finanzas {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .qs-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .qs-title {
+    width: 100%;
+  }
+
+  .step-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .step-info {
+    width: 100%;
+  }
+
+  .toggle-icon {
+    align-self: flex-end;
+    margin-top: -2rem;
+  }
+
+  .example {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .parsed {
+    flex-direction: column;
+    width: 100%;
+  }
+}
