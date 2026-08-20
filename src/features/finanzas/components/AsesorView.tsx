@@ -364,20 +364,24 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   )}
                 </div>
                 <div
-                  // Quien pregunta va en el color de acento; quien responde, en
-                  // el gris de tarjeta. Dos tonos, no dos colores de marca.
-                  className={`max-w-[80%] rounded-[var(--fin-r-card)] px-4 py-3 text-[15px] leading-relaxed ${
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-[16px] leading-relaxed break-words ${
                     msg.role === 'user'
-                      ? 'rounded-br-sm bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
-                      : 'rounded-bl-sm bg-[var(--fin-card)] text-[var(--fin-ink)]'
+                      ? 'rounded-br-none bg-[var(--fin-accent)] text-[var(--fin-on-accent)] font-medium'
+                      : 'rounded-bl-none bg-[var(--fin-soft)] text-[var(--fin-ink)]'
                   }`}
                 >
-                  {msg.text.split('\n').map((line, i) => (
-                    <React.Fragment key={i}>
-                      {renderMarkdownLine(line)}
-                      {i !== msg.text.split('\n').length - 1 && <br />}
-                    </React.Fragment>
-                  ))}
+                  <div className="space-y-2">
+                    {msg.text.split('\n\n').map((paragraph, pIdx) => (
+                      <div key={pIdx}>
+                        {paragraph.split('\n').map((line, lIdx) => (
+                          <React.Fragment key={lIdx}>
+                            {renderMarkdownLine(line)}
+                            {lIdx !== paragraph.split('\n').length - 1 && <br />}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                   {msg.action && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
                       <button
