@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { formatCop } from '../../lib/formatCop';
 import { Reveal } from './primitivas';
+import { TituloPalabras } from './adornos';
 
 /* ── Mockups ──────────────────────────────────────────────────────────────
    Cada pestaña dibuja su propia pantalla. Son SVG y CSS, no capturas: pesan
@@ -268,7 +269,7 @@ export const Funciones: React.FC = () => {
     <section className="funciones" id="funciones">
       <Reveal as="header" className="seccion-cabecera">
         <span className="seccion-etiqueta">Funciones</span>
-        <h2>Lo que hay adentro</h2>
+        <TituloPalabras texto="Lo que hay adentro" resaltarUltimas={1} />
         <p className="seccion-sub">
           No es una lista de gastos con gráficos encima. Son las piezas que
           faltan cuando de verdad quieres manejar tu plata.

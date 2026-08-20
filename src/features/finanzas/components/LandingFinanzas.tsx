@@ -6,8 +6,26 @@ import { Funciones } from './landing/Funciones';
 import { Cupo4x1000 } from './landing/Cupo4x1000';
 import { FormasDeRegistrar } from './landing/FormasDeRegistrar';
 import { Privacidad } from './landing/Privacidad';
+import { BandaCifras } from './landing/BandaCifras';
+import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
 import '../styles/LandingFinanzas.css';
+
+/* La cinta que corre bajo el hero. Son frases que la app de verdad entiende
+   —las mismas que el visitante puede pegar en el demo de abajo— así que además
+   de mover la página está enseñando el producto. */
+const FRASES_TICKER = [
+  'gasté 45k en pizza',
+  'uber a casa 12k',
+  'mercado en el éxito 180 mil',
+  'me pagaron 2 millones',
+  'netflix 38900',
+  'le presté 50 lucas a Andrés',
+  'almuerzo 15 mil con la tarjeta',
+  'tanqueé 120 mil ayer',
+  'arriendo 1.800.000',
+  'cine con Sara 42k'
+];
 
 interface LandingProps {
   onGetStarted?: () => void;
@@ -42,6 +60,7 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
   return (
     <div className="landing-finanzas">
       <nav className={`nav-bar ${compacta ? 'compacta' : ''}`}>
+        <BarraProgreso />
         <div className="nav-content">
           <span className="logo">Lukapp</span>
 
@@ -74,7 +93,9 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
       </nav>
 
       <Hero onGetStarted={onGetStarted} onSeeDemo={onSeeDemo} />
+      <Ticker frases={FRASES_TICKER} />
       <DemoParser />
+      <BandaCifras />
       <Funciones />
       <Cupo4x1000 />
       <FormasDeRegistrar />

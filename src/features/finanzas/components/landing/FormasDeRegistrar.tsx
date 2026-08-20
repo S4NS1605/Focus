@@ -9,6 +9,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { Reveal } from './primitivas';
+import { TituloPalabras } from './adornos';
 
 const FORMAS: {
   Icono: LucideIcon;
@@ -58,7 +59,7 @@ export const FormasDeRegistrar: React.FC = () => (
   <section className="formas" id="formas">
     <Reveal as="header" className="seccion-cabecera">
       <span className="seccion-etiqueta">Seis maneras</span>
-      <h2>Registra como te quede cómodo</h2>
+      <TituloPalabras texto="Registra como te quede cómodo" resaltarUltimas={1} />
       <p className="seccion-sub">
         La app que usas es la que no te estorba. Si una forma no te sirve un día,
         hay otras cinco.

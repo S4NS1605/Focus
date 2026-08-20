@@ -274,129 +274,192 @@
 
 /* MOCKUP */
 .landing-finanzas .hero-visual {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* El marco del teléfono es lo que convierte una tarjeta suelta en "así se ve
-   la app". Sin él, el mockup parece un componente perdido al lado del texto. */
-.landing-finanzas .telefono {
-  width: min(320px, 100%);
-  border-radius: 40px;
-  padding: 10px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-line);
-  box-shadow: var(--lp-sombra-tel);
+/* EL TELÉFONO
+   Un iPhone 17 dibujado en CSS: marco de titanio, bordes finos y parejos,
+   isla dinámica y los cuatro botones. No es decoración gratuita — el marco es
+   lo que hace que la pantalla se lea como "así se ve la app en tu mano" y no
+   como una tarjeta suelta al lado del texto.
+
+   La pantalla mide 375px de ancho de verdad, que es el ancho lógico del
+   teléfono, y el conjunto se encoge con `scale` en pantallas chicas. Así el
+   dashboard de adentro se renderiza con las mismas medidas que en un celular
+   real en vez de con una versión apretada que no existe en ninguna parte. */
+/* La envoltura sostiene el resplandor y el marco. Existe para que el destello
+   pueda quedar por detrás del teléfono: el marco pinta su fondo de titanio
+   antes que a cualquier hijo suyo, así que un resplandor metido adentro no
+   podría verse nunca. */
+.landing-finanzas .telefono-envoltura {
+  position: relative;
+  display: inline-block;
+}
+
+.landing-finanzas .telefono-destello {
+  position: absolute;
+  inset: -16%;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(21, 128, 61, 0.3), transparent 62%);
+}
+
+:root[data-tema='oscuro'] .landing-finanzas .telefono-destello {
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.24), transparent 62%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) .landing-finanzas .telefono-destello {
+    background: radial-gradient(circle, rgba(74, 222, 128, 0.24), transparent 62%);
+  }
+}
+
+.landing-finanzas .telefono-marco {
+  position: relative;
+  width: 393px;
+  padding: 11px;
+  border-radius: 60px;
+  background: linear-gradient(160deg, #d9d5d0 0%, #8a8480 22%, #5f5a56 50%, #8a8480 78%, #cfcac4 100%);
+  box-shadow:
+    var(--lp-sombra-tel),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
 .landing-finanzas .telefono-pantalla {
-  background: var(--lp-bg);
-  border: 1px solid var(--lp-line);
-  border-radius: 31px;
-  padding: 1.5rem 1.15rem;
-}
-
-.landing-finanzas .balance-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 1.35rem;
-  padding-bottom: 1.35rem;
-  border-bottom: 1px solid var(--lp-line);
-}
-
-.landing-finanzas .balance-section .label {
-  font-size: 0.72rem;
-  color: var(--lp-ink-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-weight: 600;
-}
-
-.landing-finanzas .balance-section .amount {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  color: var(--lp-ink);
-}
-
-.landing-finanzas .transactions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.landing-finanzas .tx {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.65rem 0.7rem;
-  background: var(--lp-surface);
-  border-radius: 12px;
-}
-
-.landing-finanzas .tx-icono {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: var(--lp-bg);
-  color: var(--lp-ink-soft);
-}
-
-.landing-finanzas .tx .desc {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.8rem;
-  color: var(--lp-ink);
-  white-space: nowrap;
+  position: relative;
   overflow: hidden;
-  text-overflow: ellipsis;
+  border-radius: 49px;
+  background: var(--fin-bg);
+  /* El alto es fijo y la lista scrollea por dentro: si creciera con cada
+     movimiento del guion, el hero entero daría saltos cada dos segundos. */
+  height: 760px;
 }
 
-.landing-finanzas .tx .amount {
-  font-weight: 600;
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  flex-shrink: 0;
+/* La isla dinámica. Flota sobre la pantalla, no empuja el contenido. */
+.landing-finanzas .isla-dinamica {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 118px;
+  height: 34px;
+  border-radius: 999px;
+  background: #000;
+  z-index: 3;
 }
 
-.landing-finanzas .tx.out .amount {
-  color: var(--lp-out);
+/* Los botones. Sobresalen del canto, por eso el `left`/`right` negativo. */
+.landing-finanzas .telefono-boton-vol,
+.landing-finanzas .telefono-boton-accion,
+.landing-finanzas .telefono-boton-lateral {
+  position: absolute;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6e6864, #a9a39d);
 }
 
-.landing-finanzas .tx.in .amount {
-  color: var(--lp-in);
+.landing-finanzas .telefono-boton-accion {
+  left: -3px;
+  top: 112px;
+  height: 32px;
 }
 
-/* La fila de dictado enseña la promesa del titular sin tener que explicarla. */
-.landing-finanzas .dictado {
-  margin-top: 1.35rem;
-  padding-top: 1.15rem;
-  border-top: 1px solid var(--lp-line);
+.landing-finanzas .telefono-boton-vol.arriba {
+  left: -3px;
+  top: 168px;
+  height: 62px;
+}
+
+.landing-finanzas .telefono-boton-vol.abajo {
+  left: -3px;
+  top: 244px;
+  height: 62px;
+}
+
+.landing-finanzas .telefono-boton-lateral {
+  right: -3px;
+  top: 196px;
+  height: 96px;
+}
+
+/* LA PANTALLA DE ADENTRO
+   Aquí viven los `--fin-*` que necesita TransactionList, que es el componente
+   de verdad de la app. No se importa finanzas.css: esa hoja cuelga sus tokens
+   de `.fin-html` y traería la app entera por un mockup. Se declaran solo los
+   que la fila usa, mapeados desde la paleta de la landing para que el teléfono
+   siga el tema claro/oscuro con el resto de la página. */
+.landing-finanzas .pantalla-app {
+  --fin-bg: var(--lp-bg);
+  --fin-card: var(--lp-surface);
+  --fin-soft: var(--lp-surface);
+  --fin-line: var(--lp-line);
+  --fin-ink: var(--lp-ink);
+  --fin-ink-soft: var(--lp-ink-soft);
+  --fin-ink-faint: var(--lp-ink-faint);
+  --fin-ink-ghost: var(--lp-line);
+  --fin-in: var(--lp-in);
+  --fin-out: var(--lp-out);
+  --fin-warn: #d97706;
+  --fin-r-card: 20px;
+  --fin-r-pill: 9999px;
+  --fin-t-cifra: 700 44px/1 inherit;
+  --fin-track-cifra: -0.03em;
+
+  height: 100%;
+  overflow: hidden;
+  padding: 68px 16px 0;
+  background: var(--fin-bg);
+  color: var(--fin-ink);
+}
+
+/* El velo de abajo: la lista se desvanece detrás de la barra del micrófono en
+   vez de cortarse en seco contra ella. */
+.landing-finanzas .pantalla-velo {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 150px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--lp-bg) 72%);
+}
+
+/* LA BARRA DEL MICRÓFONO
+   Lo que se está dictando ahora mismo. Va flotando sobre la pantalla, como el
+   botón de anotar de la app. */
+.landing-finanzas .barra-dictado {
+  position: absolute;
+  right: 14px;
+  bottom: 22px;
+  left: 14px;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 999px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.4);
 }
 
 .landing-finanzas .dictado-boton {
   position: relative;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
   border-radius: 999px;
   background: var(--lp-out);
   color: #ffffff;
 }
 
-/* El halo que late mientras se "dicta". Va en un hijo y no en el botón para que
+/* El halo que late mientras se dicta. Va en un hijo y no en el botón para que
    el pulso no arrastre el icono al escalar. */
 .landing-finanzas .dictado-pulso {
   position: absolute;
@@ -418,10 +481,12 @@
 }
 
 .landing-finanzas .dictado-texto {
-  font-size: 0.78rem;
-  color: var(--lp-ink-faint);
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: var(--lp-ink-soft);
   font-style: italic;
-  min-height: 1.2em;
 }
 
 .landing-finanzas .dictado-cursor {
@@ -438,35 +503,6 @@
   50% {
     opacity: 0;
   }
-}
-
-/* El remate: la frase dictada convertida en gasto. */
-.landing-finanzas .dictado-salida {
-  margin-top: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.55rem 0.7rem;
-  border-radius: 12px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-line);
-}
-
-.landing-finanzas .dictado-salida-cat {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--lp-ink);
-}
-
-.landing-finanzas .dictado-salida-monto {
-  font-size: 0.78rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--lp-out);
 }
 
 /* SECCIONES */
@@ -1339,4 +1375,210 @@
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MOVIMIENTO
+   Todo lo de aquí abajo existe para que la página no se sienta quieta. Cada
+   pieza se apaga sola con prefers-reduced-motion, que está al final del
+   fichero y desactiva animaciones y transiciones de golpe.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* La barra de progreso de lectura, pegada al borde de abajo de la nav. */
+.landing-finanzas .barra-progreso {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--lp-in), var(--lp-ink));
+}
+
+/* TITULARES POR PALABRA
+   Cada palabra vive en un `span` con overflow oculto, y el hijo sube desde
+   debajo de su propia línea. El padding de abajo evita que las colas de las
+   letras (la j, la g) queden recortadas por ese mismo overflow. */
+.landing-finanzas .palabra {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.12em;
+  margin-right: 0.26em;
+}
+
+.landing-finanzas .palabra > span {
+  display: inline-block;
+}
+
+.landing-finanzas .palabra .resaltada {
+  color: var(--lp-in);
+}
+
+/* LA CINTA DE FRASES */
+.landing-finanzas .ticker {
+  overflow: hidden;
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--lp-line);
+  border-bottom: 1px solid var(--lp-line);
+  background: var(--lp-surface);
+  /* Se desvanece por los bordes en vez de cortarse contra el canto. */
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.landing-finanzas .ticker-pista {
+  display: flex;
+  width: max-content;
+  animation: lp-ticker 46s linear infinite;
+}
+
+.landing-finanzas .ticker-pista.invertida {
+  animation-direction: reverse;
+}
+
+/* Al pasar el ratón se frena, para poder leer una frase concreta. */
+.landing-finanzas .ticker:hover .ticker-pista {
+  animation-play-state: paused;
+}
+
+.landing-finanzas .ticker-grupo {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.landing-finanzas .ticker-item {
+  padding: 0 1.5rem;
+  font-size: 0.92rem;
+  font-style: italic;
+  white-space: nowrap;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .ticker-item::after {
+  content: '·';
+  margin-left: 1.5rem;
+  font-style: normal;
+  color: var(--lp-ink-faint);
+}
+
+/* Recorre exactamente una copia: al terminar, la segunda está donde arrancó la
+   primera y el salto no se ve. */
+@keyframes lp-ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* LAS BURBUJAS DEL HERO */
+.landing-finanzas .burbujas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-finanzas .burbuja {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* LA BANDA DE CIFRAS */
+.landing-finanzas .banda-cifras {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+}
+
+.landing-finanzas .linea-dibujada {
+  display: block;
+  height: 1px;
+  transform-origin: 0 50%;
+  background: var(--lp-line);
+}
+
+.landing-finanzas .banda-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1.5rem;
+  padding: clamp(1.75rem, 4vw, 2.75rem) 0;
+}
+
+.landing-finanzas .banda-item {
+  text-align: center;
+}
+
+.landing-finanzas .banda-numero {
+  display: block;
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .banda-etiqueta {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--lp-ink-soft);
+  text-wrap: balance;
+}
+
+/* MICROINTERACCIONES
+   El icono salta un poco cuando el cursor entra en la tarjeta. Es el detalle
+   que hace que una cuadrícula de tarjetas se sienta viva en vez de impresa. */
+.landing-finanzas .forma-icono,
+.landing-finanzas .privacidad-icono {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s, color 0.25s;
+}
+
+.landing-finanzas .forma:hover .forma-icono,
+.landing-finanzas .privacidad-item:hover .privacidad-icono {
+  transform: translateY(-3px) scale(1.08) rotate(-4deg);
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+}
+
+/* El ejemplo de cada tarjeta se destaca al pasar por encima. */
+.landing-finanzas .forma-ejemplo {
+  transition: border-color 0.25s, color 0.25s;
+}
+
+.landing-finanzas .forma:hover .forma-ejemplo {
+  border-color: var(--lp-ink-faint);
+  color: var(--lp-ink);
+}
+
+/* Los botones principales se hunden al pulsarlos, no solo al pasar por encima:
+   sin el estado activo, en un móvil —donde no hay hover— no hay respuesta
+   táctil de ningún tipo. */
+.landing-finanzas .btn-primary:active,
+.landing-finanzas .btn-primary-lg:active,
+.landing-finanzas .link-btn:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.landing-finanzas .demo-chip {
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.landing-finanzas .demo-chip:hover {
+  transform: translateY(-1px);
+}
+
+.landing-finanzas .tab {
+  transition: color 0.2s, transform 0.2s;
+}
+
+.landing-finanzas .tab:active {
+  transform: scale(0.96);
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Braces, HardDrive, RefreshCw, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { Reveal } from './primitivas';
+import { TituloPalabras } from './adornos';
 
 const PUNTOS: { Icono: LucideIcon; titulo: string; texto: string }[] = [
   {
@@ -33,7 +34,7 @@ export const Privacidad: React.FC = () => (
   <section className="privacidad" id="privacidad">
     <Reveal as="header" className="seccion-cabecera">
       <span className="seccion-etiqueta">Tus datos</span>
-      <h2>Tu plata no es el producto</h2>
+      <TituloPalabras texto="Tu plata no es el producto" resaltarUltimas={2} />
     </Reveal>
 
     <div className="privacidad-grid">

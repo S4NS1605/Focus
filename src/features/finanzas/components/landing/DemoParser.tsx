@@ -5,6 +5,7 @@ import { parseTransaction } from '../../lib/parseTransaction';
 import { CATALOGO_BASE } from '../../categorias';
 import { formatCop } from '../../lib/formatCop';
 import { Reveal } from './primitivas';
+import { TituloPalabras } from './adornos';
 
 const EJEMPLOS = [
   'gasté 45k en pizza',
@@ -64,7 +65,7 @@ export const DemoParser: React.FC = () => {
     <section className="demo-parser" id="demo">
       <Reveal as="header" className="seccion-cabecera">
         <span className="seccion-etiqueta">Pruébalo aquí mismo</span>
-        <h2>Escribe como hablas</h2>
+        <TituloPalabras texto="Escribe como hablas" resaltarUltimas={1} />
         <p className="seccion-sub">
           Esto no es un video. Es el mismo motor que corre dentro de Lukapp.
           Cambia la frase y mira cómo la entiende.
