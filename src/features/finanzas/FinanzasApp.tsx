@@ -68,6 +68,7 @@ import type { PanelAjustes, SectionId } from './sections';
 import { TemaToggle } from './components/TemaToggle';
 import type { Tema } from './data/useTema';
 import { TransactionList } from './components/TransactionList';
+import { QuickStartGuideFinanzas } from './components/QuickStartGuideFinanzas';
 import './finanzas.css';
 
 /**
@@ -224,6 +225,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   // siquiera se dibujaba, sin forma de volver.
   const [section, setSection] = useState<SectionId>('inicio');
   const [mostrarReporte, setMostrarReporte] = useState(false);
+  const [mostrarQuickStart, setMostrarQuickStart] = useState(() => {
+    return !localStorage.getItem('__lukapp_quickstart_seen__');
+  });
 
   const today = bogotaDate();
   const thisMonth = monthKey(today);
@@ -457,6 +461,16 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
           />
         }
       >
+        {/* Quick Start Guide para nuevos usuarios */}
+        {mostrarQuickStart && (
+          <QuickStartGuideFinanzas
+            onDismiss={() => {
+              setMostrarQuickStart(false);
+              localStorage.setItem('__lukapp_quickstart_seen__', 'true');
+            }}
+          />
+        )}
+
         {/* Storage that cannot remember has to say so — silently losing a month of
  entries is far worse than an ugly banner. */}
         {!almacen.persistente ? (

@@ -8,6 +8,8 @@ import { FinanzasApp } from '../features/finanzas/FinanzasApp';
 import { AppLauncher } from './AppLauncher';
 import { SuperadminPanel } from './SuperadminPanel';
 import { EstadisticasPanel } from './EstadisticasPanel';
+import { LandingFinanzas } from '../features/finanzas/components/LandingFinanzas';
+import { WelcomeTourFinanzas } from '../features/finanzas/components/WelcomeTourFinanzas';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
@@ -37,6 +39,12 @@ export const AppsRoot: React.FC = () => {
   // en cada punto de gating, así que esta lista nunca necesita listarlos.
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
+
+  // Landing/Tour flow
+  const [showLanding, setShowLanding] = useState<boolean>(() => {
+    return !localStorage.getItem('__lukapp_landing_seen__');
+  });
+  const [showTour, setShowTour] = useState(false);
 
   // Admin impersonation banner
   const [adminBackup, setAdminBackup] = useState<AdminBackup | null>(() => {
@@ -178,6 +186,29 @@ export const AppsRoot: React.FC = () => {
   }
 
   if (sesion.estado.modo === 'anonimo') {
+    if (showLanding) {
+      return (
+        <>
+          <LandingFinanzas
+            onGetStarted={() => {
+              setShowLanding(false);
+              localStorage.setItem('__lukapp_landing_seen__', 'true');
+            }}
+            onSeeDemo={() => setShowTour(true)}
+            onLogin={() => {
+              setShowLanding(false);
+              localStorage.setItem('__lukapp_landing_seen__', 'true');
+            }}
+          />
+          {showTour && (
+            <WelcomeTourFinanzas
+              onComplete={() => setShowTour(false)}
+              onSkip={() => setShowTour(false)}
+            />
+          )}
+        </>
+      );
+    }
     return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
   }
 
