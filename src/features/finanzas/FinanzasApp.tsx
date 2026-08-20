@@ -50,6 +50,7 @@ import { DeudasView } from './components/DeudasView';
 import { MetasView } from './components/MetasView';
 import { FinanzasShell } from './components/FinanzasShell';
 import { InicioView } from './components/InicioView';
+import { insightsDelMes } from './lib/insights';
 import { DineroView } from './components/DineroView';
 import { DetalleCajita } from './components/DetalleCajita';
 import { MesView } from './components/MesView';
@@ -398,20 +399,24 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   // de 117px en el formulario, y la respuesta era la misma el 95% de las veces.
   const cuentaPorDefecto = cuentasParaElegir[0]?.id ?? null;
 
-  // Un aviso solo si de verdad te pasaste de un tope. Nunca "te quedan $X" por
-  // cada uno de los cuatro topes: eso es ruido con forma de dato.
-  const topePasado = useMemo(() => {
-    for (const p of almacen.datos.presupuestos) {
-      const gastado = gastos.find((g) => g.category === p.categoria)?.total ?? 0;
-      if (gastado > p.montoCop) {
-        return {
-          texto: `Te pasaste ${formatCop(gastado - p.montoCop)} en ${catalogoActual.de(p.categoria).nombre}`,
-          onTocar: () => setSection('mes'),
-        };
-      }
-    }
-    return null;
-  }, [almacen.datos.presupuestos, gastos, catalogoActual]);
+  // "Para ti": lo que la app nota por su cuenta. Todo se calcula en local —ver
+  // lib/insights.ts sobre por qué nunca se le pide esto a un modelo— y aquí
+  // solo se traduce a lo que la pantalla necesita: un sitio a donde ir al
+  // tocarlo.
+  const paraTi = useMemo(
+    () =>
+      insightsDelMes(
+        transacciones,
+        almacen.datos.presupuestos,
+        month,
+        bogotaDate(),
+        (categoria) => catalogoActual.de(categoria).nombre,
+      ).map((insight) => ({
+        ...insight,
+        onTocar: insight.seccion ? () => setSection(insight.seccion as SectionId) : undefined,
+      })),
+    [transacciones, almacen.datos.presupuestos, month, catalogoActual],
+  );
 
   const patrimonioCop = useMemo(
     () => totalVisible(cajitas, cajitaMovimientos, transacciones, mostrarAhorro),
@@ -505,7 +510,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             movimientos={delMes}
             conSenal={conSenal}
             onAbrirMovimiento={setDetalle}
-            aviso={topePasado}
+            insights={paraTi}
           />
         ) : null}
 

@@ -4,6 +4,7 @@ import type { Transaction } from '../types';
 import { formatCop } from '../lib/formatCop';
 import { monthKeyLabel } from '../lib/localDate';
 import { TransactionList } from './TransactionList';
+import type { Insight } from '../lib/insights';
 
 interface InicioViewProps {
   /** El mes que se está mirando, en formato YYYY-MM. */
@@ -21,8 +22,8 @@ interface InicioViewProps {
   movimientos: readonly Transaction[];
   conSenal?: ReadonlySet<string>;
   onAbrirMovimiento: (tx: Transaction) => void;
-  /** Un aviso corto, solo si de verdad pasa algo (un tope pasado). */
-  aviso?: { texto: string; onTocar: () => void } | null;
+  /** Lo que la app notó por su cuenta este mes. Casi siempre está vacío. */
+  insights?: readonly (Insight & { onTocar?: () => void })[];
 }
 
 /**
@@ -54,7 +55,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   movimientos,
   conSenal,
   onAbrirMovimiento,
-  aviso,
+  insights,
 }) => (
   <div className="flex flex-col">
     {/* Arriba: el mes a la izquierda, dos botones a la derecha. Nada más. Antes
@@ -134,20 +135,39 @@ export const InicioView: React.FC<InicioViewProps> = ({
       </div>
     </div>
 
-    {/* Casi siempre no hay nada aquí, y eso está bien. Solo aparece si de verdad
- pasó algo que merece interrumpir. */}
-    {aviso ? (
-      <button
-        type="button"
-        onClick={aviso.onTocar}
-        className="mt-5 flex items-center gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3 text-left"
-      >
-        <span
-          className="h-1.5 w-1.5 shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-out)]"
-          aria-hidden="true"
-        />
-        <span className="text-[15px] text-[var(--fin-ink)]">{aviso.texto}</span>
-      </button>
+    {/* "Para ti": casi siempre no hay nada aquí, y eso está bien. Solo aparece
+ lo que de verdad vale la pena leer — nunca más de tres cosas a la vez. */}
+    {insights && insights.length > 0 ? (
+      <div className="mt-5 flex flex-col gap-2">
+        {insights.map((insight) => {
+          const Contenedor = insight.onTocar ? 'button' : 'div';
+          return (
+            <Contenedor
+              key={insight.id}
+              type={insight.onTocar ? 'button' : undefined}
+              onClick={insight.onTocar}
+              className="flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3 text-left"
+            >
+              <span
+                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-[var(--fin-r-pill)]"
+                style={{
+                  backgroundColor:
+                    insight.tono === 'atento' ? 'var(--fin-out)' : 'var(--fin-ink-faint)',
+                }}
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                <span className="block text-[15px] font-medium text-[var(--fin-ink)]">
+                  {insight.titulo}
+                </span>
+                <span className="mt-0.5 block text-[13px] text-[var(--fin-ink-soft)]">
+                  {insight.detalle}
+                </span>
+              </span>
+            </Contenedor>
+          );
+        })}
+      </div>
     ) : null}
 
     {/* La lista: el mes completo, no las cinco últimas. Antes había que irse a
