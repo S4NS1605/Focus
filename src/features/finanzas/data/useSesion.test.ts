@@ -98,53 +98,83 @@ describe('useSesion — entrar', () => {
     });
   });
 
-  it('resuelve un usuario sin arroba a su correo', async () => {
-    rpc.mockResolvedValue({ data: 'real@correo.com', error: null });
+  it('nunca resuelve nombres de usuario contra la base', async () => {
+    // La 0017 borró `correo_de_usuario`: entregaba el correo de cualquiera que
+    // acertara un nombre, y eso solo se sostenía mientras no hubiera registro
+    // público. Un valor sin arroba ya no dispara ninguna consulta — se manda tal
+    // cual y lo rechaza Supabase.
     const { result } = await montar();
 
     await act(async () => {
       await result.current.entrar('miusuario', 'clave');
     });
 
-    expect(rpc).toHaveBeenCalledWith('correo_de_usuario', { nombre: 'miusuario' });
+    expect(rpc).not.toHaveBeenCalled();
     expect(auth.signInWithPassword).toHaveBeenCalledWith({
-      email: 'real@correo.com',
+      email: 'miusuario',
       password: 'clave',
     });
   });
 
-  it('NO delata si un usuario existe o no', async () => {
-    // Un mensaje distinto para "ese usuario no existe" convertiría el login en
-    // una forma de averiguar qué cuentas son reales.
-    rpc.mockResolvedValue({ data: null, error: null });
+  it('le quita los espacios al correo antes de entrar', async () => {
     const { result } = await montar();
 
     await act(async () => {
-      await result.current.entrar('inventado', 'clave');
+      await result.current.entrar('  yo@correo.com  ', 'clave');
     });
 
-    const porUsuarioInexistente = result.current.error;
-
-    auth.signInWithPassword.mockResolvedValueOnce({
-      error: { message: 'Invalid login credentials' },
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({
+      email: 'yo@correo.com',
+      password: 'clave',
     });
-    await act(async () => {
-      await result.current.entrar('real@correo.com', 'mala');
-    });
-
-    expect(porUsuarioInexistente).toBe(result.current.error);
-    expect(porUsuarioInexistente).not.toBeNull();
   });
 
-  it('no llama a Supabase si el usuario no se pudo resolver', async () => {
-    rpc.mockResolvedValue({ data: null, error: null });
+  it('manda el apodo en la metadata al registrarse', async () => {
+    // Es el único momento en que se puede escribir: `perfiles` no tiene permiso
+    // de inserción desde el navegador, así que la fila la crea el trigger
+    // leyendo esta metadata.
     const { result } = await montar();
 
     await act(async () => {
-      await result.current.entrar('inventado', 'clave');
+      await result.current.registrarse(' yo@correo.com ', 'clave', ' juli ');
     });
 
-    expect(auth.signInWithPassword).not.toHaveBeenCalled();
+    expect(auth.signUp).toHaveBeenCalledWith({
+      email: 'yo@correo.com',
+      password: 'clave',
+      options: { data: { usuario: 'juli' } },
+    });
+  });
+
+  it('registra sin metadata cuando no se dio apodo', async () => {
+    const { result } = await montar();
+
+    await act(async () => {
+      await result.current.registrarse('yo@correo.com', 'clave');
+    });
+
+    expect(auth.signUp).toHaveBeenCalledWith({
+      email: 'yo@correo.com',
+      password: 'clave',
+      options: undefined,
+    });
+  });
+
+  it('dice si un apodo está libre', async () => {
+    rpc.mockResolvedValue({ data: false, error: null });
+    const { result } = await montar();
+
+    await expect(result.current.usuarioDisponible(' juli ')).resolves.toBe(false);
+    expect(rpc).toHaveBeenCalledWith('usuario_disponible', { nombre: 'juli' });
+  });
+
+  it('da el apodo por libre si la comprobación falla', async () => {
+    // Bloquear el registro por no haber podido comprobarlo es peor que dejar que
+    // lo rechace el índice único, que es de todos modos quien manda.
+    rpc.mockResolvedValue({ data: null, error: { message: 'network' } });
+    const { result } = await montar();
+
+    await expect(result.current.usuarioDisponible('juli')).resolves.toBe(true);
   });
 
   it('traduce el fallo al español', async () => {

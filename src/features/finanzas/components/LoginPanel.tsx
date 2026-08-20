@@ -123,19 +123,22 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             htmlFor="login-identidad"
             className="block text-[13px] font-semibold uppercase tracking-wider text-[var(--fin-ink-faint)]"
           >
-            Usuario o correo
+            Tu correo
           </label>
           <input
             id="login-identidad"
-            type="text"
+            // Email, not text: 0017 quitó el login por nombre de usuario, y el
+            // tipo correcto es lo que hace que en un celular salga el teclado
+            // con la arroba.
+            type="email"
             value={identidad}
             onChange={(e) => setIdentidad(e.target.value)}
             // No placeholder on purpose. A sample value here is shown to every
-            // person who reaches the login screen, and a real username is half
+            // person who reaches the login screen, and a real address is half
             // of a working credential — the label above already says what goes
             // in the field, so the hint bought nothing and leaked something.
             // Standard token so password managers recognise the form and fill it.
-            autoComplete="username"
+            autoComplete="email"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}

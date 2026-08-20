@@ -7,6 +7,8 @@ import { Cupo4x1000 } from './landing/Cupo4x1000';
 import { FormasDeRegistrar } from './landing/FormasDeRegistrar';
 import { Privacidad } from './landing/Privacidad';
 import { BandaCifras } from './landing/BandaCifras';
+import { Registro } from './landing/Registro';
+import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
 import '../styles/LandingFinanzas.css';
@@ -31,19 +33,27 @@ interface LandingProps {
   onGetStarted?: () => void;
   onSeeDemo?: () => void;
   onLogin?: () => void;
+  /**
+   * Opcional para que la portada se pueda montar suelta (una vista de
+   * inspección, un test) sin tener que fabricar una sesión. Sin ella no se
+   * pinta el formulario de registro, que es lo único que la necesita.
+   */
+  sesion?: Sesion;
 }
 
 const ENLACES = [
   { href: '#demo', texto: 'Pruébalo' },
   { href: '#funciones', texto: 'Funciones' },
   { href: '#cuatro-por-mil', texto: '4×1000' },
-  { href: '#privacidad', texto: 'Privacidad' }
+  { href: '#privacidad', texto: 'Privacidad' },
+  { href: '#registro', texto: 'Crear cuenta' }
 ];
 
 export const LandingFinanzas: React.FC<LandingProps> = ({
   onGetStarted,
   onSeeDemo,
-  onLogin
+  onLogin,
+  sesion
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [compacta, setCompacta] = useState(false);
@@ -101,16 +111,20 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
       <FormasDeRegistrar />
       <Privacidad />
 
-      <section className="final-cta">
-        <Reveal>
-          <h2>¿Listo?</h2>
-          <p>30 días para entender tu dinero.</p>
-          <button className="btn-primary-lg" onClick={onGetStarted}>
-            Empezar ahora
-            <ArrowRight size={18} strokeWidth={2} aria-hidden />
-          </button>
-        </Reveal>
-      </section>
+      {sesion ? (
+        <Registro sesion={sesion} onIrAEntrar={onLogin} />
+      ) : (
+        <section className="final-cta">
+          <Reveal>
+            <h2>¿Listo?</h2>
+            <p>30 días para entender tu dinero.</p>
+            <button className="btn-primary-lg" onClick={onGetStarted}>
+              Empezar ahora
+              <ArrowRight size={18} strokeWidth={2} aria-hidden />
+            </button>
+          </Reveal>
+        </section>
+      )}
 
       <footer className="footer">
         <p>© 2026 Lukapp — Tu dinero, bajo control</p>

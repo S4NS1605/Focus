@@ -82,6 +82,15 @@
   /* La landing manda sobre su propio lienzo: sin esto, en móvil el fondo de la
      app se ve por debajo del último bloque. */
   min-height: 100dvh;
+
+  /* Los adornos sobresalen a propósito —el resplandor del teléfono se sale un
+     16% por cada lado, las burbujas rozan los bordes— y en un celular eso
+     bastaba para dejar la página desplazable a lo ancho.
+
+     `clip` y no `hidden`: hidden convierte esto en un contenedor de scroll y
+     eso rompe el `position: sticky` de la barra de arriba. clip recorta sin
+     crear el contenedor. */
+  overflow-x: clip;
 }
 
 .landing-finanzas ::selection {
@@ -297,6 +306,42 @@
 .landing-finanzas .telefono-envoltura {
   position: relative;
   display: inline-block;
+
+  /* El teléfono se dibuja SIEMPRE a tamaño real —393px de pantalla, que es el
+     ancho lógico del aparato— y se encoge entero con `scale`. Así el dashboard
+     de adentro conserva las proporciones del celular en vez de reflowear a una
+     versión estrecha que no existe en ningún teléfono.
+
+     Quien se escala es el marco; la envoltura declara el tamaño ya escalado.
+     Al revés no funciona: `scale` no encoge la caja de maquetación, así que el
+     teléfono seguía midiendo 393px para el grid del hero y la columna se
+     quedaba clavada en 393px —el `min-width: auto` de las pistas de grid— por
+     mucho que en pantalla se viera más pequeño. El hero desbordaba a lo ancho
+     en cualquier celular. */
+  --ancho-tel: 393px;
+  --alto-tel: 782px; /* 760 de pantalla + 22 de marco */
+  --escala: 1;
+  width: calc(var(--ancho-tel) * var(--escala));
+  height: calc(var(--alto-tel) * var(--escala));
+}
+
+.landing-finanzas .telefono-envoltura .telefono-marco {
+  transform: scale(var(--escala));
+  transform-origin: top left;
+}
+
+/* Con el marco puesto ocupa 415px, y la sección le quita 48 de aire lateral:
+   por debajo de 463px de ventana ya no cabe. */
+@media (max-width: 470px) {
+  .landing-finanzas .telefono-envoltura {
+    --escala: 0.78;
+  }
+}
+
+@media (max-width: 360px) {
+  .landing-finanzas .telefono-envoltura {
+    --escala: 0.7;
+  }
 }
 
 .landing-finanzas .telefono-destello {
@@ -1305,10 +1350,15 @@
   }
 
   /* El mockup baja debajo del texto: en una columna, la explicación va primero
-     y la pantalla la ilustra después. */
+     y la pantalla la ilustra después.
+
+     minmax(0, 1fr) y no 1fr: el mínimo `auto` de una pista de grid es el ancho
+     de su contenido más ancho, así que una pista con un mockup dentro se niega
+     a bajar de él y desborda la pantalla en vez de encogerse. */
+  .landing-finanzas .hero,
   .landing-finanzas .funciones-contenido,
   .landing-finanzas .gmf-caja {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1581,4 +1631,209 @@
 
 .landing-finanzas .tab:active {
   transform: scale(0.96);
+}
+
+/* REGISTRO
+   Cierra la página. Sustituye al "¿Listo?" genérico que había antes: pedirle a
+   alguien que se registre y ponerle debajo otra llamada a lo mismo es pedir dos
+   veces y creer que se pidió una. */
+.landing-finanzas .registro {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: clamp(3.5rem, 8vw, 6rem) 1.5rem clamp(4rem, 9vw, 7rem);
+}
+
+.landing-finanzas .registro-cabecera {
+  text-align: center;
+}
+
+.landing-finanzas .registro-cabecera .seccion-sub {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-finanzas .registro-caja {
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 24px;
+}
+
+.landing-finanzas .registro-campo {
+  display: block;
+  margin-bottom: 1.15rem;
+}
+
+.landing-finanzas .registro-etiqueta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .registro-campo input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  background: var(--lp-bg);
+  color: var(--lp-ink);
+  font-family: inherit;
+  /* 1rem y no menos: por debajo de 16px Safari en iPhone hace zoom al enfocar
+     el campo y deja la página descuadrada. Misma regla que vigila ios.test.ts. */
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.landing-finanzas .registro-campo input:focus {
+  outline: none;
+  border-color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .registro-campo input::placeholder {
+  color: var(--lp-ink-faint);
+}
+
+/* El ojo de la contraseña va dentro del campo, así que el input le deja sitio
+   a la derecha con el padding. */
+.landing-finanzas .registro-password {
+  position: relative;
+  display: block;
+}
+
+.landing-finanzas .registro-password input {
+  padding-right: 3rem;
+}
+
+.landing-finanzas .registro-password button {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--lp-ink-soft);
+  cursor: pointer;
+}
+
+.landing-finanzas .registro-password button:hover {
+  background: var(--lp-surface-hover);
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .registro-pista {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--lp-ink-soft);
+}
+
+/* El veredicto del apodo, al lado de su etiqueta. */
+.landing-finanzas .apodo-aviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .apodo-aviso.libre {
+  color: var(--lp-in);
+}
+
+.landing-finanzas .apodo-aviso.cogido {
+  color: var(--lp-out);
+}
+
+.landing-finanzas .registro-error {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: var(--lp-out);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-out);
+}
+
+.landing-finanzas .registro-enviar {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
+.landing-finanzas .registro-enviar:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.landing-finanzas .registro-girando {
+  animation: lp-girar 0.9s linear infinite;
+}
+
+@keyframes lp-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.landing-finanzas .registro-pie {
+  margin: 1.15rem 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .registro-enlace {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--lp-ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* La confirmación de "revisa tu correo". */
+.landing-finanzas .registro-exito {
+  text-align: center;
+}
+
+.landing-finanzas .registro-sello {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 1.1rem;
+  border-radius: 999px;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  color: var(--lp-in);
+}
+
+.landing-finanzas .registro-exito h2 {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.7rem;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .registro-exito p {
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--lp-ink-soft);
 }

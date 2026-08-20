@@ -14,7 +14,9 @@ export interface Sesion {
   error: string | null;
   ocupado: boolean;
   entrar: (email: string, password: string) => Promise<void>;
-  registrarse: (email: string, password: string) => Promise<void>;
+  registrarse: (email: string, password: string, usuario?: string) => Promise<void>;
+  /** True cuando el apodo está libre. Ver la implementación para el caso de fallo. */
+  usuarioDisponible: (usuario: string) => Promise<boolean>;
   salir: () => Promise<void>;
   limpiarError: () => void;
 }
@@ -92,35 +94,53 @@ export const useSesion = (): Sesion => {
     ocupado,
     limpiarError: useCallback(() => setError(null), []),
 
+    /**
+     * Sign-in is by email only.
+     *
+     * It used to accept a username too, resolving it through
+     * `correo_de_usuario`. That function handed out the address behind any name
+     * somebody guessed, and migration 0002 accepted the disclosure on one
+     * explicit condition: that accounts were created by the admin and there was
+     * no public sign-up. Opening registration ended that condition, so 0017
+     * drops the function and this path with it.
+     */
     entrar: useCallback(
-      (identidad, password) =>
-        ejecutar(async () => {
-          // Supabase authenticates by email only. A value with no "@" is taken
-          // as a username and resolved through `correo_de_usuario`, a
-          // security-definer function that returns the address for an exact
-          // match — see migration 0002 for why that disclosure is acceptable here.
-          let email = identidad;
-          if (!identidad.includes('@')) {
-            const { data, error: fallo } = await cliente!.rpc('correo_de_usuario', {
-              nombre: identidad,
-            });
-            if (fallo) return { error: fallo };
-            if (!data) {
-              // Deliberately the same wording as a wrong password: saying "that
-              // user does not exist" would turn the login form into a way to
-              // enumerate which accounts are real.
-              return { error: { message: 'invalid login credentials' } };
-            }
-            email = data as string;
-          }
-          return cliente!.auth.signInWithPassword({ email, password });
-        }),
+      (email, password) =>
+        ejecutar(() => cliente!.auth.signInWithPassword({ email: email.trim(), password })),
       [cliente, ejecutar],
     ),
 
+    /**
+     * El apodo viaja en la metadata porque el trigger `crear_perfil` lo lee de
+     * ahí para escribir la fila de `perfiles`: es el único momento en que se
+     * puede poner sin darle permiso de escritura al navegador.
+     */
     registrarse: useCallback(
-      (email, password) => ejecutar(() => cliente!.auth.signUp({ email, password })),
+      (email, password, usuario) =>
+        ejecutar(() =>
+          cliente!.auth.signUp({
+            email: email.trim(),
+            password,
+            options: usuario ? { data: { usuario: usuario.trim() } } : undefined,
+          }),
+        ),
       [cliente, ejecutar],
+    ),
+
+    /**
+     * True cuando el apodo está libre. Ante un fallo de red devuelve `true`:
+     * bloquear el registro por no haber podido comprobarlo es peor que dejar
+     * que lo rechace el índice único, que es de todos modos quien manda.
+     */
+    usuarioDisponible: useCallback(
+      async (usuario: string) => {
+        if (!cliente) return true;
+        const { data, error: fallo } = await cliente.rpc('usuario_disponible', {
+          nombre: usuario.trim(),
+        });
+        return fallo ? true : Boolean(data);
+      },
+      [cliente],
     ),
 
     salir: useCallback(() => ejecutar(() => cliente!.auth.signOut()), [cliente, ejecutar]),

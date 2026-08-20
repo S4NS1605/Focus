@@ -217,6 +217,7 @@ export const AppsRoot: React.FC = () => {
             onGetStarted={entrar}
             onSeeDemo={() => setShowTour(true)}
             onLogin={entrar}
+            sesion={sesion}
           />
           {showTour && (
             <WelcomeTourFinanzas
