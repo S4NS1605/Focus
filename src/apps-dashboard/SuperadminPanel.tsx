@@ -459,6 +459,18 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     if (tabActiva === 'roles' || (tabActiva === 'usuarios' && rol === 'admin')) fetchRoles();
   }, [tabActiva, fetchVisitas, rol]);
 
+  useEffect(() => {
+    if (tabActiva !== 'visitantes') return;
+    const interval = setInterval(fetchVisitas, 60000);
+    return () => clearInterval(interval);
+  }, [tabActiva, fetchVisitas]);
+
+  useEffect(() => {
+    if (tabActiva !== 'ia-tokens') return;
+    const interval = setInterval(fetchMetricasIA, 30000);
+    return () => clearInterval(interval);
+  }, [tabActiva]);
+
   const abrirCrear = () => {
     setEditando(null);
     setNuevoEmail('');
