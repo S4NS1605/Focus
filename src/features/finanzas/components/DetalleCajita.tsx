@@ -49,6 +49,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   const [transfiriendo, setTransfiriendo] = useState(false);
   const [destinoId, setDestinoId] = useState('');
   const [montoTexto, setMontoTexto] = useState('');
+  const [errorTransferencia, setErrorTransferencia] = useState<string | null>(null);
 
   const saldo = saldoDeCajita(movimientos, cajita.id, transacciones);
   const Icono = iconoDeCajita(cajita.icon);
@@ -70,17 +71,33 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   };
 
   const abrirTransferir = () => {
+    console.log('[transferir] abriendo modal', { puedeTransferir, destinos: destinosPosibles.length, primero: destinosPosibles[0]?.nombre });
     setDestinoId(destinosPosibles[0]?.id ?? '');
     setMontoTexto('');
     setTransfiriendo(true);
   };
 
-  const confirmarTransferir = () => {
+  const confirmarTransferir = async () => {
     const monto = parseAmountInput(montoTexto);
-    if (!onTransferir || destinoId === '' || monto === null) return;
-    onTransferir(cajita.id, destinoId, monto);
-    setTransfiriendo(false);
-    setMontoTexto('');
+    console.log('[transferir]', { onTransferir: !!onTransferir, destinoId, monto });
+    if (!onTransferir || destinoId === '' || monto === null) {
+      const razon = !onTransferir ? 'sin callback' : destinoId === '' ? 'sin destino' : 'monto inválido';
+      console.warn('[transferir] aborto:', { razon });
+      setErrorTransferencia('Error: ' + razon);
+      return;
+    }
+    try {
+      console.log('[transferir] enviando:', { origen: cajita.id, destino: destinoId, monto });
+      await onTransferir(cajita.id, destinoId, monto);
+      setTransfiriendo(false);
+      setMontoTexto('');
+      setDestinoId('');
+      setErrorTransferencia(null);
+      console.log('[transferir] ✓ completada');
+    } catch (err) {
+      console.error('[transferir] error:', err);
+      setErrorTransferencia('Error en la transferencia. Intenta de nuevo.');
+    }
   };
 
   const confirmarEliminar = () => {
@@ -269,7 +286,13 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               className={claseCampo}
             />
 
-            {!destinoId && destinosPosibles.length > 0 && (
+            {errorTransferencia && (
+              <p className="mt-2 text-[13px] font-semibold text-[var(--fin-warn)]">
+                {errorTransferencia}
+              </p>
+            )}
+
+            {!destinoId && destinosPosibles.length > 0 && !errorTransferencia && (
               <p className="mt-2 text-[13px] font-semibold text-[var(--fin-warn)]">
                 Elige una cuenta de destino
               </p>

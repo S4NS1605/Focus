@@ -615,7 +615,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
                     onFijarSaldo={(cajitaId: string, saldo: number) => void almacen.fijarSaldo(cajitaId, saldo)}
                     onEliminar={(id: string) => void almacen.borrarCajita(id)}
                     onTransferir={(origenId, destinoId, montoCop) =>
-                      void almacen.transferirEntreCuentas({ origenId, destinoId, montoCop })
+                      almacen.transferirEntreCuentas({ origenId, destinoId, montoCop })
                     }
                     destinos={destinosDeTransferencia}
                   />
