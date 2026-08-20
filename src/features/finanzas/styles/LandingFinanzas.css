@@ -1,21 +1,82 @@
 /* Landing Finanzas — Minimalista, directo, sin pretensiones
-   Paleta: beige (#fbf9f6), verde (#15803d), rojo (#be123c) */
+   Paleta: beige (#fbf9f6), verde (#15803d), rojo (#be123c)
 
-:root {
-  --fin-bg: #fbf9f6;
-  --fin-ink: #1c1917;
-  --fin-ink-soft: #78716c;
-  --fin-ink-faint: #a8a29e;
-  --fin-accent: #1c1917;
-  --fin-in: #15803d;
-  --fin-out: #be123c;
+   Los colores viven en variables propias con prefijo --lp- y colgadas de
+   `.landing-finanzas`, no de `:root`. Antes este fichero redefinía los
+   --fin-* globales con la paleta clara, así que dependía de quién cargara
+   último: finanzas.css ganaba, la landing heredaba tinta clara para modo
+   oscuro y la pintaba sobre su `background: white` fijo. Texto blanco sobre
+   blanco. Con las variables propias la landing ya no puede pisar a la app ni
+   ser pisada por ella.
+
+   El tema se resuelve con el mismo contrato del resto de la app: `data-tema`
+   en <html> manda, y si no está, decide el sistema. */
+
+.landing-finanzas {
+  --lp-bg: #ffffff;
+  --lp-surface: #fbf9f6;
+  --lp-surface-hover: #f5f3f0;
+  --lp-line: #ede9e3;
+  --lp-ink: #1c1917;
+  --lp-ink-soft: #78716c;
+  --lp-ink-faint: #a8a29e;
+  /* El botón principal y su texto van juntos: en oscuro se invierten los dos,
+     y separarlos es como se acaba con un botón claro y letra blanca. */
+  --lp-accent: #1c1917;
+  --lp-on-accent: #ffffff;
+  --lp-in: #15803d;
+  --lp-out: #be123c;
+  --lp-nav-bg: rgba(255, 255, 255, 0.95);
+  --lp-sombra-btn: 0 10px 25px rgba(28, 25, 23, 0.15);
+  --lp-sombra-card: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --lp-card-degradado: linear-gradient(135deg, #fbf9f6 0%, #f5f3f0 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) .landing-finanzas {
+    --lp-bg: #1a1817;
+    --lp-surface: #221f1e;
+    --lp-surface-hover: #2d2a28;
+    --lp-line: #35322f;
+    --lp-ink: #f5f3f0;
+    --lp-ink-soft: #a8a29e;
+    --lp-ink-faint: #857f7a;
+    --lp-accent: #f5f3f0;
+    --lp-on-accent: #1a1817;
+    /* El verde y el rojo de marca no llegan a 4.5:1 sobre fondo oscuro; estos
+       son los mismos tonos aclarados hasta que sí. */
+    --lp-in: #4ade80;
+    --lp-out: #fb7185;
+    --lp-nav-bg: rgba(26, 24, 23, 0.95);
+    --lp-sombra-btn: 0 10px 25px rgba(0, 0, 0, 0.45);
+    --lp-sombra-card: 0 10px 30px rgba(0, 0, 0, 0.4);
+    --lp-card-degradado: linear-gradient(135deg, #221f1e 0%, #2d2a28 100%);
+  }
+}
+
+:root[data-tema='oscuro'] .landing-finanzas {
+  --lp-bg: #1a1817;
+  --lp-surface: #221f1e;
+  --lp-surface-hover: #2d2a28;
+  --lp-line: #35322f;
+  --lp-ink: #f5f3f0;
+  --lp-ink-soft: #a8a29e;
+  --lp-ink-faint: #857f7a;
+  --lp-accent: #f5f3f0;
+  --lp-on-accent: #1a1817;
+  --lp-in: #4ade80;
+  --lp-out: #fb7185;
+  --lp-nav-bg: rgba(26, 24, 23, 0.95);
+  --lp-sombra-btn: 0 10px 25px rgba(0, 0, 0, 0.45);
+  --lp-sombra-card: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --lp-card-degradado: linear-gradient(135deg, #221f1e 0%, #2d2a28 100%);
 }
 
 .landing-finanzas {
   width: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: var(--fin-ink);
-  background: white;
+  color: var(--lp-ink);
+  background: var(--lp-bg);
   line-height: 1.6;
 }
 
@@ -24,8 +85,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
-  border-bottom: 1px solid rgba(237, 233, 227, 0.3);
+  background: var(--lp-nav-bg);
+  border-bottom: 1px solid var(--lp-line);
   backdrop-filter: blur(10px);
   padding: 1rem 0;
 }
@@ -42,7 +103,7 @@
 .logo {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--fin-ink);
+  color: var(--lp-ink);
 }
 
 .nav-links {
@@ -52,20 +113,20 @@
 }
 
 .nav-links a {
-  color: var(--fin-ink-soft);
+  color: var(--lp-ink-soft);
   text-decoration: none;
   font-size: 0.95rem;
   transition: color 0.2s;
 }
 
 .nav-links a:hover {
-  color: var(--fin-ink);
+  color: var(--lp-ink);
 }
 
 .link-btn {
-  background: var(--fin-bg);
-  color: var(--fin-ink);
-  border: 1px solid #ede9e3;
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+  border: 1px solid transparent;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
@@ -75,8 +136,7 @@
 }
 
 .link-btn:hover {
-  background: #f5f3f0;
-  border-color: var(--fin-ink-faint);
+  opacity: 0.9;
 }
 
 .menu-btn {
@@ -84,7 +144,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--fin-ink);
+  color: var(--lp-ink);
 }
 
 /* HERO */
@@ -103,12 +163,12 @@
   font-weight: 700;
   line-height: 1.2;
   margin: 0 0 1rem;
-  color: var(--fin-ink);
+  color: var(--lp-ink);
 }
 
 .hero-text > p {
   font-size: 1.1rem;
-  color: var(--fin-ink-soft);
+  color: var(--lp-ink-soft);
   margin: 0 0 2rem;
   line-height: 1.7;
 }
@@ -136,29 +196,29 @@
 }
 
 .btn-primary {
-  background: var(--fin-accent);
-  color: white;
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(28, 25, 23, 0.15);
+  box-shadow: var(--lp-sombra-btn);
 }
 
 .btn-secondary {
-  background: var(--fin-bg);
-  color: var(--fin-ink);
-  border: 1px solid #ede9e3;
+  background: var(--lp-surface);
+  color: var(--lp-ink);
+  border: 1px solid var(--lp-line);
 }
 
 .btn-secondary:hover {
-  background: #f5f3f0;
-  border-color: var(--fin-ink-faint);
+  background: var(--lp-surface-hover);
+  border-color: var(--lp-ink-faint);
 }
 
 .hero-note {
   font-size: 0.85rem;
-  color: var(--fin-ink-faint);
+  color: var(--lp-ink-faint);
   margin: 0;
 }
 
@@ -169,13 +229,13 @@
 }
 
 .card-visual {
-  background: linear-gradient(135deg, #fbf9f6 0%, #f5f3f0 100%);
-  border: 1px solid #ede9e3;
+  background: var(--lp-card-degradado);
+  border: 1px solid var(--lp-line);
   border-radius: 12px;
   padding: 1.5rem;
   width: 100%;
   max-width: 320px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--lp-sombra-card);
 }
 
 .balance-section {
@@ -184,12 +244,12 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #ede9e3;
+  border-bottom: 1px solid var(--lp-line);
 }
 
 .balance-section .label {
   font-size: 0.8rem;
-  color: var(--fin-ink-faint);
+  color: var(--lp-ink-faint);
   text-transform: uppercase;
   font-weight: 600;
 }
@@ -197,7 +257,7 @@
 .balance-section .amount {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--fin-in);
+  color: var(--lp-in);
 }
 
 .transactions {
@@ -211,9 +271,9 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: white;
+  background: var(--lp-bg);
   border-radius: 8px;
-  border: 1px solid #ede9e3;
+  border: 1px solid var(--lp-line);
 }
 
 .tx .emoji {
@@ -224,7 +284,7 @@
 .tx .desc {
   flex: 1;
   font-size: 0.85rem;
-  color: var(--fin-ink);
+  color: var(--lp-ink);
 }
 
 .tx .amount {
@@ -234,11 +294,11 @@
 }
 
 .tx.out .amount {
-  color: var(--fin-out);
+  color: var(--lp-out);
 }
 
 .tx.in .amount {
-  color: var(--fin-in);
+  color: var(--lp-in);
 }
 
 /* SECTIONS */
@@ -256,7 +316,7 @@
   font-weight: 700;
   margin: 0 0 2rem;
   text-align: center;
-  color: var(--fin-ink);
+  color: var(--lp-ink);
 }
 
 /* FEATURES GRID */
@@ -268,14 +328,14 @@
 
 .feature {
   padding: 1.5rem;
-  background: var(--fin-bg);
+  background: var(--lp-surface);
   border-radius: 8px;
-  border: 1px solid #ede9e3;
+  border: 1px solid var(--lp-line);
   transition: all 0.3s;
 }
 
 .feature:hover {
-  background: #f5f3f0;
+  background: var(--lp-surface-hover);
   transform: translateY(-4px);
 }
 
@@ -289,12 +349,12 @@
   font-size: 1rem;
   font-weight: 600;
   margin: 0 0 0.5rem;
-  color: var(--fin-ink);
+  color: var(--lp-ink);
 }
 
 .feature p {
   font-size: 0.9rem;
-  color: var(--fin-ink-soft);
+  color: var(--lp-ink-soft);
   margin: 0;
   line-height: 1.5;
 }
@@ -309,9 +369,9 @@
 .step {
   position: relative;
   padding: 2rem 1.5rem 1.5rem;
-  background: var(--fin-bg);
+  background: var(--lp-surface);
   border-radius: 8px;
-  border: 1px solid #ede9e3;
+  border: 1px solid var(--lp-line);
   text-align: center;
 }
 
@@ -321,8 +381,8 @@
   left: 1.5rem;
   width: 2rem;
   height: 2rem;
-  background: var(--fin-accent);
-  color: white;
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -335,12 +395,12 @@
   font-size: 1.05rem;
   font-weight: 600;
   margin: 0 0 0.5rem;
-  color: var(--fin-ink);
+  color: var(--lp-ink);
 }
 
 .step p {
   font-size: 0.9rem;
-  color: var(--fin-ink-soft);
+  color: var(--lp-ink-soft);
   margin: 0;
 }
 
@@ -350,9 +410,9 @@
   margin: 4rem auto;
   padding: 3rem 1.5rem;
   text-align: center;
-  background: var(--fin-bg);
+  background: var(--lp-surface);
   border-radius: 12px;
-  border: 1px solid #ede9e3;
+  border: 1px solid var(--lp-line);
 }
 
 .final-cta h2 {
@@ -361,14 +421,14 @@
 
 .final-cta p {
   font-size: 1rem;
-  color: var(--fin-ink-soft);
+  color: var(--lp-ink-soft);
   margin: 0 0 1.5rem;
 }
 
 .btn-primary-lg {
   padding: 1rem 2rem;
-  background: var(--fin-accent);
-  color: white;
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -383,16 +443,16 @@
 
 .btn-primary-lg:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(28, 25, 23, 0.15);
+  box-shadow: var(--lp-sombra-btn);
 }
 
 /* FOOTER */
 .footer {
-  background: var(--fin-bg);
-  border-top: 1px solid #ede9e3;
+  background: var(--lp-surface);
+  border-top: 1px solid var(--lp-line);
   padding: 2rem;
   text-align: center;
-  color: var(--fin-ink-soft);
+  color: var(--lp-ink-soft);
   font-size: 0.9rem;
 }
 
@@ -423,10 +483,10 @@
     left: 0;
     right: 0;
     flex-direction: column;
-    background: white;
+    background: var(--lp-bg);
     padding: 1rem;
     gap: 1rem;
-    border-bottom: 1px solid #ede9e3;
+    border-bottom: 1px solid var(--lp-line);
   }
 
   .menu-btn {
