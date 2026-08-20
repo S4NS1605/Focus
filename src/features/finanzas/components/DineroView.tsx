@@ -88,7 +88,13 @@ export const DineroView: React.FC<DineroViewProps> = ({
       ) : null}
 
       {GRUPOS.map((grupo) => {
-        const delGrupo = vivas.filter((c) => grupo.tipos.includes(c.tipo));
+        const delGrupo = vivas
+          .filter((c) => grupo.tipos.includes(c.tipo))
+          .sort((a, b) => {
+            const saldoA = saldos.get(a.id) ?? 0;
+            const saldoB = saldos.get(b.id) ?? 0;
+            return saldoB - saldoA;
+          });
         if (delGrupo.length === 0) return null;
 
         return (
