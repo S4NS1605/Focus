@@ -80,25 +80,25 @@ const TarjetaPaso: React.FC<{ paso: Paso; indice: number }> = ({ paso, indice })
       transition={{ duration: 0.35, delay: indice * 0.05, ease: [0.32, 0.72, 0, 1] }}
       whileHover={{ y: -2 }}
       className={[
-        'group relative flex flex-col rounded-xl border border-zinc-800/50 bg-zinc-900',
-        'p-5 transition-colors duration-200 hover:border-zinc-700',
+        'group relative flex flex-col rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-surface)]',
+        'p-5 transition-colors duration-200 hover:border-[var(--fin-ink-ghost)]',
         destacado ? 'md:col-span-2 md:row-span-2 md:p-7' : ''
       ].join(' ')}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <Icono
-          className={destacado ? 'text-emerald-400/90' : 'text-zinc-500'}
+          className={destacado ? 'text-[var(--fin-in)]' : 'text-[var(--fin-ink-faint)]'}
           size={destacado ? 22 : 18}
           strokeWidth={1.5}
           aria-hidden
         />
         <div className="flex items-center gap-2">
           {etiqueta && (
-            <span className="rounded-full border border-zinc-800 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+            <span className="rounded-full border border-[var(--fin-line)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]">
               {etiqueta}
             </span>
           )}
-          <span className="font-mono text-xs tabular-nums text-zinc-600">
+          <span className="font-mono text-xs tabular-nums text-[var(--fin-ink-ghost)]">
             {String(indice + 1).padStart(2, '0')}
           </span>
         </div>
@@ -106,20 +106,20 @@ const TarjetaPaso: React.FC<{ paso: Paso; indice: number }> = ({ paso, indice })
 
       <h4
         className={[
-          'font-medium tracking-tight text-zinc-100',
+          'font-medium tracking-tight text-[var(--fin-ink)]',
           destacado ? 'text-xl' : 'text-[15px]'
         ].join(' ')}
       >
         {titulo}
       </h4>
 
-      <p className={['mt-1.5 text-zinc-400', destacado ? 'text-sm' : 'text-[13px]'].join(' ')}>
+      <p className={['mt-1.5 text-[var(--fin-ink-soft)]', destacado ? 'text-sm' : 'text-[13px]'].join(' ')}>
         {descripcion}
       </p>
 
       <p
         className={[
-          'mt-auto pt-4 leading-relaxed text-zinc-500',
+          'mt-auto pt-4 leading-relaxed text-[var(--fin-ink-soft)]',
           destacado ? 'text-sm' : 'text-[12.5px]'
         ].join(' ')}
       >
@@ -127,7 +127,7 @@ const TarjetaPaso: React.FC<{ paso: Paso; indice: number }> = ({ paso, indice })
       </p>
 
       {destacado && (
-        <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-300 transition-colors group-hover:text-white">
+        <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fin-ink-soft)] transition-colors group-hover:text-[var(--fin-ink)]">
           Empieza por aquí
           <ArrowUpRight
             size={15}
@@ -146,12 +146,12 @@ export const QuickStartGuideFinanzas: React.FC<{
 }> = ({ onDismiss }) => (
   <section
     aria-label="Primeros pasos"
-    className="mb-6 rounded-2xl border border-zinc-800/50 bg-zinc-950 p-6 md:p-8"
+    className="mb-6 rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)] bg-[var(--fin-bg-soft)] p-6 md:p-8"
   >
     <header className="mb-6 flex items-start justify-between gap-4">
       <div>
-        <h3 className="text-lg font-medium tracking-tight text-zinc-100">Primeros pasos</h3>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h3 className="text-lg font-medium tracking-tight text-[var(--fin-ink)]">Primeros pasos</h3>
+        <p className="mt-1 text-sm text-[var(--fin-ink-soft)]">
           Cuatro cosas para tener tu dinero bajo control
         </p>
       </div>
@@ -160,7 +160,7 @@ export const QuickStartGuideFinanzas: React.FC<{
           type="button"
           onClick={onDismiss}
           aria-label="Cerrar guía"
-          className="-m-1 rounded-lg p-1 text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-zinc-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-600"
+          className="-m-1 rounded-lg p-1 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fin-ink-faint)]"
         >
           <X size={16} strokeWidth={1.75} />
         </button>
@@ -173,10 +173,10 @@ export const QuickStartGuideFinanzas: React.FC<{
       ))}
     </div>
 
-    <footer className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-zinc-800/50 pt-4">
+    <footer className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[var(--fin-line)] pt-4">
       {CONSEJOS.map(({ Icono, texto }) => (
-        <span key={texto} className="flex items-center gap-1.5 text-xs text-zinc-500/80">
-          <Icono size={13} strokeWidth={1.5} className="text-zinc-600" aria-hidden />
+        <span key={texto} className="flex items-center gap-1.5 text-xs text-[var(--fin-ink-soft)]">
+          <Icono size={13} strokeWidth={1.5} className="text-[var(--fin-ink-ghost)]" aria-hidden />
           {texto}
         </span>
       ))}

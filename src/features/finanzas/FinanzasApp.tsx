@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import './styles/premium-effects.css';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
 import type { Transaction } from './types';
@@ -233,6 +233,16 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   const { mostrarQuickStart, ocultar: ocultarQuickStart, volverAMostrar: volverAMostrarQuickStart } =
     useQuickStart();
 
+  // La hoja de anotar se dibuja encima, sin bloquear el scroll de detrás, así
+  // que al cerrarse devuelve la página donde estuviera — y con la guía de
+  // primeros pasos ocupando la primera pantalla, "donde estuviera" es a media
+  // guía, cortada por arriba. Al volver de anotar lo que se quiere ver es el
+  // total y el movimiento recién guardado, y los dos están arriba del todo.
+  const cerrarCaptura = useCallback(() => {
+    setPending(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const today = bogotaDate();
   const thisMonth = monthKey(today);
   const [month, setMonth] = useState(thisMonth);
@@ -330,7 +340,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
     // because the user was browsing an older month.
     const finalDate = draft.occurredOn || bogotaDate();
     setMonth(finalDate.slice(0, 7));
-    setPending(null);
+    cerrarCaptura();
 
     // El aviso de "quedó guardado", con Deshacer. Antes guardar no decía nada:
     // la hoja se cerraba y uno se quedaba sin saber si había quedado.
@@ -829,7 +839,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             parsed={pending}
             cuentaPorDefecto={cuentaPorDefecto}
             onSave={handleSave}
-            onCancel={() => setPending(null)}
+            onCancel={cerrarCaptura}
           />
         ) : null}
 
