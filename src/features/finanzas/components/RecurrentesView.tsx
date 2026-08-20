@@ -4,7 +4,7 @@ import type { Transaction } from '../types';
 import type { Pendiente, Recurrente } from '../lib/recurrentes';
 import { pendientesDelMes, totalMensual } from '../lib/recurrentes';
 import { useCatalogo } from '../catalogoContexto';
-import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../lib/formatCop';
+import { formatCop, parseAmountInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 
 interface RecurrentesViewProps {

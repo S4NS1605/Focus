@@ -5,7 +5,7 @@ import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
 import { idsPasivos, saldosPorCajita } from '../lib/cajitas';
-import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
+import { formatAmountInput, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 
 /**
  * Solo saldos. Categorías, 4x1000 y Respaldo vivían apiladas debajo de esto

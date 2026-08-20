@@ -4,7 +4,7 @@ import type { Transaction } from '../types';
 import type { Presupuesto, TonoPresupuesto } from '../lib/presupuestos';
 import { estadoDeTodos, tonoDe } from '../lib/presupuestos';
 import { useCatalogo } from '../catalogoContexto';
-import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../lib/formatCop';
+import { formatCop, parseAmountInput, conPuntos } from '../lib/formatCop';
 
 interface PresupuestosViewProps {
   presupuestos: readonly Presupuesto[];

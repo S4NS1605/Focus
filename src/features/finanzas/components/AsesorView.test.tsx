@@ -35,6 +35,8 @@ describe('AsesorView — estado de conexión', () => {
   it('arranca diciendo que está conectando, no que hay IA', async () => {
     // Importa: mientras no se sepa, no se puede prometer "En línea". En el plan
     // gratuito de Render despertar el servicio tarda hasta ~40 s.
+    // Mock la hora a un momento dentro del horario (08:00 Bogotá = 13:00 UTC).
+    vi.setSystemTime(new Date('2026-08-20T13:00:00Z'));
     render(<AsesorView {...props} />);
     expect(screen.getByText('Conectando…')).toBeTruthy();
   });

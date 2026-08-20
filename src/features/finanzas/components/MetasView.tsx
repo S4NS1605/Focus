@@ -8,7 +8,7 @@ import { metasConProgreso } from '../lib/metas';
 import type { ProgresoMeta } from '../lib/metas';
 import { saldosPorCajita } from '../lib/cajitas';
 import type { CajitaMovimiento } from '../data/modelos';
-import { formatAmountInput, conPuntos, formatCop, parseAmountInput } from '../lib/formatCop';
+import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
 import { bogotaDate } from '../lib/localDate';
 
 interface MetasViewProps {

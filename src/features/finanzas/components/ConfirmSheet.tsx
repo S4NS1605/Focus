@@ -161,12 +161,12 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        className="max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-5 sm:pt-5 sm:pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="flex items-center gap-2 text-[20px] font-semibold tracking-tight text-[var(--fin-ink)]">
+            <h2 className="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[var(--fin-ink)] sm:text-[20px]">
               {(() => {
                 const Icon = catalogo.de(category).Icono;
                 return <Icon className="h-6 w-6 mr-1" aria-hidden="true" />;
@@ -194,7 +194,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         <div className="mt-5">
           <label
             htmlFor="fin-amount"
-            className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+            className="block text-[13px] font-semibold text-[var(--fin-ink-soft)] sm:text-[15px]"
           >
             {COPY.confirm.amount}
           </label>
@@ -202,7 +202,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 bg-[var(--fin-card)] px-4 py-3"
             style={{ borderColor: amountWeak ? 'var(--fin-warn)' : 'var(--fin-line)' }}
           >
-            <span className="text-[28px] font-semibold text-[var(--fin-ink-faint)]">$</span>
+            <span className="text-[24px] font-semibold text-[var(--fin-ink-faint)] sm:text-[28px]">$</span>
             <input
               id="fin-amount"
               ref={amountRef}
@@ -210,7 +210,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
               onChange={(e) => setAmountText(conPuntos(e.target.value))}
               inputMode="numeric"
               placeholder="0"
-              className="w-full bg-transparent text-[28px] font-semibold text-[var(--fin-ink)] tabular-nums placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+              className="w-full bg-transparent text-[24px] font-semibold text-[var(--fin-ink)] tabular-nums placeholder:text-[var(--fin-ink-ghost)] focus:outline-none sm:text-[28px]"
             />
           </div>
           {amountWeak ? (
@@ -227,7 +227,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
 
         {/* Direction */}
         <fieldset className="mt-5">
-          <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)] sm:text-[15px]">
             {COPY.confirm.kind}
           </legend>
           <div
@@ -275,7 +275,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
 
         {/* Category: Visual grid of colorful buttons */}
         <fieldset className="mt-5">
-          <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)] sm:text-[15px]">
             {COPY.confirm.category}
           </legend>
           <div className="mt-2 flex flex-wrap gap-2">

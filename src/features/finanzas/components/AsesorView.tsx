@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, BrainCircuit } from 'lucide-react';
+import { Send, Bot, User, BrainCircuit, ThumbsUp, ThumbsDown } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
@@ -102,6 +102,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   ]);
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
+  const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -315,6 +316,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         <span className="truncate">{etiquetaConexion(conexion)}</span>
       </p>
 
+      <p className="mb-4 text-[12px] text-[var(--fin-ink-faint)]">
+        LukApp es una IA y puede cometer errores. Verifica cualquier consejo sobre dinero antes de actuar.
+      </p>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-5">
         {/* Antes de que exista una conversación real (solo el saludo inicial),
@@ -412,6 +417,32 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                           {sug}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {msg.role === 'bot' && (
+                    <div className="mt-2 flex gap-1.5 border-t border-[var(--fin-line)] pt-2">
+                      <button
+                        onClick={() => setFeedback(new Map(feedback).set(msg.id, 'like'))}
+                        className={`flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-1 text-[12px] transition-colors ${
+                          feedback.get(msg.id) === 'like'
+                            ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
+                            : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
+                        }`}
+                        aria-label="Útil"
+                      >
+                        <ThumbsUp className="h-3 w-3" strokeWidth={2.5} />
+                      </button>
+                      <button
+                        onClick={() => setFeedback(new Map(feedback).set(msg.id, 'dislike'))}
+                        className={`flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-1 text-[12px] transition-colors ${
+                          feedback.get(msg.id) === 'dislike'
+                            ? 'bg-[var(--fin-warn)] text-[var(--fin-on-accent)]'
+                            : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
+                        }`}
+                        aria-label="No fue útil"
+                      >
+                        <ThumbsDown className="h-3 w-3" strokeWidth={2.5} />
+                      </button>
                     </div>
                   )}
                 </div>
