@@ -1078,13 +1078,13 @@ Reglas clave:
 
     // 1. Groq (rápido y SIN COSTO en plan gratuito) — PRIORITARIO
     if (groqKey) {
-      proveedor = 'Groq (Llama 3.1 70B)';
-      modelo = 'llama-3.1-70b-versatile';
+      proveedor = 'Groq (Mixtral 8x7B)';
+      modelo = 'mixtral-8x7b-32768';
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
         body: JSON.stringify({
-          model: 'llama-3.1-70b-versatile',
+          model: 'mixtral-8x7b-32768',
           messages: [
             { role: 'system', content: systemPrompt },
             ...(Array.isArray(history) ? history.slice(-6).map((m: any) => ({
