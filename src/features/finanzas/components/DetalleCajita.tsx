@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Check, Pencil, Trash2, X } from 'lucide-react';
+import { ChevronDown, Check, Pencil, Send, Trash2, X } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import { TIPO_LABELS } from '../data/modelos';
 import type { Transaction } from '../types';
@@ -299,7 +299,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               </p>
             )}
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-6 flex gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -307,7 +307,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                   setDestinoId('');
                   setMontoTexto('');
                 }}
-                className="flex-1 rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink)]"
+                className="flex-1 rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)]"
               >
                 Cancelar
               </button>
@@ -315,8 +315,9 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 type="button"
                 onClick={confirmarTransferir}
                 disabled={!montoValido}
-                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-in)] px-4 py-3 text-[15px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="flex-1 flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-in)] px-4 py-3 text-[15px] font-semibold text-white transition-all hover:shadow-lg hover:shadow-[var(--fin-in)]/50 hover:scale-[1.02] disabled:opacity-40 disabled:hover:scale-100 disabled:hover:shadow-none active:scale-[0.98]"
               >
+                <Send className="h-4 w-4" strokeWidth={2.5} />
                 Enviar
               </button>
             </div>
