@@ -458,7 +458,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
         ...insight,
         onTocar: insight.seccion ? () => setSection(insight.seccion as SectionId) : undefined,
       })),
-    [transacciones, almacen.datos.presupuestos, month, catalogoActual],
+    [transacciones, almacen.datos.presupuestos, month, catalogoActual, setSection],
   );
 
   const patrimonioCop = useMemo(

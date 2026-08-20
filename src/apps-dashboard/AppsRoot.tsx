@@ -112,7 +112,10 @@ export const AppsRoot: React.FC = () => {
     };
 
     const path = (activeApp && RUTAS[activeApp]) ?? '/ecosistema';
-    if (window.location.pathname !== path) {
+    // Comparar con startsWith y no con igualdad: cada app tiene ahora subrutas
+    // propias (/finanzas/ajustes/cuentas), y exigir el path exacto las
+    // revertía a la raíz en bucle contra quien acababa de navegar.
+    if (!window.location.pathname.startsWith(path)) {
       window.history.pushState(null, '', path);
     }
 
