@@ -149,11 +149,17 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         <button
           type="button"
           onClick={abrirTransferir}
-          className="rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink)]"
+          className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
         >
-          Transferir
+          Enviar dinero a otra cuenta
         </button>
-      ) : null}
+      ) : (
+        <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-3 text-center">
+          <p className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+            Necesitas al menos 2 cuentas para transferir
+          </p>
+        </div>
+      )}
 
       {/* Ajustes avanzados */}
       <section>
@@ -239,8 +245,9 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               id="destino"
               value={destinoId}
               onChange={(e) => setDestinoId(e.target.value)}
-              className="mt-1 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-[17px] text-[var(--fin-ink)]"
+              className="mt-1 w-full rounded-[var(--fin-r-card)] border-2 transition-colors border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-[17px] text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             >
+              <option value="">— Elige la cuenta destino —</option>
               {destinosPosibles.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.nombre}
@@ -262,11 +269,21 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               className={claseCampo}
             />
 
+            {!destinoId && destinosPosibles.length > 0 && (
+              <p className="mt-2 text-[13px] font-semibold text-[var(--fin-warn)]">
+                Elige una cuenta de destino
+              </p>
+            )}
+
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                onClick={() => setTransfiriendo(false)}
-                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink)]"
+                onClick={() => {
+                  setTransfiriendo(false);
+                  setDestinoId('');
+                  setMontoTexto('');
+                }}
+                className="flex-1 rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink)]"
               >
                 Cancelar
               </button>
@@ -274,9 +291,9 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 type="button"
                 onClick={confirmarTransferir}
                 disabled={!montoValido}
-                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-40"
+                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-in)] px-4 py-3 text-[15px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
               >
-                Transferir
+                Enviar
               </button>
             </div>
           </div>
