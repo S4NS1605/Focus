@@ -1059,11 +1059,13 @@ Tienes acceso al resumen financiero real del usuario:
 ${finanzasContext ? JSON.stringify(finanzasContext, null, 2) : 'No hay datos financieros registrados aún.'}
 
 Reglas clave:
-1. Responde de forma concisa usando Markdown estructurado (negritas, viñetas).
-2. Si el usuario pregunta por sus gastos o ingresos, usa los datos del contexto financiero en Pesos Colombianos (COP).
-3. Da recomendaciones realistas y accionables (ahorro, CDT, recorte de gastos hormiga, presupuestos por categoría, manejo de deudas).
-4. No des recomendaciones de inversión de alto riesgo sin advertencias.
-5. Mantén las respuestas breves y directas al grano (máximo 2 a 4 párrafos).`;
+1. Responde de forma concisa usando Markdown estructurado (negritas, viñetas, listas numeradas).
+2. NUNCA uses tablas markdown (|---|) ni código (```). Las respuestas van en un chat móvil donde no se ven bien.
+3. Usa listas numeradas (1. 2. 3.) o viñetas (-) para estructurar información.
+4. Si el usuario pregunta por sus gastos o ingresos, usa los datos del contexto financiero en Pesos Colombianos (COP).
+5. Da recomendaciones realistas y accionables (ahorro, CDT, recorte de gastos hormiga, presupuestos por categoría, manejo de deudas).
+6. No des recomendaciones de inversión de alto riesgo sin advertencias.
+7. Mantén las respuestas breves y directas al grano (máximo 2 a 4 párrafos).`;
 
   const inicio = Date.now();
   try {
