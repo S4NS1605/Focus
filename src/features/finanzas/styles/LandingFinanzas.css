@@ -107,6 +107,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: padding 0.25s ease;
+}
+
+/* Al bajar, la barra se encoge para devolverle alto a la página. Solo cambia el
+   padding: mover el tamaño de fuente del logo aquí haría saltar el texto. */
+.landing-finanzas .nav-bar.compacta .nav-content {
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
+.landing-finanzas .nav-bar.compacta {
+  box-shadow: 0 1px 12px -6px rgba(0, 0, 0, 0.25);
 }
 
 .landing-finanzas .logo {
@@ -191,6 +203,11 @@
   margin: 0 0 1.5rem;
   color: var(--lp-ink);
   text-wrap: balance;
+}
+
+/* Cada línea del titular es su propio span para poder escalonar la entrada. */
+.landing-finanzas .hero-text h1 > span {
+  display: block;
 }
 
 .landing-finanzas .hero-text h1 em {
@@ -368,6 +385,7 @@
 }
 
 .landing-finanzas .dictado-boton {
+  position: relative;
   display: grid;
   place-items: center;
   width: 32px;
@@ -378,15 +396,85 @@
   color: #ffffff;
 }
 
+/* El halo que late mientras se "dicta". Va en un hijo y no en el botón para que
+   el pulso no arrastre el icono al escalar. */
+.landing-finanzas .dictado-pulso {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--lp-out);
+  animation: lp-pulso 1.5s ease-out infinite;
+}
+
+@keyframes lp-pulso {
+  from {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
 .landing-finanzas .dictado-texto {
   font-size: 0.78rem;
   color: var(--lp-ink-faint);
   font-style: italic;
+  min-height: 1.2em;
+}
+
+.landing-finanzas .dictado-cursor {
+  display: inline-block;
+  width: 1.5px;
+  height: 0.95em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--lp-ink-soft);
+  animation: lp-cursor 1s steps(2) infinite;
+}
+
+@keyframes lp-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* El remate: la frase dictada convertida en gasto. */
+.landing-finanzas .dictado-salida {
+  margin-top: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+}
+
+.landing-finanzas .dictado-salida-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .dictado-salida-monto {
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-out);
 }
 
 /* SECCIONES */
-.landing-finanzas .what-is,
-.landing-finanzas .how-it-works {
+.landing-finanzas .demo-parser,
+.landing-finanzas .funciones,
+.landing-finanzas .gmf,
+.landing-finanzas .formas,
+.landing-finanzas .privacidad {
   max-width: 1140px;
   margin: 0 auto;
   padding: clamp(3.5rem, 8vw, 6rem) 1.5rem;
@@ -394,6 +482,15 @@
 
 .landing-finanzas .seccion-cabecera {
   margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.landing-finanzas .seccion-sub {
+  font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+  color: var(--lp-ink-soft);
+  line-height: 1.6;
+  margin: 0.85rem 0 0;
+  max-width: 52ch;
+  text-wrap: pretty;
 }
 
 .landing-finanzas .seccion-etiqueta {
@@ -406,8 +503,16 @@
   margin-bottom: 0.6rem;
 }
 
-.landing-finanzas .what-is h2,
-.landing-finanzas .how-it-works h2,
+.landing-finanzas .seccion-etiqueta svg {
+  vertical-align: -2px;
+  margin-right: 0.35rem;
+}
+
+.landing-finanzas .demo-parser h2,
+.landing-finanzas .funciones h2,
+.landing-finanzas .gmf h2,
+.landing-finanzas .formas h2,
+.landing-finanzas .privacidad h2,
 .landing-finanzas .final-cta h2 {
   font-size: clamp(1.7rem, 3.4vw, 2.6rem);
   font-weight: 700;
@@ -418,14 +523,627 @@
   text-wrap: balance;
 }
 
-/* FEATURES */
-.landing-finanzas .features {
+/* DEMO DEL PARSER
+   La pieza interactiva: lo que se ve aquí lo calcula parseTransaction, el mismo
+   de la app. */
+.landing-finanzas .demo-caja {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 24px;
+}
+
+.landing-finanzas .demo-campo {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  color: var(--lp-ink-faint);
+  transition: border-color 0.2s;
+}
+
+.landing-finanzas .demo-campo:focus-within {
+  border-color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .demo-campo input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  /* El mínimo es 1rem y no menos: por debajo de 16px, Safari en iPhone hace
+     zoom al enfocar el campo y deja la página descuadrada. Es la misma regla
+     que vigila ios.test.ts para los campos de la app. */
+  font-size: clamp(1rem, 1.8vw, 1.1rem);
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .demo-ejemplos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+
+.landing-finanzas .demo-chip {
+  padding: 0.4rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--lp-ink-soft);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.landing-finanzas .demo-chip:hover {
+  color: var(--lp-ink);
+  border-color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .demo-chip.activo {
+  color: var(--lp-on-accent);
+  background: var(--lp-accent);
+  border-color: var(--lp-accent);
+}
+
+.landing-finanzas .demo-flecha {
+  display: block;
+  margin: 1.1rem auto 0.9rem;
+  color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .demo-resultado {
+  padding: 1.1rem;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 16px;
+}
+
+.landing-finanzas .demo-vacio {
+  margin: 0;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .demo-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.landing-finanzas .demo-icono {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+}
+
+.landing-finanzas .demo-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.landing-finanzas .demo-desc {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .demo-categoria {
+  font-size: 0.78rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .demo-monto {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.landing-finanzas .demo-monto.gasto {
+  color: var(--lp-out);
+}
+
+.landing-finanzas .demo-monto.ingreso {
+  color: var(--lp-in);
+}
+
+.landing-finanzas .demo-insignias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+
+.landing-finanzas .demo-insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+}
+
+.landing-finanzas .demo-confianza {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--lp-line);
+}
+
+.landing-finanzas .demo-barra {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--lp-surface-hover);
+  overflow: hidden;
+}
+
+.landing-finanzas .demo-barra-lleno {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--lp-in);
+}
+
+.landing-finanzas .demo-confianza-texto {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-soft);
+  flex-shrink: 0;
+}
+
+/* FUNCIONES */
+.landing-finanzas .tabs-riel {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  margin-bottom: 1.5rem;
+  scrollbar-width: none;
+}
+
+.landing-finanzas .tabs-riel::-webkit-scrollbar {
+  display: none;
+}
+
+.landing-finanzas .tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.6rem 1rem;
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.landing-finanzas .tab:hover {
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .tab.activa {
+  color: var(--lp-on-accent);
+}
+
+/* El fondo es un hermano posicionado detrás, no un background del botón: así
+   framer-motion puede deslizarlo entre pestañas con layoutId. */
+.landing-finanzas .tab-fondo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 999px;
+  background: var(--lp-accent);
+}
+
+.landing-finanzas .tab > svg,
+.landing-finanzas .tab > span {
+  position: relative;
+}
+
+.landing-finanzas .funciones-contenido {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+}
+
+.landing-finanzas .funciones-texto h3 {
+  font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.85rem;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+.landing-finanzas .funciones-texto p {
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--lp-ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* MOCKUPS DE LAS PESTAÑAS */
+.landing-finanzas .mk {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.4rem;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 20px;
+  box-shadow: var(--lp-sombra-tel);
+}
+
+.landing-finanzas .mk-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-nota {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-barra-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .mk-barra-fila span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-pasado {
+  color: var(--lp-out) !important;
+}
+
+.landing-finanzas .mk-barra-riel {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--lp-bg);
+  overflow: hidden;
+}
+
+.landing-finanzas .mk-barra-lleno {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.landing-finanzas .mk-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--lp-bg);
+  border-radius: 12px;
+}
+
+.landing-finanzas .mk-fila-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.landing-finanzas .mk-fila-nombre {
+  font-size: 0.85rem;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .mk-fila-sub {
+  font-size: 0.72rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-fila-monto {
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.landing-finanzas .mk-fila-monto.out {
+  color: var(--lp-out);
+}
+
+.landing-finanzas .mk-dia {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-chat {
+  gap: 0.55rem;
+}
+
+.landing-finanzas .mk-burbuja {
+  max-width: 85%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  border-radius: 15px;
+}
+
+.landing-finanzas .mk-burbuja.yo {
+  align-self: flex-end;
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+  border-bottom-right-radius: 5px;
+}
+
+.landing-finanzas .mk-burbuja.bot {
+  align-self: flex-start;
+  background: var(--lp-bg);
+  color: var(--lp-ink);
+  border-bottom-left-radius: 5px;
+}
+
+.landing-finanzas .mk-grafico {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 150px;
+}
+
+.landing-finanzas .mk-columna {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  height: 100%;
+}
+
+.landing-finanzas .mk-columna-barra {
+  display: block;
+  width: 100%;
+  border-radius: 6px 6px 3px 3px;
+  background: var(--lp-line);
+}
+
+.landing-finanzas .mk-columna-barra.destacada {
+  background: var(--lp-in);
+}
+
+.landing-finanzas .mk-columna-mes {
+  font-size: 0.7rem;
+  color: var(--lp-ink-soft);
+}
+
+/* CUPO DEL 4x1000 */
+.landing-finanzas .gmf-caja {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+  padding: clamp(1.75rem, 4vw, 3rem);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 28px;
+}
+
+.landing-finanzas .gmf-texto h2 {
+  margin-bottom: 1rem;
+}
+
+.landing-finanzas .gmf-texto h2 em {
+  font-style: normal;
+  color: var(--lp-in);
+}
+
+.landing-finanzas .gmf-texto > p {
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--lp-ink-soft);
+  margin: 0 0 1.6rem;
+  text-wrap: pretty;
+}
+
+.landing-finanzas .gmf-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0 0 1.2rem;
+}
+
+.landing-finanzas .gmf-datos div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--lp-line);
+}
+
+.landing-finanzas .gmf-datos dt {
+  font-size: 0.85rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .gmf-datos dd {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.landing-finanzas .gmf-costo {
+  color: var(--lp-out) !important;
+}
+
+.landing-finanzas .gmf-fuente {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .gmf-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.landing-finanzas .gmf-medidor {
+  position: relative;
+  width: min(230px, 100%);
+  aspect-ratio: 1;
+}
+
+.landing-finanzas .gmf-medidor svg {
+  width: 100%;
+  height: 100%;
+  /* El arco de un donut empieza a las 3 en punto; girarlo lo lleva arriba. */
+  transform: rotate(-90deg);
+}
+
+.landing-finanzas .gmf-riel,
+.landing-finanzas .gmf-arco {
+  fill: none;
+  stroke-width: 14;
+}
+
+.landing-finanzas .gmf-riel {
+  stroke: var(--lp-line);
+}
+
+.landing-finanzas .gmf-arco {
+  stroke: var(--lp-in);
+  stroke-linecap: round;
+}
+
+.landing-finanzas .gmf-centro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.landing-finanzas .gmf-pct {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .gmf-centro-etq {
+  font-size: 0.74rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .gmf-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.landing-finanzas .gmf-leyenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.76rem;
+  color: var(--lp-ink-soft);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+}
+
+.landing-finanzas .gmf-leyenda-item strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .gmf-leyenda-item::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.landing-finanzas .gmf-leyenda-item.usado::before {
+  background: var(--lp-in);
+}
+
+.landing-finanzas .gmf-leyenda-item.libre::before {
+  background: var(--lp-line);
+}
+
+/* FORMAS DE REGISTRAR */
+.landing-finanzas .formas-grid,
+.landing-finanzas .privacidad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
   gap: 1rem;
 }
 
-.landing-finanzas .feature {
+.landing-finanzas .forma,
+.landing-finanzas .privacidad-item {
   padding: 1.6rem;
   background: var(--lp-surface);
   border-radius: 18px;
@@ -433,12 +1151,14 @@
   transition: border-color 0.25s, transform 0.25s;
 }
 
-.landing-finanzas .feature:hover {
+.landing-finanzas .forma:hover,
+.landing-finanzas .privacidad-item:hover {
   border-color: var(--lp-ink-faint);
   transform: translateY(-2px);
 }
 
-.landing-finanzas .feature-icono {
+.landing-finanzas .forma-icono,
+.landing-finanzas .privacidad-icono {
   display: grid;
   place-items: center;
   width: 38px;
@@ -450,7 +1170,8 @@
   color: var(--lp-ink-soft);
 }
 
-.landing-finanzas .feature h3 {
+.landing-finanzas .forma h3,
+.landing-finanzas .privacidad-item h3 {
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -458,50 +1179,23 @@
   color: var(--lp-ink);
 }
 
-.landing-finanzas .feature p {
+.landing-finanzas .forma p,
+.landing-finanzas .privacidad-item p {
   font-size: 0.9rem;
   color: var(--lp-ink-soft);
   margin: 0;
   line-height: 1.55;
 }
 
-/* PASOS */
-.landing-finanzas .steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.landing-finanzas .step {
-  padding: 1.6rem 0 0;
-  border-top: 2px solid var(--lp-line);
-}
-
-.landing-finanzas .step .number {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--lp-ink-faint);
-  margin-bottom: 0.75rem;
-}
-
-.landing-finanzas .step h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.4rem;
-  color: var(--lp-ink);
-}
-
-.landing-finanzas .step p {
-  font-size: 0.9rem;
+.landing-finanzas .forma-ejemplo {
+  display: inline-block;
+  margin-top: 0.9rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.74rem;
   color: var(--lp-ink-soft);
-  margin: 0;
-  line-height: 1.55;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 8px;
 }
 
 /* CTA FINAL */
@@ -573,6 +1267,13 @@
   .landing-finanzas .telefono {
     width: min(280px, 100%);
   }
+
+  /* El mockup baja debajo del texto: en una columna, la explicación va primero
+     y la pantalla la ilustra después. */
+  .landing-finanzas .funciones-contenido,
+  .landing-finanzas .gmf-caja {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -610,11 +1311,32 @@
     width: 100%;
     justify-content: center;
   }
+
+  /* El monto ya no cabe al lado de la descripción: la fila se parte en dos y el
+     monto queda bajo el texto, alineado con él. */
+  .landing-finanzas .demo-fila {
+    flex-wrap: wrap;
+  }
+
+  .landing-finanzas .demo-monto {
+    width: 100%;
+    padding-left: calc(44px + 0.85rem);
+  }
+
+  .landing-finanzas .gmf-datos div {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .landing-finanzas .gmf-datos dd {
+    text-align: left;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .landing-finanzas *,
   .landing-finanzas *::before {
     transition: none !important;
+    animation: none !important;
   }
 }
