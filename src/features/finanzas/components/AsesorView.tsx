@@ -103,7 +103,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
   const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
-  const { guardar: guardarFeedback } = useFeedbackAsesor();
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -423,7 +422,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                           const nuevoFeedback = new Map(feedback);
                           nuevoFeedback.set(msg.id, 'like');
                           setFeedback(nuevoFeedback);
-                          guardarFeedback(msg.id, 'like');
                         }}
                         className={`flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-1 text-[12px] transition-colors ${
                           feedback.get(msg.id) === 'like'
@@ -439,7 +437,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                           const nuevoFeedback = new Map(feedback);
                           nuevoFeedback.set(msg.id, 'dislike');
                           setFeedback(nuevoFeedback);
-                          guardarFeedback(msg.id, 'dislike');
                         }}
                         className={`flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-1 text-[12px] transition-colors ${
                           feedback.get(msg.id) === 'dislike'
