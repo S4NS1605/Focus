@@ -324,15 +324,23 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               setIntentandoDespertar(true);
 
               const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 5000);
+              const timeoutId = setTimeout(() => controller.abort(), 8000);
 
               try {
                 const res = await fetch(apiUrl('/api/salud'), { signal: controller.signal });
                 clearTimeout(timeoutId);
+
+                if (!res.ok) {
+                  console.log('[asesor] Servidor retornó:', res.status);
+                  setConexion('local');
+                  return;
+                }
+
                 const data = await res.json();
+                console.log('[asesor] Servidor disponible, IA:', data?.ia);
                 setConexion(data?.ia ? 'en-linea' : 'local');
               } catch (error) {
-                console.log('[asesor] Error despertando:', error);
+                console.log('[asesor] Error despertando:', error instanceof Error ? error.message : error);
                 setConexion('local');
               } finally {
                 clearTimeout(timeoutId);
