@@ -55,6 +55,7 @@ import { DineroView } from './components/DineroView';
 import { DetalleCajita } from './components/DetalleCajita';
 import { MesView } from './components/MesView';
 import { AjustesView } from './components/AjustesView';
+import { PasswordRecoveryView } from './components/PasswordRecoveryView';
 import { HojaPanel } from './components/HojaPanel';
 import { Captura } from './components/Captura';
 import { BotonAnotar } from './components/BotonAnotar';
@@ -744,6 +745,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
                   void almacen.apodarParte(clave, nombre, apodo, quitar)
                 }
               />
+            ) : panelAjustes === 'contraseña' ? (
+              <PasswordRecoveryView email={cuenta?.email} />
             ) : (
               <PanelRespaldo
                 datos={almacen.datos}

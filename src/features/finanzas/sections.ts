@@ -59,6 +59,7 @@ export const PANELES_AJUSTES = [
     label: 'Nombres repetidos',
     ayuda: 'Une a la misma persona escrita de dos formas',
   },
+  { id: 'contraseña', label: 'Cambiar contraseña', ayuda: 'Cambia tu contraseña o recupérala' },
   { id: 'respaldo', label: 'Copia de seguridad', ayuda: 'Descarga todo, o vuelve a un respaldo' },
 ] as const;
 
