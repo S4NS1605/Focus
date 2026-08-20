@@ -95,7 +95,7 @@ export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ emai
               onChange={(e) => setCorreo(e.target.value)}
               placeholder="tu@correo.com"
               disabled={estado === 'enviando'}
-              className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2.5 text-[15px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] border-none focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]"
+              className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2.5 text-base text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] border-none focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]"
             />
           </div>
 
