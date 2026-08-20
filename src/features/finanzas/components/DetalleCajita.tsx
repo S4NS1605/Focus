@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, Check, Pencil, Trash2, X } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import type { Transaction } from '../types';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
@@ -131,21 +131,60 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
         <p className="text-[13px] text-[var(--fin-ink-faint)]">Saldo actual</p>
 
-        <button
-          type="button"
-          onClick={abrirEditarSaldo}
-          aria-label={`Cambiar el saldo de ${cajita.nombre}`}
-          className="mt-2 flex w-full items-center gap-2 rounded-[var(--fin-r-card)] text-left transition-opacity active:opacity-60"
-        >
-          <span
-            className="text-[40px] font-semibold tabular-nums text-[var(--fin-ink)]"
-            style={{ letterSpacing: 'var(--fin-track-cifra)' }}
-          >
-            {formatCop(saldo)}
-          </span>
-          <Pencil className="h-4 w-4 shrink-0 text-[var(--fin-ink-faint)]" strokeWidth={2} aria-hidden="true" />
-        </button>
-        <p className="text-[13px] text-[var(--fin-ink-faint)]">Toca la cifra para cambiarla</p>
+        {!editandoSaldo ? (
+          <>
+            <button
+              type="button"
+              onClick={abrirEditarSaldo}
+              aria-label={`Cambiar el saldo de ${cajita.nombre}`}
+              className="mt-2 flex w-full items-center gap-2 rounded-[var(--fin-r-card)] text-left transition-opacity active:opacity-60"
+            >
+              <span
+                className="text-[40px] font-semibold tabular-nums text-[var(--fin-ink)]"
+                style={{ letterSpacing: 'var(--fin-track-cifra)' }}
+              >
+                {formatCop(saldo)}
+              </span>
+              <Pencil className="h-4 w-4 shrink-0 text-[var(--fin-ink-faint)]" strokeWidth={2} aria-hidden="true" />
+            </button>
+            <p className="text-[13px] text-[var(--fin-ink-faint)]">Toca la cifra para cambiarla</p>
+          </>
+        ) : (
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={nuevoSaldoTexto}
+              onChange={(e) => setNuevoSaldoTexto(conPuntos(e.target.value))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') guardarSaldo();
+                if (e.key === 'Escape') setEditandoSaldo(false);
+              }}
+              onFocus={(e) => e.target.select()}
+              placeholder="0"
+              autoFocus
+              className="flex-1 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-[40px] font-semibold tabular-nums text-[var(--fin-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]"
+              style={{ letterSpacing: 'var(--fin-track-cifra)' }}
+            />
+            <button
+              type="button"
+              onClick={guardarSaldo}
+              disabled={parseSaldoInput(nuevoSaldoTexto) === null}
+              aria-label="Guardar saldo"
+              className="flex h-12 w-12 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] text-[var(--fin-on-accent)] transition-opacity disabled:opacity-40"
+            >
+              <Check className="h-5 w-5" strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditandoSaldo(false)}
+              aria-label="Cancelar"
+              className="flex h-12 w-12 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-opacity hover:opacity-80"
+            >
+              <X className="h-5 w-5" strokeWidth={2.5} />
+            </button>
+          </div>
+        )}
 
         {cajita.metaCop && cajita.metaCop > 0 ? (
           <>
@@ -209,43 +248,6 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         Eliminar cuenta
       </button>
 
-      {/* Modal de editar saldo */}
-      {editandoSaldo ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-            <h2 className="text-[17px] font-semibold text-[var(--fin-ink)]">
-              Nuevo saldo para {cajita.nombre}
-            </h2>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={nuevoSaldoTexto}
-              onChange={(e) => setNuevoSaldoTexto(conPuntos(e.target.value))}
-              onFocus={(e) => e.target.select()}
-              placeholder="0"
-              autoFocus
-              className={claseCampo}
-            />
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setEditandoSaldo(false)}
-                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink)]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={guardarSaldo}
-                disabled={parseSaldoInput(nuevoSaldoTexto) === null}
-                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-40"
-              >
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {/* Modal de transferir */}
       {transfiriendo ? (
