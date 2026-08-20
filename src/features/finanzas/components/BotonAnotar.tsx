@@ -101,22 +101,32 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={alTocarMicrofono}
-          aria-pressed={escuchando}
-          aria-busy={procesando}
-          aria-label={
-            procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
-          }
-          // Es el único objeto rojo de la app que no es una cifra, y por eso se
-          // reconoce sin leer nada. Mientras escucha late, para que se note que
-          // el micrófono está abierto sin tener que decirlo con palabras.
-          className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-white shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)] transition-transform active:scale-95 ${
-            escuchando ? 'animate-pulse' : ''
-          }`}
-          style={{ backgroundColor: 'var(--fin-out)', opacity: procesando ? 0.75 : 1 }}
-        >
+        <div className="relative">
+          {dictation.status === 'blocked' && (
+            <span
+              className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--fin-warn)] text-white text-[10px] font-bold"
+              aria-label="Micrófono bloqueado"
+              title="Permiso del micrófono denegado"
+            >
+              ✕
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={alTocarMicrofono}
+            aria-pressed={escuchando}
+            aria-busy={procesando}
+            aria-label={
+              procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
+            }
+            // Es el único objeto rojo de la app que no es una cifra, y por eso se
+            // reconoce sin leer nada. Mientras escucha late, para que se note que
+            // el micrófono está abierto sin tener que decirlo con palabras.
+            className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-white shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)] transition-transform active:scale-95 ${
+              escuchando ? 'animate-pulse' : ''
+            }`}
+            style={{ backgroundColor: 'var(--fin-out)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
+          >
           {procesando ? (
             <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />
           ) : escuchando ? (
@@ -124,7 +134,8 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
           ) : (
             <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
           )}
-        </button>
+          </button>
+        </div>
       </div>
     </div>
   );

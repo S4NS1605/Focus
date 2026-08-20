@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePermisoDeMicrófono } from './usePermisoDeMicrófono';
 
 export type AudioCaptureStatus = 'idle' | 'listening' | 'processing' | 'blocked';
 
@@ -114,6 +115,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   const [status, setStatus] = useState<AudioCaptureStatus>('idle');
   const [interim, setInterim] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const permiso = usePermisoDeMicrófono();
 
   const grabadoraRef = useRef<MediaRecorder | null>(null);
   const trozosRef = useRef<Blob[]>([]);
@@ -161,7 +163,13 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       const nombre = err instanceof DOMException ? err.name : '';
       if (nombre === 'NotAllowedError' || nombre === 'PermissionDeniedError') {
         setStatus('blocked');
-        setError('No diste permiso al micrófono. Actívalo en los ajustes del teléfono.');
+        permiso.marcarComoPedido();
+        // En iOS, el permiso se pide en un diálogo que solo aparece la primera vez.
+        // Si el usuario tocó "No", tiene que ir a Ajustes manualmente.
+        const mensaje = permiso.permisoPedidoAntes
+          ? 'El permiso del micrófono está denegado. Ve a Ajustes › Finanzas › Micrófono.'
+          : 'Necesitamos acceso al micrófono. Cuando pida permiso, toca "Sí".';
+        setError(mensaje);
       } else {
         setStatus('idle');
         setError('No se pudo abrir el micrófono.');

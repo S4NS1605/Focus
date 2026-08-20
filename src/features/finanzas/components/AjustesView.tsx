@@ -5,7 +5,6 @@ import {
   HardDriveDownload,
   Flag,
   Landmark,
-  MessageCircle,
   PiggyBank,
   Repeat,
   Tag,
@@ -35,7 +34,6 @@ const ICONOS: Record<
   topes: Target,
   metas: Flag,
   recurrentes: Repeat,
-  preguntar: MessageCircle,
   extractos: FileUp,
   gmf: Landmark,
   nombres: Users,
@@ -46,7 +44,7 @@ const ICONOS: Record<
  * que leer las nueve filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
   { titulo: 'Tu dinero', paneles: ['cuentas', 'categorias', 'topes', 'metas', 'recurrentes'] },
-  { titulo: 'Herramientas', paneles: ['preguntar', 'extractos', 'gmf'] },
+  { titulo: 'Herramientas', paneles: ['extractos', 'gmf'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
 ];
 
