@@ -2,6 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "trailingSlash": false,
   "rewrites": [
     { "source": "/ecosistema", "destination": "/ecosistema/index.html" },
     { "source": "/ecosistema/:path*", "destination": "/ecosistema/index.html" },
