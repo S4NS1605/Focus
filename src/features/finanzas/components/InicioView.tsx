@@ -1,10 +1,11 @@
-import React from 'react';
-import { ChevronDown, Search, Settings2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ChevronDown, Search, Settings2, X } from 'lucide-react';
 import type { Transaction } from '../types';
 import { formatCop } from '../lib/formatCop';
 import { monthKeyLabel } from '../lib/localDate';
 import { TransactionList } from './TransactionList';
 import type { Insight } from '../lib/insights';
+import { useDismissedInsights } from '../data/useDismissedInsights';
 
 interface InicioViewProps {
   /** El mes que se está mirando, en formato YYYY-MM. */
@@ -62,7 +63,29 @@ export const InicioView: React.FC<InicioViewProps> = ({
   mostrarEfectivoSeparado,
   saldoEfectivoCop,
   saldoCuentasSinEfectivoCop,
-}) => (
+}) => {
+  const { isDismissed, dismiss } = useDismissedInsights();
+  const [indiceRotacion, setIndiceRotacion] = useState(0);
+
+  // Filtrar insights no descartados
+  const insightsVisibles = useMemo(() => {
+    if (!insights) return [];
+    return insights.filter((i) => !isDismissed(i.id));
+  }, [insights, isDismissed]);
+
+  // Rotar entre insights cada 60 segundos si hay múltiples
+  useEffect(() => {
+    if (insightsVisibles.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndiceRotacion((prev) => (prev + 1) % insightsVisibles.length);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [insightsVisibles.length]);
+
+  // El insight a mostrar (rotación si hay múltiples, primero si hay uno)
+  const insightActual = insightsVisibles[insightsVisibles.length > 1 ? indiceRotacion : 0] ?? null;
+
+  return (
   <div className="flex flex-col">
     {/* Arriba: el mes a la izquierda, dos botones a la derecha. Nada más. Antes
  el navegador de mes ocupaba una fila entera para él solo, con dos
@@ -154,36 +177,51 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
     {/* "Para ti": casi siempre no hay nada aquí, y eso está bien. Solo aparece
  lo que de verdad vale la pena leer — nunca más de tres cosas a la vez. */}
-    {insights && insights.length > 0 ? (
-      <div className="mt-5 flex flex-col gap-2">
-        {insights.map((insight) => {
-          const Contenedor = insight.onTocar ? 'button' : 'div';
-          return (
-            <Contenedor
-              key={insight.id}
-              type={insight.onTocar ? 'button' : undefined}
-              onClick={insight.onTocar}
-              className="flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3 text-left"
-            >
-              <span
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-[var(--fin-r-pill)]"
-                style={{
-                  backgroundColor:
-                    insight.tono === 'atento' ? 'var(--fin-out)' : 'var(--fin-ink-faint)',
-                }}
-                aria-hidden="true"
-              />
-              <span className="min-w-0">
+    {insightActual ? (
+      <div className="mt-5">
+        <div className="flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3">
+          <span
+            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-[var(--fin-r-pill)]"
+            style={{
+              backgroundColor:
+                insightActual.tono === 'atento' ? 'var(--fin-out)' : 'var(--fin-ink-faint)',
+            }}
+            aria-hidden="true"
+          />
+          <span className="min-w-0 flex-1">
+            {insightActual.onTocar ? (
+              <button
+                type="button"
+                onClick={insightActual.onTocar}
+                className="block text-left hover:underline"
+              >
                 <span className="block text-[15px] font-medium text-[var(--fin-ink)]">
-                  {insight.titulo}
+                  {insightActual.titulo}
                 </span>
-                <span className="mt-0.5 block text-[13px] text-[var(--fin-ink-soft)]">
-                  {insight.detalle}
-                </span>
+              </button>
+            ) : (
+              <span className="block text-[15px] font-medium text-[var(--fin-ink)]">
+                {insightActual.titulo}
               </span>
-            </Contenedor>
-          );
-        })}
+            )}
+            <span className="mt-0.5 block text-[13px] text-[var(--fin-ink-soft)]">
+              {insightActual.detalle}
+            </span>
+            {insightsVisibles.length > 1 && (
+              <span className="mt-2 inline-block text-[11px] font-semibold text-[var(--fin-ink-faint)]">
+                {indiceRotacion + 1} de {insightsVisibles.length}
+              </span>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => dismiss(insightActual.id)}
+            aria-label="Cerrar"
+            className="shrink-0 rounded-lg p-1.5 text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] transition-colors"
+          >
+            <X className="h-4 w-4" strokeWidth={2.5} />
+          </button>
+        </div>
       </div>
     ) : null}
 
@@ -193,4 +231,5 @@ export const InicioView: React.FC<InicioViewProps> = ({
       <TransactionList transactions={movimientos} conSenal={conSenal} onAbrir={onAbrirMovimiento} />
     </div>
   </div>
-);
+  );
+};
