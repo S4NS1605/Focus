@@ -45,8 +45,8 @@ const MAX_MS = 60_000;
 /** Traduce el motivo técnico del servidor a algo que se pueda leer. */
 const enPalabras = (motivo: string | undefined): string => {
   if (!motivo) return 'No se pudo transcribir. Escríbelo a mano.';
-  if (motivo.includes('OPENAI_API_KEY')) {
-    return 'Falta configurar la clave de OpenAI en el servidor.';
+  if (motivo.includes('llave') || motivo.includes('API_KEY')) {
+    return 'Falta configurar la clave de transcripción en el servidor.';
   }
   if (motivo.includes('No llegó audio')) {
     return 'No se grabó nada. Mantén la app abierta mientras hablas.';

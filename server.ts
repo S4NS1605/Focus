@@ -1294,10 +1294,29 @@ Reglas clave:
 // ENDPOINT: Transcribir Audio (Whisper)
 // ----------------------------------------------------------------------
 app.post('/api/transcribir', async (req, res) => {
-  // Transcripción sin autenticación requerida (funciona en PWA sin login)
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) {
-    return res.status(200).json({ offline: true, error: 'OpenAI API key not configured' });
+  // Transcripción sin autenticación requerida (funciona en PWA sin login).
+  //
+  // Groq va primero: su capa gratuita cubre ocho horas de audio al día, mucho
+  // más de lo que esta app dicta, y su API es compatible con la de OpenAI, así
+  // que lo único que cambia entre los dos es la URL y el modelo.
+  const proveedor = process.env.GROQ_API_KEY
+    ? {
+        nombre: 'Groq',
+        llave: process.env.GROQ_API_KEY,
+        url: 'https://api.groq.com/openai/v1/audio/transcriptions',
+        modelo: 'whisper-large-v3-turbo',
+      }
+    : process.env.OPENAI_API_KEY
+      ? {
+          nombre: 'OpenAI',
+          llave: process.env.OPENAI_API_KEY,
+          url: 'https://api.openai.com/v1/audio/transcriptions',
+          modelo: 'whisper-1',
+        }
+      : null;
+
+  if (!proveedor) {
+    return res.status(200).json({ offline: true, error: 'Falta llave de transcripción' });
   }
 
   try {
@@ -1323,18 +1342,20 @@ app.post('/api/transcribir', async (req, res) => {
     // FormData solo funciona en Node 18.10+
     const formData = new FormData();
     formData.append('file', new Blob([audioBuffer], { type: tipo }), nombre);
-    formData.append('model', 'whisper-1');
+    formData.append('model', proveedor.modelo);
     formData.append('language', 'es');
 
-    const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const whisperRes = await fetch(proveedor.url, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${openaiKey}` },
+      headers: { Authorization: `Bearer ${proveedor.llave}` },
       body: formData,
     });
 
     if (!whisperRes.ok) {
       const error = await whisperRes.text();
-      console.error(`[transcribir] Whisper ${whisperRes.status}: ${error.slice(0, 200)}`);
+      console.error(
+        `[transcribir] ${proveedor.nombre} ${whisperRes.status}: ${error.slice(0, 200)}`,
+      );
       return res.status(200).json({ offline: true, error: 'Transcription failed' });
     }
 
