@@ -103,6 +103,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
   const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
+  const { guardar: guardarFeedback } = useFeedbackAsesor();
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -316,10 +317,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         <span className="truncate">{etiquetaConexion(conexion)}</span>
       </p>
 
-      <p className="mb-4 text-[12px] text-[var(--fin-ink-faint)]">
-        LukApp es una IA y puede cometer errores. Verifica cualquier consejo sobre dinero antes de actuar.
-      </p>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-5">
         {/* Antes de que exista una conversación real (solo el saludo inicial),
@@ -422,7 +419,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   {msg.role === 'bot' && (
                     <div className="mt-2 flex gap-1.5 border-t border-[var(--fin-line)] pt-2">
                       <button
-                        onClick={() => setFeedback(new Map(feedback).set(msg.id, 'like'))}
+                        onClick={() => {
+                          const nuevoFeedback = new Map(feedback);
+                          nuevoFeedback.set(msg.id, 'like');
+                          setFeedback(nuevoFeedback);
+                          guardarFeedback(msg.id, 'like');
+                        }}
                         className={`flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-1 text-[12px] transition-colors ${
                           feedback.get(msg.id) === 'like'
                             ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
@@ -433,7 +435,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                         <ThumbsUp className="h-3 w-3" strokeWidth={2.5} />
                       </button>
                       <button
-                        onClick={() => setFeedback(new Map(feedback).set(msg.id, 'dislike'))}
+                        onClick={() => {
+                          const nuevoFeedback = new Map(feedback);
+                          nuevoFeedback.set(msg.id, 'dislike');
+                          setFeedback(nuevoFeedback);
+                          guardarFeedback(msg.id, 'dislike');
+                        }}
                         className={`flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-1 text-[12px] transition-colors ${
                           feedback.get(msg.id) === 'dislike'
                             ? 'bg-[var(--fin-warn)] text-[var(--fin-on-accent)]'
@@ -498,6 +505,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             <Send className="mr-0.5 h-4 w-4" strokeWidth={2.5} />
           </button>
         </div>
+        <p className="mt-2 text-center text-[11px] text-[var(--fin-ink-faint)]">
+          LukApp es una IA y puede cometer errores. Verifica cualquier consejo sobre dinero antes de actuar.
+        </p>
       </div>
     </div>
   );
