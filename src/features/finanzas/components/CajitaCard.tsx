@@ -12,6 +12,7 @@ import { bogotaDate } from '../lib/localDate';
 import type { CajitaMovimiento } from '../data/modelos';
 import { formatCop, formatAmountInput, parseAmountInput, parseSaldoInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface CajitaCardProps {
   resumen: ResumenCajita;
@@ -62,6 +63,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   onTransferir,
   onEliminar,
 }) => {
+  const haptic = useHapticFeedback();
   const { cajita, saldoCop, pct } = resumen;
   const [accion, setAccion] = useState<Accion | null>(null);
   const otras = destinos.filter((d) => d.id !== cajita.id);
@@ -83,6 +85,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
 
   const abrirAccion = (siguiente: Accion) => {
     const misma = accion === siguiente;
+    haptic.trigger(misma ? 'light' : 'medium');
     setAccion(misma ? null : siguiente);
     // "Update balance" starts from what the app currently believes, so the user
     // edits a number instead of retyping one they did not change.
@@ -147,7 +150,10 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
 
         <button
           type="button"
-          onClick={() => setConfirmandoBorrado((v) => !v)}
+          onClick={() => {
+            haptic.trigger('warning');
+            setConfirmandoBorrado((v) => !v);
+          }}
           aria-label={`${T.eliminar}: ${cajita.nombre}`}
           className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
         >
@@ -212,14 +218,20 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           <div className="mt-2.5 flex gap-2">
             <button
               type="button"
-              onClick={() => onEliminar(cajita.id)}
+              onClick={() => {
+                haptic.trigger('heavy');
+                onEliminar(cajita.id);
+              }}
               className="rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2 text-[15px] font-semibold text-white"
             >
               {T.eliminar}
             </button>
             <button
               type="button"
-              onClick={() => setConfirmandoBorrado(false)}
+              onClick={() => {
+                haptic.trigger('light');
+                setConfirmandoBorrado(false);
+              }}
               className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
             >
               {COPY.confirm.cancel}
@@ -333,7 +345,10 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
         <>
           <button
             type="button"
-            onClick={() => setAbierto((v) => !v)}
+            onClick={() => {
+              haptic.trigger('light');
+              setAbierto((v) => !v);
+            }}
             aria-expanded={abierto}
             className="mt-3 flex w-full items-center justify-between rounded-[var(--fin-r-control)] px-1 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
           >

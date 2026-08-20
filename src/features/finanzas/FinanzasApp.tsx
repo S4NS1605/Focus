@@ -68,7 +68,8 @@ import { DetalleMovimiento } from './components/DetalleMovimiento';
 import { AvisoGuardado } from './components/AvisoGuardado';
 import type { Guardado } from './components/AvisoGuardado';
 import { Onboarding } from './components/Onboarding';
-import { PANELES_AJUSTES } from './sections';
+import { PANELES_AJUSTES, SECTIONS } from './sections';
+import { BASE_FINANZAS, segmentosDe, useRuta } from './data/useRuta';
 import type { PanelAjustes, SectionId } from './sections';
 import { TemaToggle } from './components/TemaToggle';
 import type { Tema } from './data/useTema';
@@ -228,7 +229,21 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   // pestaña de Ahorro y la de Configuración), y de ahí salían estados
   // imposibles: quedarte en una pestaña que en ese ancho de pantalla ni
   // siquiera se dibujaba, sin forma de volver.
-  const [section, setSection] = useState<SectionId>('inicio');
+  // La sección y el panel abierto salen de la URL, no de un useState suelto:
+  // así /finanzas/movimientos y /finanzas/ajustes/cuentas son enlazables, el
+  // atrás del navegador retrocede dentro de la app y recargar no te devuelve
+  // al inicio.
+  const { ruta, ir } = useRuta();
+  const segmentos = segmentosDe(ruta);
+  const section: SectionId = (() => {
+    const s = SECTIONS.find((x) => x.id === segmentos[0]);
+    return s ? (s.id as SectionId) : 'inicio';
+  })();
+  const setSection = useCallback(
+    (destino: SectionId) =>
+      ir(destino === 'inicio' ? `${BASE_FINANZAS}/app` : `${BASE_FINANZAS}/${destino}`),
+    [ir],
+  );
   const [mostrarReporte, setMostrarReporte] = useState(false);
   const { mostrarQuickStart, ocultar: ocultarQuickStart, volverAMostrar: volverAMostrarQuickStart } =
     useQuickStart();
@@ -402,7 +417,15 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   // todas eran secciones con su propio puesto en el menú; ahora son capas, que
   // es lo que siempre fueron: sitios de los que uno sale, no en los que vive.
   const [capa, setCapa] = useState<Capa>(null);
-  const [panelAjustes, setPanelAjustes] = useState<PanelAjustes | null>(null);
+  const panelAjustes: PanelAjustes | null =
+    section === 'ajustes' && segmentos[1]
+      ? (PANELES_AJUSTES.find((p) => p.id === segmentos[1])?.id as PanelAjustes) ?? null
+      : null;
+  const setPanelAjustes = useCallback(
+    (panel: PanelAjustes | null) =>
+      ir(panel ? `${BASE_FINANZAS}/ajustes/${panel}` : `${BASE_FINANZAS}/ajustes`),
+    [ir],
+  );
   // Qué grupo de "Dinero" se abrió. La lista de Dinero es solo el resumen; las
   // acciones de verdad (crear, transferir, aportar, abonar) siguen viviendo en
   // las vistas de siempre, que se abren desde aquí. Así la pantalla nueva es

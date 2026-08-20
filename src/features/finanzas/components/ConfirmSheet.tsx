@@ -20,6 +20,7 @@ import type { ParsedTransaction } from '../lib/parseTransaction';
 import { analizarAnomalias } from '../lib/senalesAvanzadas';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { useCatalogo } from '../catalogoContexto';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 export interface ConfirmDraft {
   kind: TxKind;
@@ -80,6 +81,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   transacciones,
 }) => {
   const editando = modo === 'editar';
+  const haptic = useHapticFeedback();
   const [amountText, setAmountText] = useState(() => formatAmountInput(parsed.amount));
   const [fecha, setFecha] = useState(fechaInicial ?? parsed.dateOverride ?? '');
   const [kind, setKind] = useState<TxKind>(parsed.kind);
@@ -131,6 +133,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
       amountRef.current?.focus();
       return;
     }
+    haptic.trigger('success');
     onSave({
       kind,
       amountCop,
@@ -182,7 +185,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           </div>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={() => {
+              haptic.trigger('light');
+              onCancel();
+            }}
             aria-label={COPY.confirm.cancel}
             className="rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
           >

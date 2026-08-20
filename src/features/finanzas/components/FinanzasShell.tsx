@@ -1,6 +1,7 @@
 import React from 'react';
 import { SECTIONS } from '../sections';
 import type { SectionId } from '../sections';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
 interface FinanzasShellProps {
   section: SectionId;
@@ -36,7 +37,15 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
   accion,
   onBack,
   children,
-}) => (
+}) => {
+  const haptic = useHapticFeedback();
+
+  const handleSectionChange = (newSection: SectionId) => {
+    haptic.trigger('selection');
+    onSectionChange(newSection);
+  };
+
+  return (
   <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased">
     {/* El contenido. El hueco de abajo deja sitio para la barra y para la franja
  del iPhone, y así la última fila de la lista nunca queda tapada. */}
@@ -82,7 +91,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
             <button
               key={item.id}
               type="button"
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
               className="flex min-w-0 flex-1 flex-col items-center gap-1 py-1.5"
             >
@@ -107,4 +116,5 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
       </div>
     </nav>
   </div>
-);
+  );
+};

@@ -9,6 +9,7 @@ import { AppLauncher } from './AppLauncher';
 import { SuperadminPanel } from './SuperadminPanel';
 import { EstadisticasPanel } from './EstadisticasPanel';
 import { LandingFinanzas } from '../features/finanzas/components/LandingFinanzas';
+import { BASE_FINANZAS, segmentosDe, useRuta } from '../features/finanzas/data/useRuta';
 import { WelcomeTourFinanzas } from '../features/finanzas/components/WelcomeTourFinanzas';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 
@@ -40,11 +41,27 @@ export const AppsRoot: React.FC = () => {
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
 
-  // Landing/Tour flow
-  const [showLanding, setShowLanding] = useState<boolean>(() => {
-    return !localStorage.getItem('__lukapp_landing_seen__');
-  });
+  // Landing y login son rutas, no estados: /finanzas es la portada y
+  // /finanzas/entrar el formulario. Antes ambas vivían en la misma URL, así
+  // que no se podía enlazar ninguna de las dos ni volver atrás entre ellas.
+  const { ruta, ir, reemplazar } = useRuta();
+  const enPortada = activeApp === 'finanzas' && segmentosDe(ruta).length === 0;
   const [showTour, setShowTour] = useState(false);
+
+  // Quien ya pasó por la portada entra directo al formulario. Reemplaza en vez
+  // de empujar: es un salto que el usuario no pidió, y empujarlo dejaría el
+  // botón atrás rebotando contra la redirección.
+  useEffect(() => {
+    if (!enPortada) return;
+    // Con sesión ya no hay portada que enseñar: la raíz es la app.
+    if (sesion.estado.modo === 'autenticado' || sesion.estado.modo === 'local') {
+      reemplazar(`${BASE_FINANZAS}/app`);
+      return;
+    }
+    if (localStorage.getItem('__lukapp_landing_seen__')) {
+      reemplazar(`${BASE_FINANZAS}/entrar`);
+    }
+  }, [enPortada, reemplazar, sesion.estado.modo]);
 
   // Admin impersonation banner
   const [adminBackup, setAdminBackup] = useState<AdminBackup | null>(() => {
@@ -186,19 +203,17 @@ export const AppsRoot: React.FC = () => {
   }
 
   if (sesion.estado.modo === 'anonimo') {
-    if (showLanding) {
+    if (enPortada) {
+      const entrar = () => {
+        localStorage.setItem('__lukapp_landing_seen__', 'true');
+        ir(`${BASE_FINANZAS}/entrar`);
+      };
       return (
         <>
           <LandingFinanzas
-            onGetStarted={() => {
-              setShowLanding(false);
-              localStorage.setItem('__lukapp_landing_seen__', 'true');
-            }}
+            onGetStarted={entrar}
             onSeeDemo={() => setShowTour(true)}
-            onLogin={() => {
-              setShowLanding(false);
-              localStorage.setItem('__lukapp_landing_seen__', 'true');
-            }}
+            onLogin={entrar}
           />
           {showTour && (
             <WelcomeTourFinanzas
