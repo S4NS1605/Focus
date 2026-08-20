@@ -5,7 +5,7 @@ orden.
 
 ---
 
-## 1. Migraciones pendientes: `0007` a `0012`
+## 1. Migraciones pendientes: `0007` a `0012`, y la `0017`
 
 **Dónde:** Supabase → tu proyecto → **SQL Editor** → *New query*.
 
@@ -28,6 +28,7 @@ usa los bloques de abajo.
 | 0009 | `0009_presupuestos.sql` | topes de gasto por categoría |
 | 0010 | `0010_recurrentes.sql` | lo que se repite cada mes |
 | 0011 | `0011_apodos.sql` | cómo le dices tú a cada contacto |
+| 0017 | `0017_registro_publico.sql` | abre el registro y cierra la fuga de correos |
 | 0012 | `0012_visitas.sql` | analítica del portafolio |
 
 **Dependencias ya cubiertas:** la `0010` referencia `public.cajitas`, creada en
@@ -136,15 +137,29 @@ después producen huellas distintas para la misma persona. Se infla el número d
 
 ---
 
-## 5. Apagar el registro público
+## 5. El registro público — ahora es a propósito
 
-**Sigue encendido.** Mientras lo esté, cualquiera con la URL puede crearse una
-cuenta en tu ecosistema.
+**Déjalo encendido.** Aquí antes decía justo lo contrario: apágalo. Ya no.
 
-Supabase → **Authentication → Sign In / Providers → Email** → apaga
-*Allow new users to sign up*.
+Supabase → **Authentication → Sign In / Providers → Email** → *Allow new users
+to sign up* tiene que estar **activado**. Es configuración del proyecto, no del
+código: ninguna migración lo cambia, y si está apagado el formulario de la
+portada falla con un error que no le dice nada a nadie.
 
-Es configuración del proyecto, no del código: ninguna migración lo cambia.
+### Lo que había que arreglar antes de abrirlo
+
+Esa casilla llevaba encendida todo este tiempo. La app lo tapaba enseñando solo
+la pestaña de entrar, pero eso es maquillaje: cualquiera que llamara a la API
+de Supabase directamente podía crearse una cuenta igual.
+
+Eso importa porque la 0002 daba el sistema por cerrado, y sobre esa idea
+justificaba `correo_de_usuario` — una función que devolvía el correo de
+cualquiera que acertara un nombre de usuario. O sea que la fuga ya estaba
+abierta, solo que nadie la había mirado de frente.
+
+La `0017` cierra eso: borra la función, quita el login por nombre de usuario
+(ahora se entra solo con correo) y deja el registro apoyado en algo que sí se
+sostiene.
 
 ---
 
