@@ -987,16 +987,21 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span
-                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                                  u.rol === 'admin'
-                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300'
-                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300'
-                                }`}
-                              >
-                                {u.rol === 'admin' && <ShieldAlert className="h-3 w-3" />}
-                                {u.rol}
-                              </span>
+                              {u.rol === 'admin' ? (
+                                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300">
+                                  <ShieldAlert className="h-3 w-3" />
+                                  Admin
+                                </span>
+                              ) : u.rol_personalizado_id ? (
+                                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                                  <Sparkles className="h-3 w-3" />
+                                  {roles.find((r) => r.id === u.rol_personalizado_id)?.nombre || 'Desconocido'}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
+                                  Usuario
+                                </span>
+                              )}
                             </td>
                             <td className="px-6 py-4 text-[var(--fin-ink-soft)]">
                               {new Date(u.created_at).toLocaleDateString('es-CO')}
