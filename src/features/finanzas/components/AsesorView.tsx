@@ -305,16 +305,39 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           Asesor Financiero", así que se veían dos títulos seguidos diciendo casi
           lo mismo. Aquí solo queda la línea de estado, que sí aporta algo que el
           título no puede decir. */}
-      <p className="flex items-center gap-2 pb-4 text-[13px] text-[var(--fin-ink-soft)]">
-        <span
-          aria-hidden="true"
-          className={`inline-block h-2 w-2 shrink-0 rounded-[var(--fin-r-pill)] ${
-            conexion === 'local' ? '' : 'animate-pulse'
-          }`}
-          style={{ backgroundColor: colorConexion }}
-        />
-        <span className="truncate">{etiquetaConexion(conexion)}</span>
-      </p>
+      <div className="flex items-center justify-between gap-2 pb-4">
+        <p className="flex items-center gap-2 text-[13px] text-[var(--fin-ink-soft)]">
+          <span
+            aria-hidden="true"
+            className={`inline-block h-2 w-2 shrink-0 rounded-[var(--fin-r-pill)] ${
+              conexion === 'local' ? '' : 'animate-pulse'
+            }`}
+            style={{ backgroundColor: colorConexion }}
+          />
+          <span className="truncate">{etiquetaConexion(conexion)}</span>
+        </p>
+        {conexion === 'local' && (
+          <button
+            onClick={async () => {
+              setConexion('despertando');
+              try {
+                const res = await fetch(apiUrl('/api/salud'));
+                if (res.ok) {
+                  const data = await res.json();
+                  setConexion(data?.ia ? 'en-linea' : 'local');
+                } else {
+                  setConexion('local');
+                }
+              } catch {
+                setConexion('local');
+              }
+            }}
+            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1 text-[12px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
+          >
+            Despertarlo
+          </button>
+        )}
+      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-5">
