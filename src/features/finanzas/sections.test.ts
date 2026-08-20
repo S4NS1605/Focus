@@ -11,15 +11,20 @@ import { SECTIONS, PANELES_AJUSTES, sectionLabel } from './sections';
  * Ahora que la navegación es una sola, eso es lo que se comprueba.
  */
 describe('la navegación', () => {
-  it('tiene cuatro destinos, ni uno más', () => {
+  it('tiene cinco destinos, ni uno más', () => {
     // El número importa: pasar de cuatro es como empezó la cuesta que llevó a
-    // once. Si algún día hay que añadir un quinto, que sea una decisión que
-    // alguien tome a propósito y no algo que se cuele.
-    expect(SECTIONS).toHaveLength(4);
+    // once. Si algún día hay que añadir otro, que sea una decisión que alguien
+    // tome a propósito y no algo que se cuele.
+    //
+    // El quinto —Asesor— se añadió a propósito: era una pestaña dentro de Mes y
+    // se sacó a la barra porque se usa a diario, no una vez al mes. Este test
+    // hizo su trabajo entonces: el cambio no pasó callado, dejó el número en
+    // rojo hasta que alguien vino a confirmarlo aquí.
+    expect(SECTIONS).toHaveLength(5);
   });
 
   it('los destinos son los esperados y en ese orden', () => {
-    expect(SECTIONS.map((s) => s.id)).toEqual(['inicio', 'dinero', 'mes', 'ajustes']);
+    expect(SECTIONS.map((s) => s.id)).toEqual(['inicio', 'dinero', 'mes', 'asesor', 'ajustes']);
   });
 
   it('cada destino tiene id único', () => {
