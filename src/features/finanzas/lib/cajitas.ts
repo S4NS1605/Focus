@@ -1,6 +1,6 @@
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
-import { ES_PASIVO } from '../data/modelos';
+import { ES_PASIVO, ID_EFECTIVO } from '../data/modelos';
 
 /**
  * A pocket's balance is always the sum of its movements — never a stored number.
@@ -244,4 +244,26 @@ export const totalVisible = (
 ): number => {
   const p = patrimonio(cajitas, movimientos, transacciones);
   return contarAhorros ? p.netoCop : p.cuentasCop - p.deudasCop;
+};
+
+/** Balance of the cash account (efectivo) if it exists and is not archived. */
+export const saldoEfectivo = (
+  cajitas: readonly Cajita[],
+  movimientos: readonly CajitaMovimiento[],
+  transacciones: readonly Transaction[] = [],
+): number => {
+  const efectivoCajita = cajitas.find((c) => c.id === ID_EFECTIVO && c.archivedAt === null);
+  if (!efectivoCajita) return 0;
+  return saldoDeCajita(movimientos, ID_EFECTIVO, transacciones, idsPasivos(cajitas));
+};
+
+/** Accounts balance excluding cash (efectivo). */
+export const saldoCuentasSinEfectivo = (
+  cajitas: readonly Cajita[],
+  movimientos: readonly CajitaMovimiento[],
+  transacciones: readonly Transaction[] = [],
+): number => {
+  const saldosCuentas = totalPorTipo(cajitas, movimientos, 'cuenta', transacciones);
+  const saldoEfect = saldoEfectivo(cajitas, movimientos, transacciones);
+  return saldosCuentas - saldoEfect;
 };

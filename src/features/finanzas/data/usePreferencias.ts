@@ -11,6 +11,7 @@ import type { RegimenGmf, ValorUvt } from '../lib/gmf';
  * different answers, and nothing here needs to survive a reinstall.
  */
 const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
+const CLAVE_EFECTIVO_SEPARADO = 'finanzas:resumen:efectivo-separado';
 const CLAVE_NOMBRE = 'finanzas:onboarding:nombre';
 const CLAVE_ONBOARDING = 'finanzas:onboarding:terminado';
 const CLAVE_UVT = 'finanzas:gmf:uvt';
@@ -59,6 +60,8 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
 
   if (metadata[CLAVE_AHORRO] !== undefined)
     setIf(CLAVE_AHORRO, metadata[CLAVE_AHORRO] ? 'si' : 'no');
+  if (metadata[CLAVE_EFECTIVO_SEPARADO] !== undefined)
+    setIf(CLAVE_EFECTIVO_SEPARADO, metadata[CLAVE_EFECTIVO_SEPARADO] ? 'si' : 'no');
   if (metadata[CLAVE_NOMBRE] !== undefined) setIf(CLAVE_NOMBRE, metadata[CLAVE_NOMBRE]);
   // Nunca se baja a 'no' desde la nube: si en cualquier dispositivo ya se
   // terminó la bienvenida, se terminó en todos.
@@ -114,6 +117,28 @@ export const useMostrarAhorro = () => {
   }, []);
 
   return { mostrarAhorro, setMostrarAhorro };
+};
+
+export const useMostrarEfectivoSeparado = () => {
+  const [mostrarEfectivoSeparado, setEstado] = useState(() =>
+    leerBooleano(CLAVE_EFECTIVO_SEPARADO, false),
+  );
+
+  const setMostrarEfectivoSeparado = useCallback((valor: boolean) => {
+    setEstado(valor);
+    guardarBooleano(CLAVE_EFECTIVO_SEPARADO, valor);
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== CLAVE_EFECTIVO_SEPARADO) return;
+      setEstado(leerBooleano(CLAVE_EFECTIVO_SEPARADO, false));
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return { mostrarEfectivoSeparado, setMostrarEfectivoSeparado };
 };
 
 /**

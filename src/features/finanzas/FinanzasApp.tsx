@@ -4,7 +4,7 @@ import { AlertTriangle, CloudOff, X } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forMonth, monthTotals } from './lib/aggregate';
-import { totalVisible } from './lib/cajitas';
+import { totalVisible, saldoEfectivo, saldoCuentasSinEfectivo } from './lib/cajitas';
 import { formatCop } from './lib/formatCop';
 import { bogotaDate, monthKey, shiftMonth } from './lib/localDate';
 import { nuevoId } from './lib/id';
@@ -35,7 +35,7 @@ import { useAjustesGmf } from './data/usePreferencias';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
 import { contactoPorApodo } from './lib/contactos';
-import { useMostrarAhorro, useOnboarding } from './data/usePreferencias';
+import { useMostrarAhorro, useMostrarEfectivoSeparado, useOnboarding } from './data/usePreferencias';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { CategoriasEditor } from './components/CategoriasEditor';
 import { AnalisisMovimiento } from './components/AnalisisMovimiento';
@@ -210,6 +210,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   // mismo problema, y leer de la base local no cuesta ni un viaje a internet.
   useSincronizacion({ activo: true, recargar: almacen.recargar });
   const { mostrarAhorro, setMostrarAhorro } = useMostrarAhorro();
+  const { mostrarEfectivoSeparado, setMostrarEfectivoSeparado } = useMostrarEfectivoSeparado();
   const onboarding = useOnboarding();
   const gmf = useAjustesGmf();
   const { transacciones, cajitas, cajitaMovimientos, categorias } = almacen.datos;
@@ -424,6 +425,16 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
     [cajitas, cajitaMovimientos, transacciones, mostrarAhorro],
   );
 
+  const saldoEfectivoCop = useMemo(
+    () => saldoEfectivo(cajitas, cajitaMovimientos, transacciones),
+    [cajitas, cajitaMovimientos, transacciones],
+  );
+
+  const saldoCuentasSinEfectivoCop = useMemo(
+    () => saldoCuentasSinEfectivo(cajitas, cajitaMovimientos, transacciones),
+    [cajitas, cajitaMovimientos, transacciones],
+  );
+
   if (almacen.cargando) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
@@ -512,6 +523,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             conSenal={conSenal}
             onAbrirMovimiento={setDetalle}
             insights={paraTi}
+            mostrarEfectivoSeparado={mostrarEfectivoSeparado}
+            saldoEfectivoCop={saldoEfectivoCop}
+            saldoCuentasSinEfectivoCop={saldoCuentasSinEfectivoCop}
           />
         ) : null}
 
@@ -585,6 +599,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             cuenta={cuenta}
             mostrarAhorro={mostrarAhorro}
             onMostrarAhorro={setMostrarAhorro}
+            mostrarEfectivoSeparado={mostrarEfectivoSeparado}
+            onMostrarEfectivoSeparado={setMostrarEfectivoSeparado}
           />
         ) : null}
 

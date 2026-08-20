@@ -24,6 +24,9 @@ interface InicioViewProps {
   onAbrirMovimiento: (tx: Transaction) => void;
   /** Lo que la app notó por su cuenta este mes. Casi siempre está vacío. */
   insights?: readonly (Insight & { onTocar?: () => void })[];
+  mostrarEfectivoSeparado?: boolean;
+  saldoEfectivoCop?: number;
+  saldoCuentasSinEfectivoCop?: number;
 }
 
 /**
@@ -56,6 +59,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
   conSenal,
   onAbrirMovimiento,
   insights,
+  mostrarEfectivoSeparado,
+  saldoEfectivoCop,
+  saldoCuentasSinEfectivoCop,
 }) => (
   <div className="flex flex-col">
     {/* Arriba: el mes a la izquierda, dos botones a la derecha. Nada más. Antes
@@ -107,6 +113,17 @@ export const InicioView: React.FC<InicioViewProps> = ({
     >
       {formatCop(patrimonioCop)}
     </button>
+
+    {mostrarEfectivoSeparado && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
+      <div className="mt-3 flex flex-col gap-2 text-center text-[14px]">
+        <div className="text-[var(--fin-ink-soft)]">
+          En Bancos: <span className="font-semibold text-[var(--fin-ink)]">{formatCop(saldoCuentasSinEfectivoCop)}</span>
+        </div>
+        <div className="text-[var(--fin-ink-soft)]">
+          Efectivo: <span className="font-semibold text-[var(--fin-ink)]">{formatCop(saldoEfectivoCop)}</span>
+        </div>
+      </div>
+    ) : null}
 
     {/* Lo que salió y lo que entró, en un solo control de 44px. Esto reemplaza
  tres bloques que decían lo mismo: la tarjeta de estado del mes (295px),

@@ -4,6 +4,7 @@ import {
   FileUp,
   HardDriveDownload,
   Flag,
+  Key,
   Landmark,
   PiggyBank,
   Repeat,
@@ -21,6 +22,8 @@ interface AjustesViewProps {
   cuenta?: { email: string; onSalir: () => void };
   mostrarAhorro: boolean;
   onMostrarAhorro: (valor: boolean) => void;
+  mostrarEfectivoSeparado: boolean;
+  onMostrarEfectivoSeparado: (valor: boolean) => void;
 }
 
 /** Cada panel con su icono. Van aquí y no en sections.ts para que ese fichero
@@ -37,6 +40,7 @@ const ICONOS: Record<
   extractos: FileUp,
   gmf: Landmark,
   nombres: Users,
+  contraseña: Key,
   respaldo: HardDriveDownload,
 };
 
@@ -106,6 +110,8 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
   cuenta,
   mostrarAhorro,
   onMostrarAhorro,
+  mostrarEfectivoSeparado,
+  onMostrarEfectivoSeparado,
 }) => (
   <div className="flex flex-col gap-7">
     <h1
@@ -168,6 +174,32 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           />
         </label>
 
+        <label
+          className="flex cursor-pointer items-center gap-3 px-4 py-3.5"
+          style={{ boxShadow: temaToggle || cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
+        >
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+            aria-hidden="true"
+          >
+            <PiggyBank className="h-[18px] w-[18px] text-[var(--fin-ink-soft)]" strokeWidth={2} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
+              Mostrar efectivo por separado
+            </span>
+            <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+              Desglosar el dinero en efectivo del total
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={mostrarEfectivoSeparado}
+            onChange={(e) => onMostrarEfectivoSeparado(e.target.checked)}
+            className="h-6 w-6 shrink-0 accent-[var(--fin-in)]"
+          />
+        </label>
+
         {temaToggle ? (
           <div
             className="flex items-center justify-between gap-3 px-4 py-3.5"
@@ -198,6 +230,5 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
       </div>
     </section>
 
-    <p className="px-1 text-[13px] text-[var(--fin-ink-faint)]">Privado · solo para ti</p>
   </div>
 );
