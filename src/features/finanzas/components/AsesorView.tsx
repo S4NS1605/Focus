@@ -104,6 +104,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [pensando, setPensando] = useState(false);
   const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
+  const [intentandoDespertar, setIntentandoDespertar] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -319,22 +320,24 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         {conexion === 'local' && (
           <button
             onClick={async () => {
-              setConexion('despertando');
+              if (intentandoDespertar) return;
+              setIntentandoDespertar(true);
+
               try {
-                const res = await fetch(apiUrl('/api/salud'));
-                if (res.ok) {
-                  const data = await res.json();
-                  setConexion(data?.ia ? 'en-linea' : 'local');
-                } else {
-                  setConexion('local');
-                }
-              } catch {
+                const res = await fetch(apiUrl('/api/salud'), { signal: AbortSignal.timeout(5000) });
+                const data = await res.json();
+                setConexion(data?.ia ? 'en-linea' : 'local');
+              } catch (error) {
+                console.log('[asesor] Error despertando:', error);
                 setConexion('local');
+              } finally {
+                setIntentandoDespertar(false);
               }
             }}
-            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1 text-[12px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
+            disabled={intentandoDespertar}
+            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1 text-[12px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
           >
-            Despertarlo
+            {intentandoDespertar ? 'Despertando...' : 'Despertarlo'}
           </button>
         )}
       </div>
