@@ -1,7 +1,7 @@
 // Kept out of FinanzasShell.tsx so that file only exports a component — mixing
 // constants with components breaks Fast Refresh, which oxlint flags via
 // react/only-export-components.
-import { BarChart3, Home, Menu, Wallet } from 'lucide-react';
+import { BarChart3, Brain, Home, Menu, Wallet } from 'lucide-react';
 
 /**
  * Los cuatro sitios a los que se puede ir. Cuatro, no once.
@@ -27,6 +27,7 @@ export const SECTIONS = [
   { id: 'inicio', icon: Home, label: 'Inicio' },
   { id: 'dinero', icon: Wallet, label: 'Dinero' },
   { id: 'mes', icon: BarChart3, label: 'Mes' },
+  { id: 'preguntar', icon: Brain, label: 'Preguntar' },
   { id: 'ajustes', icon: Menu, label: 'Más' },
 ] as const;
 
@@ -51,7 +52,6 @@ export const PANELES_AJUSTES = [
   { id: 'topes', label: 'Topes de gasto', ayuda: 'Te avisa antes de que te pases' },
   { id: 'metas', label: 'Metas de ahorro', ayuda: 'Ponte un objetivo y mira cuánto te falta' },
   { id: 'recurrentes', label: 'Pagos fijos', ayuda: 'Lo que te cobran todos los meses' },
-  { id: 'preguntar', label: 'Preguntar', ayuda: 'Resuelve dudas sobre tu plata' },
   { id: 'extractos', label: 'Importar extractos', ayuda: 'Sube el PDF que te manda el banco' },
   { id: 'gmf', label: 'Impuesto 4x1000', ayuda: 'Cuánto te está costando y en qué cuenta' },
   {

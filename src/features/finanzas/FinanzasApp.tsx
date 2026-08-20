@@ -561,7 +561,22 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
           />
         ) : null}
 
-        {/* ------------------------------------------------------ 4. Ajustes --- */}
+        {/* ------------------------------------------------------- 4. Preguntar --- */}
+        {section === 'preguntar' ? (
+          <AsesorView
+            transacciones={transacciones}
+            cajitas={cajitas}
+            cajitasBalances={cajitasBalances}
+            categorias={categorias}
+            lexico={lexico}
+            onCrearTransaccion={(tx) => {
+              setSection('inicio');
+              setPending(tx);
+            }}
+          />
+        ) : null}
+
+        {/* ------------------------------------------------------ 5. Ajustes --- */}
         {section === 'ajustes' ? (
           <AjustesView
             onAbrir={setPanelAjustes}
@@ -696,18 +711,6 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
                 onCrear={(d) => void almacen.crearRecurrente(d)}
                 onBorrar={(id) => void almacen.borrarRecurrente(id)}
                 onConfirmar={(p) => void almacen.confirmarRecurrente(p)}
-              />
-            ) : panelAjustes === 'preguntar' ? (
-              <AsesorView
-                transacciones={transacciones}
-                cajitas={cajitas}
-                cajitasBalances={cajitasBalances}
-                categorias={categorias}
-                lexico={lexico}
-                onCrearTransaccion={(tx) => {
-                  setPanelAjustes(null);
-                  setPending(tx);
-                }}
               />
             ) : panelAjustes === 'extractos' ? (
               <AnalistaView
