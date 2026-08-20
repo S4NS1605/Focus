@@ -1306,9 +1306,23 @@ app.post('/api/transcribir', async (req, res) => {
       return res.status(400).json({ error: 'No audio data provided' });
     }
 
+    // Whisper elige el decodificador por la EXTENSIÓN del archivo, no por el
+    // tipo MIME. Un iPhone graba mp4, así que mandarlo siempre como
+    // "audio.webm" hacía que lo rechazara sin más.
+    const tipo = req.headers['content-type'] ?? 'audio/webm';
+    const nombre = tipo.includes('mp4') || tipo.includes('m4a')
+      ? 'audio.mp4'
+      : tipo.includes('mpeg') || tipo.includes('mp3')
+        ? 'audio.mp3'
+        : tipo.includes('ogg')
+          ? 'audio.ogg'
+          : tipo.includes('wav')
+            ? 'audio.wav'
+            : 'audio.webm';
+
     // FormData solo funciona en Node 18.10+
     const formData = new FormData();
-    formData.append('file', new Blob([audioBuffer], { type: 'audio/webm' }), 'audio.webm');
+    formData.append('file', new Blob([audioBuffer], { type: tipo }), nombre);
     formData.append('model', 'whisper-1');
     formData.append('language', 'es');
 

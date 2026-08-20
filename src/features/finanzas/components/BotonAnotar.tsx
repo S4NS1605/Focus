@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic, Plus, Search, Square } from 'lucide-react';
+import { Loader2, Mic, Plus, Search, Square } from 'lucide-react';
 import { useDictation } from '../hooks/useDictation';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
@@ -22,27 +22,33 @@ interface BotonAnotarProps {
  * primero. Ahora el botón está siempre en el mismo sitio, se ve sin mirar y se
  * alcanza con el pulgar.
  *
- * El micrófono SIEMPRE está, y esa es la parte importante:
- * antes se escondía cuando `dictation.supported` era falso — y eso pasa
- * justamente cuando la app está instalada en la pantalla de inicio, o sea en el
- * uso real. La gente aprendía un gesto que luego desaparecía.
- * Ahora es un solo botón con dos caminos por debajo: si el navegador sabe
- * escuchar, escucha; si no, abre la pantalla de anotar con el teclado listo
- * (y ahí la tecla del micrófono del teclado hace el resto).
+ * El micrófono tiene TRES estados visibles, y eso es lo importante: quieto,
+ * escuchando y transcribiendo. Antes solo se distinguían dos, y como el estado
+ * "escuchando" se comparaba contra un valor que el motor nunca devolvía, el
+ * botón se quedaba pintado como quieto mientras el micrófono seguía abierto —
+ * así que tocarlo otra vez volvía a intentar empezar en vez de parar, y la
+ * grabación no terminaba nunca. Se veía exactamente como si se prendiera y se
+ * apagara solo.
  */
 export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, onBuscar }) => {
   const dictation = useDictation(onDictado);
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
+
   const escuchando = dictation.status === 'listening';
+  const procesando = dictation.status === 'processing';
 
   const alTocarMicrofono = () => {
-    haptic.trigger('medium');
-    audio.play('click');
+    // Mientras sube el audio no hay nada que empezar ni que parar.
+    if (procesando) return;
+
     if (!dictation.supported) {
+      haptic.trigger('light');
+      audio.play('click');
       onManual();
       return;
     }
+
     if (escuchando) {
       haptic.trigger('light');
       audio.play('click');
@@ -55,7 +61,18 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+      {/* Lo que salió mal se dice. Antes un fallo de transcripción se tragaba
+ en silencio y la única señal era que no pasaba nada. */}
+      {dictation.error ? (
+        <p
+          role="status"
+          className="pointer-events-auto mx-4 max-w-sm rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-2.5 text-center text-[13px] text-[var(--fin-ink-soft)] shadow-[0_8px_32px_rgb(0_0_0/0.18)]"
+        >
+          {dictation.error}
+        </p>
+      ) : null}
+
       <div className="pointer-events-auto flex items-center gap-2.5">
         <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-1.5">
           <button
@@ -88,16 +105,21 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
           type="button"
           onClick={alTocarMicrofono}
           aria-pressed={escuchando}
-          aria-label={escuchando ? 'Dejar de escuchar' : 'Anotar hablando'}
+          aria-busy={procesando}
+          aria-label={
+            procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
+          }
           // Es el único objeto rojo de la app que no es una cifra, y por eso se
           // reconoce sin leer nada. Mientras escucha late, para que se note que
           // el micrófono está abierto sin tener que decirlo con palabras.
           className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-white shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)] transition-transform active:scale-95 ${
             escuchando ? 'animate-pulse' : ''
           }`}
-          style={{ backgroundColor: 'var(--fin-out)' }}
+          style={{ backgroundColor: 'var(--fin-out)', opacity: procesando ? 0.75 : 1 }}
         >
-          {escuchando ? (
+          {procesando ? (
+            <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />
+          ) : escuchando ? (
             <Square className="h-6 w-6" strokeWidth={3} aria-hidden="true" />
           ) : (
             <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
