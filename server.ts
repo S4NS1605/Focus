@@ -1293,6 +1293,22 @@ Reglas clave:
 // ----------------------------------------------------------------------
 // ENDPOINT: Transcribir Audio (Whisper)
 // ----------------------------------------------------------------------
+/**
+ * Vocabulario que se le adelanta al modelo.
+ *
+ * Whisper acepta un texto de contexto y lo usa para inclinar lo que oye. Sin él
+ * "pagué mi crédito en Nu" salía como "Baggi míld ey doguín nú": nombres de
+ * bancos colombianos de dos letras no están en lo que el modelo espera oír, y
+ * sin pista los reconstruye con fonética de otro idioma.
+ */
+const CONTEXTO_ES =
+  'Anotación de un gasto o un ingreso en pesos colombianos. ' +
+  'Bancos y aplicaciones: Nequi, Daviplata, Bancolombia, Davivienda, Nu, Rappi, ' +
+  'RappiPay, Lulo, Ualá, Falabella, Scotiabank, Colpatria, BBVA, Bold, Addi. ' +
+  'Palabras frecuentes: pagué, gasté, compré, retiré, transferí, me dieron, ' +
+  'mercado, almuerzo, desayuno, comida, domicilio, transporte, gasolina, ' +
+  'arriendo, servicios, crédito, cuota, mil, millón.';
+
 app.post('/api/transcribir', async (req, res) => {
   // Transcripción sin autenticación requerida (funciona en PWA sin login).
   //
@@ -1304,7 +1320,7 @@ app.post('/api/transcribir', async (req, res) => {
         nombre: 'Groq',
         llave: process.env.GROQ_API_KEY,
         url: 'https://api.groq.com/openai/v1/audio/transcriptions',
-        modelo: 'whisper-large-v3-turbo',
+        modelo: 'whisper-large-v3',
       }
     : process.env.OPENAI_API_KEY
       ? {
@@ -1343,7 +1359,10 @@ app.post('/api/transcribir', async (req, res) => {
     const formData = new FormData();
     formData.append('file', new Blob([audioBuffer], { type: tipo }), nombre);
     formData.append('model', proveedor.modelo);
+    // Fijo, no detectado: esta app se habla en español y punto.
     formData.append('language', 'es');
+    formData.append('prompt', CONTEXTO_ES);
+    formData.append('temperature', '0');
 
     const whisperRes = await fetch(proveedor.url, {
       method: 'POST',

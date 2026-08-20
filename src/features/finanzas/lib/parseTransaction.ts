@@ -414,6 +414,32 @@ const detectAndConsumePaymentMethod = (
   return 'desconocido';
 };
 
+/**
+ * Lo mínimo que puede medir una descripción para que el Oráculo se fíe de ella.
+ *
+ * El Oráculo hereda el monto de un apunte viejo cuando el dictado no trae
+ * cifra, y eso es útil de verdad: dices "almuerzo" y ya sabe que son 13.500.
+ * Pero comparaba por trozos de letras y sin piso de largo, así que una palabra
+ * suelta cazaba con cualquier apunte por pura coincidencia —"Gracias" contra la
+ * "as" de otra descripción— y le copiaba el monto. Whisper devuelve justamente
+ * "Gracias" cuando le llega silencio, así que apagar el micrófono sin hablar
+ * inventaba un gasto que nadie hizo.
+ */
+const MINIMO_ORACULO = 4;
+
+/**
+ * Si `texto` menciona `buscado` como palabra entera.
+ *
+ * Por palabra y no por trozo: "as" dentro de "Gracias" no es una mención, es una
+ * casualidad de letras.
+ */
+const mencionaEntera = (texto: string, buscado: string): boolean => {
+  const aguja = buscado.trim().toLowerCase();
+  if (aguja.length < MINIMO_ORACULO) return false;
+  const escapada = aguja.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|\\W)${escapada}(\\W|$)`, 'i').test(texto.toLowerCase());
+};
+
 export const parseTransaction = (
   raw: string,
   /**
@@ -1006,14 +1032,14 @@ export const parseTransaction = (
   );
 
   // MEGA UPGRADE 5: El Oráculo (Contextual Memory for recurring/known expenses)
-  if (amount === null && description !== '' && transacciones.length > 0) {
+  if (amount === null && description.trim().length >= MINIMO_ORACULO && transacciones.length > 0) {
     const descLower = description.toLowerCase();
     // Search newest first
     for (let i = transacciones.length - 1; i >= 0; i--) {
       const t = transacciones[i];
       if (
-        t.description.toLowerCase().includes(descLower) ||
-        descLower.includes(t.description.toLowerCase())
+        mencionaEntera(t.description, descLower) ||
+        mencionaEntera(descLower, t.description)
       ) {
         amount = t.amountCop;
         if (category === 'otros' || categorySource === 'default') {

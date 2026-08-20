@@ -42,6 +42,48 @@ const primerFormatoSoportado = (): string => {
  */
 const MAX_MS = 60_000;
 
+/**
+ * Lo mínimo que tiene que durar una grabación para molestarse en subirla.
+ *
+ * Prender y apagar el micrófono de una manda medio segundo de silencio, y
+ * Whisper no contesta "no oí nada": se inventa una frase de relleno. Descartar
+ * aquí es más honesto que adivinar después, y de paso ahorra la petición.
+ */
+const MIN_MS = 800;
+
+/**
+ * Lo que Whisper devuelve cuando le llega silencio.
+ *
+ * No es un error suyo: el modelo se entrenó con subtítulos de video, y en un
+ * tramo mudo lo más probable según sus datos es la despedida del youtuber. Por
+ * eso hay que reconocerlas y tirarlas, o "Gracias" acaba siendo un gasto.
+ */
+const ALUCINACIONES = new Set([
+  'gracias',
+  'gracias por ver el video',
+  'gracias por ver',
+  'gracias por su atencion',
+  'suscribete al canal',
+  'subtitulos realizados por la comunidad de amara org',
+  'subtitulado por la comunidad de amara org',
+  'amara org',
+  'mas videos en',
+  'hasta la proxima',
+  'adios',
+]);
+
+/** Sin tildes, sin signos y en minúscula, para poder comparar de verdad. */
+const desnudo = (texto: string): string =>
+  texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const esAlucinacion = (texto: string): boolean => ALUCINACIONES.has(desnudo(texto));
+
 /** Traduce el motivo técnico del servidor a algo que se pueda leer. */
 const enPalabras = (motivo: string | undefined): string => {
   if (!motivo) return 'No se pudo transcribir. Escríbelo a mano.';
@@ -76,6 +118,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   const grabadoraRef = useRef<MediaRecorder | null>(null);
   const trozosRef = useRef<Blob[]>([]);
   const topeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inicioRef = useRef(0);
   const onFinalRef = useRef(onFinal);
 
   // Mantiene fresco el callback sin volver a crear la grabadora.
@@ -167,9 +210,10 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       const audio = new Blob(trozosRef.current, { type: tipo });
       trozosRef.current = [];
 
-      if (audio.size === 0) {
+      const duracion = Date.now() - inicioRef.current;
+      if (audio.size === 0 || duracion < MIN_MS) {
         setStatus('idle');
-        setError('No se grabó nada. Intenta otra vez.');
+        setError('Muy corto. Deja el micrófono abierto mientras hablas.');
         return;
       }
 
@@ -200,7 +244,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
         }
 
         const texto = typeof datos.text === 'string' ? datos.text.trim() : '';
-        if (!texto) {
+        if (!texto || esAlucinacion(texto)) {
           setError('No se entendió lo que dijiste. Intenta otra vez.');
           return;
         }
@@ -214,6 +258,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     };
 
     grabadoraRef.current = grabadora;
+    inicioRef.current = Date.now();
     grabadora.start();
     setStatus('listening');
     topeRef.current = setTimeout(stop, MAX_MS);

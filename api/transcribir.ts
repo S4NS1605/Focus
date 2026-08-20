@@ -26,7 +26,7 @@ const PROVEEDORES = [
     nombre: 'Groq',
     variable: 'GROQ_API_KEY',
     url: 'https://api.groq.com/openai/v1/audio/transcriptions',
-    modelo: 'whisper-large-v3-turbo',
+    modelo: 'whisper-large-v3',
   },
   {
     nombre: 'OpenAI',
@@ -35,6 +35,22 @@ const PROVEEDORES = [
     modelo: 'whisper-1',
   },
 ] as const;
+
+/**
+ * Vocabulario que se le adelanta al modelo.
+ *
+ * Whisper acepta un texto de contexto y lo usa para inclinar lo que oye. Sin él
+ * "pagué mi crédito en Nu" salía como "Baggi míld ey doguín nú": nombres de
+ * bancos colombianos de dos letras no están en lo que el modelo espera oír, y
+ * sin pista los reconstruye con fonética de otro idioma.
+ */
+const CONTEXTO_ES =
+  'Anotación de un gasto o un ingreso en pesos colombianos. ' +
+  'Bancos y aplicaciones: Nequi, Daviplata, Bancolombia, Davivienda, Nu, Rappi, ' +
+  'RappiPay, Lulo, Ualá, Falabella, Scotiabank, Colpatria, BBVA, Bold, Addi. ' +
+  'Palabras frecuentes: pagué, gasté, compré, retiré, transferí, me dieron, ' +
+  'mercado, almuerzo, desayuno, comida, domicilio, transporte, gasolina, ' +
+  'arriendo, servicios, crédito, cuota, mil, millón.';
 
 /** Lo que la app entiende como "no se pudo, sigue tú a mano". */
 const noSePudo = (motivo: string): Response =>
@@ -71,7 +87,12 @@ export default async function handler(req: Request): Promise<Response> {
   const formulario = new FormData();
   formulario.append('file', audio, nombreSegunTipo(tipo));
   formulario.append('model', elegido.modelo);
+  // Fijo, no detectado: esta app se habla en español y punto. Dejar que el
+  // modelo adivine el idioma es lo que producía frases fonéticas sin sentido.
   formulario.append('language', 'es');
+  formulario.append('prompt', CONTEXTO_ES);
+  // Sin creatividad: que transcriba lo que oyó, no lo que le parecería probable.
+  formulario.append('temperature', '0');
 
   try {
     const respuesta = await fetch(elegido.url, {

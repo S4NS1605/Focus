@@ -467,3 +467,37 @@ describe('parseTransaction — aprendido del historial', () => {
     expect(r.signals.categorySource).toBe('default');
   });
 });
+
+describe('El Oráculo no inventa montos', () => {
+  const almuerzo = {
+    id: 't-viejo',
+    kind: 'gasto' as const,
+    amountCop: 13_500,
+    category: 'comida',
+    description: 'Almuerzo',
+    occurredOn: '2026-08-01',
+    cuentaId: null,
+    rawTranscript: '',
+    createdAt: '2026-08-01T12:00:00.000Z',
+  };
+
+  it('hereda el monto cuando la palabra sí está, entera', () => {
+    // Para esto existe el Oráculo: dices "almuerzo" y ya sabe cuánto vale.
+    const r = parseTransaction('almuerzo', [], [], undefined, [almuerzo]);
+    expect(r.amount).toBe(13_500);
+  });
+
+  it('no hereda nada de una coincidencia de letras sueltas', () => {
+    // Whisper devuelve "Gracias" cuando le llega silencio: apagar el micrófono
+    // sin hablar no puede acabar siendo un gasto. La "as" de "Gracias" está
+    // dentro de "Almuerzo" sin que eso signifique absolutamente nada.
+    const r = parseTransaction('Gracias', [], [], undefined, [almuerzo]);
+    expect(r.amount).toBeNull();
+  });
+
+  it('una palabra muy corta no dispara la memoria', () => {
+    const corto = { ...almuerzo, description: 'Uber' };
+    const r = parseTransaction('en', [], [], undefined, [corto]);
+    expect(r.amount).toBeNull();
+  });
+});
