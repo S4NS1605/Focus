@@ -8,6 +8,8 @@ import {
   historialDeCajita,
   resumenDeCajitas,
   saldoDeCajita,
+  saldoEfectivo,
+  saldoCuentasSinEfectivo,
   saldosPorCajita,
   totalEnCajitas,
 } from './cajitas';
@@ -440,5 +442,49 @@ describe('el signo de un movimiento atribuido', () => {
     ]);
 
     expect([...conjunto].sort()).toEqual(['deu', 'tar']);
+  });
+});
+
+/**
+ * El desglose de Inicio decía "Efectivo: $0" con una cuenta de efectivo llena.
+ *
+ * La causa: el efectivo se reconocía por un id fijo, y ese id solo lo tiene la
+ * cuenta que siembra la app. Quien creó la suya a mano — que es lo natural si
+ * empiezas antes de que exista el sembrado, o si la borraste y la volviste a
+ * hacer — tenía una cuenta llamada Efectivo que el resumen contaba como banco.
+ */
+describe('saldoEfectivo con cuentas de efectivo creadas a mano', () => {
+  const efectivoAMano = caj({
+    id: 'a3f1c2d4-0000-4000-8000-000000000001',
+    nombre: 'Efectivo',
+    tipo: 'cuenta',
+  });
+  const nequi = caj({ id: 'n1', nombre: 'Nequi', tipo: 'cuenta' });
+  const movimientos = [
+    mov({ id: 'm1', cajitaId: efectivoAMano.id, deltaCop: 231300 }),
+    mov({ id: 'm2', cajitaId: 'n1', deltaCop: 100198 }),
+  ];
+
+  it('cuenta el efectivo aunque su id no sea el sembrado', () => {
+    expect(saldoEfectivo([efectivoAMano, nequi], movimientos)).toBe(231300);
+  });
+
+  it('no lo suma dos veces: los bancos son el resto', () => {
+    expect(saldoCuentasSinEfectivo([efectivoAMano, nequi], movimientos)).toBe(100198);
+  });
+
+  it('suma varias cuentas de efectivo, no solo la primera', () => {
+    const segunda = caj({
+      id: 'a3f1c2d4-0000-4000-8000-000000000002',
+      nombre: 'efectivo casa',
+      tipo: 'cuenta',
+    });
+    const conDos = [...movimientos, mov({ id: 'm3', cajitaId: segunda.id, deltaCop: 50000 })];
+    expect(saldoEfectivo([efectivoAMano, segunda, nequi], conDos)).toBe(281300);
+  });
+
+  it('una cuenta archivada no cuenta', () => {
+    const archivada = { ...efectivoAMano, archivedAt: '2026-08-10T00:00:00.000Z' };
+    expect(saldoEfectivo([archivada, nequi], movimientos)).toBe(0);
   });
 });

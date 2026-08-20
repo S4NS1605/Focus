@@ -1,6 +1,6 @@
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
-import { ES_PASIVO, ID_EFECTIVO } from '../data/modelos';
+import { ES_PASIVO, ID_EFECTIVO, ID_EFECTIVO_VIEJO } from '../data/modelos';
 
 /**
  * A pocket's balance is always the sum of its movements — never a stored number.
@@ -246,15 +246,41 @@ export const totalVisible = (
   return contarAhorros ? p.netoCop : p.cuentasCop - p.deudasCop;
 };
 
-/** Balance of the cash account (efectivo) if it exists and is not archived. */
+/**
+ * Si esta cuenta es efectivo.
+ *
+ * Por el id cuando es la que siembra la app, y por el nombre cuando no. Mirar
+ * solo el id fijo dejaba fuera a quien creó la suya a mano — que es lo normal
+ * si empezaste antes de que existiera el sembrado, o si la borraste y la
+ * volviste a hacer —, y entonces el resumen de Inicio enseñaba "Efectivo: $0"
+ * teniendo la cuenta llena y contaba esa plata como si estuviera en un banco.
+ *
+ * El nombre es un criterio más flojo que un id, pero es el que usa la persona:
+ * quien llama "Efectivo" a una cuenta está diciendo exactamente eso.
+ */
+export const esCuentaEfectivo = (cajita: Cajita): boolean => {
+  if (cajita.tipo !== 'cuenta') return false;
+  if (cajita.id === ID_EFECTIVO || cajita.id === ID_EFECTIVO_VIEJO) return true;
+  return cajita.nombre
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .startsWith('efectivo');
+};
+
+/** Balance of every cash account that is not archived. */
 export const saldoEfectivo = (
   cajitas: readonly Cajita[],
   movimientos: readonly CajitaMovimiento[],
   transacciones: readonly Transaction[] = [],
 ): number => {
-  const efectivoCajita = cajitas.find((c) => c.id === ID_EFECTIVO && c.archivedAt === null);
-  if (!efectivoCajita) return 0;
-  return saldoDeCajita(movimientos, ID_EFECTIVO, transacciones, idsPasivos(cajitas));
+  const pasivos = idsPasivos(cajitas);
+  // Todas, no la primera: quien tiene "Efectivo" y "Efectivo casa" tiene dos
+  // sitios donde hay billetes, y el resumen debe contar los dos.
+  return cajitas
+    .filter((c) => c.archivedAt === null && esCuentaEfectivo(c))
+    .reduce((suma, c) => suma + saldoDeCajita(movimientos, c.id, transacciones, pasivos), 0);
 };
 
 /** Accounts balance excluding cash (efectivo). */
