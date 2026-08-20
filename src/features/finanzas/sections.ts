@@ -1,7 +1,7 @@
 // Kept out of FinanzasShell.tsx so that file only exports a component — mixing
 // constants with components breaks Fast Refresh, which oxlint flags via
 // react/only-export-components.
-import { BarChart3, Home, Settings2, Wallet } from 'lucide-react';
+import { BarChart3, Home, Menu, Wallet } from 'lucide-react';
 
 /**
  * Los cuatro sitios a los que se puede ir. Cuatro, no once.
@@ -27,7 +27,7 @@ export const SECTIONS = [
   { id: 'inicio', icon: Home, label: 'Inicio' },
   { id: 'dinero', icon: Wallet, label: 'Dinero' },
   { id: 'mes', icon: BarChart3, label: 'Mes' },
-  { id: 'ajustes', icon: Settings2, label: 'Ajustes' },
+  { id: 'ajustes', icon: Menu, label: 'Más' },
 ] as const;
 
 export type SectionId = (typeof SECTIONS)[number]['id'];
