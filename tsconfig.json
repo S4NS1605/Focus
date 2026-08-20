@@ -1,8 +1,29 @@
 {
+  /* Los tres proyectos de verdad. `tsc -b` compila cada uno con SU propia
+     configuración, y por eso este archivo no compila nada por sí mismo. */
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" },
     { "path": "./tsconfig.api.json" }
-  ]
+  ],
+
+  /* Estas opciones no las usa `tsc -b` — las usa VERCEL.
+     Al compilar cada función de `api/` por separado, Vercel no lee
+     `tsconfig.api.json`: lee este archivo. Sin las opciones aquí, cada función
+     se chequeaba con los valores por defecto, donde no existen los tipos de
+     Node (`process` sin declarar) y las rutas relativas exigen extensión.
+     Se mantienen iguales a las de `tsconfig.api.json` a propósito: si divergen,
+     el build pasa en local y falla en el deploy, que es justo lo que pasó. */
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force"
+  }
 }
