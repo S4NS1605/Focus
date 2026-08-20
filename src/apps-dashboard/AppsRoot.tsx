@@ -237,6 +237,17 @@ export const AppsRoot: React.FC = () => {
     return <EstadisticasPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
   }
 
+  const handleSalir = async () => {
+    await sesion.salir();
+    // Asegurar que redirige al login aunque el signOut falle silenciosamente
+    setActiveApp(null);
+    setTimeout(() => {
+      if (sesion.estado.modo === 'autenticado') {
+        window.location.href = '/';
+      }
+    }, 500);
+  };
+
   return (
     <>
       <AppLauncher
@@ -245,7 +256,7 @@ export const AppsRoot: React.FC = () => {
         onSelectApp={setActiveApp}
         tema={tema}
         onCambiarTema={setTema}
-        onSalir={() => sesion.salir()}
+        onSalir={handleSalir}
       />
       {bannerAdmin}
     </>
