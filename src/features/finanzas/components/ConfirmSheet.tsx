@@ -15,7 +15,7 @@ import { tint } from '../types';
 import type { CategoriaClave, Transaction } from '../types';
 import type { TxKind } from '../types';
 import { COPY } from '../copy';
-import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
+import { formatAmountInput, conPuntos, formatCop, parseAmountInput } from '../lib/formatCop';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 import { analizarAnomalias } from '../lib/senalesAvanzadas';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
@@ -207,7 +207,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
               id="fin-amount"
               ref={amountRef}
               value={amountText}
-              onChange={(e) => setAmountText(formatAmountInput(parseAmountInput(e.target.value)))}
+              onChange={(e) => setAmountText(conPuntos(e.target.value))}
               inputMode="numeric"
               placeholder="0"
               className="w-full bg-transparent text-[28px] font-semibold text-[var(--fin-ink)] tabular-nums placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"

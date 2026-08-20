@@ -6,7 +6,7 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS } from '../data/modelos';
 import { resumenDeCajitas } from '../lib/cajitas';
-import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
+import { formatAmountInput, conPuntos, formatCop, parseAmountInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
 
 interface CajitasViewProps {
@@ -201,7 +201,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               <input
                 id="cajita-saldo"
                 value={saldoTexto}
-                onChange={(e) => setSaldoTexto(formatAmountInput(parseAmountInput(e.target.value)))}
+                onChange={(e) => setSaldoTexto(conPuntos(e.target.value))}
                 inputMode="numeric"
                 placeholder="0"
                 className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"

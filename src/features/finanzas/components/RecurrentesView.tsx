@@ -4,7 +4,7 @@ import type { Transaction } from '../types';
 import type { Pendiente, Recurrente } from '../lib/recurrentes';
 import { pendientesDelMes, totalMensual } from '../lib/recurrentes';
 import { useCatalogo } from '../catalogoContexto';
-import { formatCop, formatAmountInput, parseAmountInput } from '../lib/formatCop';
+import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 
 interface RecurrentesViewProps {
@@ -162,7 +162,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                 <input
                   id="rec-monto"
                   value={monto}
-                  onChange={(e) => setMonto(formatAmountInput(parseAmountInput(e.target.value)))}
+                  onChange={(e) => setMonto(conPuntos(e.target.value))}
                   inputMode="numeric"
                   placeholder="0"
                   className={`mt-1.5 ${CAMPO}`}

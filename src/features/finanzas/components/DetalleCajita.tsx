@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import type { Transaction } from '../types';
-import { formatAmountInput, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
+import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { saldoDeCajita } from '../lib/cajitas';
 import { iconoDeCajita } from '../cajitaIconos';
 import { useCatalogo } from '../catalogoContexto';
@@ -23,11 +23,6 @@ interface DetalleCajitaProps {
  * Se hace sobre los dígitos y no sobre el texto tal cual para que borrar, pegar
  * o teclear en la mitad no rompa la agrupación: siempre se reconstruye entera.
  */
-const conPuntos = (texto: string): string => {
-  const digitos = texto.replace(/\D/g, '');
-  return digitos === '' ? '' : formatAmountInput(Number(digitos));
-};
-
 /**
  * Detalle de una sola cuenta/cajita (no una lista).
  * Se abre cuando haces click en una cuenta desde "Dinero".

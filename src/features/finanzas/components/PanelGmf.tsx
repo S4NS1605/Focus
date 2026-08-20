@@ -9,7 +9,7 @@ import {
   consumoDelMes,
   uvtDesactualizada,
 } from '../lib/gmf';
-import { formatCop, formatAmountInput, parseAmountInput } from '../lib/formatCop';
+import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../lib/formatCop';
 
 interface PanelGmfProps {
   transacciones: readonly Transaction[];
@@ -266,7 +266,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
           >
             <input
               value={borrador}
-              onChange={(e) => setBorrador(formatAmountInput(parseAmountInput(e.target.value)))}
+              onChange={(e) => setBorrador(conPuntos(e.target.value))}
               inputMode="numeric"
               aria-label="Valor de la UVT en pesos"
               autoFocus

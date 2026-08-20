@@ -6,7 +6,7 @@ import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo } from '../dat
 import { CAJITA_ICONS, CAJITA_MOV_LABELS, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
 import { historialDeCajita, resumenDePasivos } from '../lib/cajitas';
-import { formatAmountInput, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
+import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 
 interface DeudasViewProps {
@@ -189,7 +189,7 @@ const DeudaCard: React.FC<{
             <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
             <input
               value={texto}
-              onChange={(e) => setTexto(formatAmountInput(leer(e.target.value)))}
+              onChange={(e) => setTexto(conPuntos(e.target.value))}
               inputMode="numeric"
               placeholder="0"
               autoFocus
@@ -421,7 +421,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
               <input
                 id="deuda-saldo"
                 value={saldoTexto}
-                onChange={(e) => setSaldoTexto(formatAmountInput(parseAmountInput(e.target.value)))}
+                onChange={(e) => setSaldoTexto(conPuntos(e.target.value))}
                 inputMode="numeric"
                 placeholder="0"
                 className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"

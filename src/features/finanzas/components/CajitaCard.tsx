@@ -10,7 +10,7 @@ import { historialDeCajita } from '../lib/cajitas';
 import { rendimientoEstimado } from '../lib/rendimiento';
 import { bogotaDate } from '../lib/localDate';
 import type { CajitaMovimiento } from '../data/modelos';
-import { formatCop, formatAmountInput, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
+import { formatCop, formatAmountInput, parseAmountInput, parseSaldoInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 
 interface CajitaCardProps {
@@ -273,7 +273,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                 <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
                 <input
                   value={texto}
-                  onChange={(e) => setTexto(formatAmountInput(leer(e.target.value)))}
+                  onChange={(e) => setTexto(conPuntos(e.target.value))}
                   inputMode="numeric"
                   placeholder="0"
                   autoFocus

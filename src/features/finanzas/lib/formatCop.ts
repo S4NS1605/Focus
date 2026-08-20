@@ -38,3 +38,14 @@ export const parseSaldoInput = (text: string): number | null => {
   const value = Number(digits);
   return Number.isFinite(value) && value >= 0 ? value : null;
 };
+
+/**
+ * Mientras el usuario escribe un número, muestra los puntos separadores.
+ *
+ * Tolera cualquier entrada (con letras, puntos, comas, todo) y devuelve el
+ * número con formato de miles: "1234567" -> "1.234.567".
+ */
+export const conPuntos = (texto: string): string => {
+  const digitos = texto.replace(/\D/g, '');
+  return digitos === '' ? '' : formatAmountInput(Number(digitos));
+};

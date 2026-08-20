@@ -4,7 +4,7 @@ import type { Transaction } from '../types';
 import type { Presupuesto, TonoPresupuesto } from '../lib/presupuestos';
 import { estadoDeTodos, tonoDe } from '../lib/presupuestos';
 import { useCatalogo } from '../catalogoContexto';
-import { formatCop, formatAmountInput, parseAmountInput } from '../lib/formatCop';
+import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../lib/formatCop';
 
 interface PresupuestosViewProps {
   presupuestos: readonly Presupuesto[];
@@ -118,7 +118,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
           <input
             id="pre-monto"
             value={monto}
-            onChange={(e) => setMonto(formatAmountInput(parseAmountInput(e.target.value)))}
+            onChange={(e) => setMonto(conPuntos(e.target.value))}
             inputMode="numeric"
             placeholder="0"
             autoFocus
