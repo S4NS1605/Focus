@@ -561,8 +561,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
           />
         ) : null}
 
-        {/* ------------------------------------------------------- 4. Preguntar --- */}
-        {section === 'preguntar' ? (
+        {/* -------------------------------------------------------- 4. Asesor --- */}
+        {section === 'asesor' ? (
           <AsesorView
             transacciones={transacciones}
             cajitas={cajitas}
