@@ -323,6 +323,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   const [rangoVisitantes, setRangoVisitantes] = useState(30);
   const [visitas, setVisitas] = useState<Visita[]>([]);
   const [loadingVisitas, setLoadingVisitas] = useState(false);
+  const [visitasHoy, setVisitasHoy] = useState<{ fecha: string; visitas_hoy: number; unicos_hoy: number } | null>(null);
+  const [loadingVisitasHoy, setLoadingVisitasHoy] = useState(false);
 
   // --- Consulta Detalle Modal ---
   const [consultaDetalle, setConsultaDetalle] = useState<PeticionIA | null>(null);
@@ -418,7 +420,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     }
   };
 
-  // 4. Cargar Visitantes
+  // 4. Cargar Visitantes (histórico)
   const fetchVisitas = useCallback(async () => {
     setLoadingVisitas(true);
     const cliente = obtenerSupabase();
@@ -440,6 +442,25 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     setLoadingVisitas(false);
   }, [dias]);
 
+  // 4b. Cargar Visitantes Hoy (en vivo)
+  const fetchVisitasHoy = useCallback(async () => {
+    setLoadingVisitasHoy(true);
+    const cliente = obtenerSupabase();
+    if (!cliente) {
+      setLoadingVisitasHoy(false);
+      return;
+    }
+
+    const { data, error } = await cliente
+      .from('visitas_hoy_en_vivo')
+      .select('fecha,visitas_hoy,unicos_hoy');
+
+    if (!error && data && data.length > 0) {
+      setVisitasHoy(data[0] as { fecha: string; visitas_hoy: number; unicos_hoy: number });
+    }
+    setLoadingVisitasHoy(false);
+  }, []);
+
   useEffect(() => {
     // Bajo RLS, un rol personalizado sin ninguno de los 4 permisos de gestión
     // de usuarios recibiría de todos modos su propia fila, no una lista
@@ -455,15 +476,21 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   useEffect(() => {
     if (tabActiva === 'ia-tokens') fetchMetricasIA();
     if (tabActiva === 'auditoria') fetchAuditoria();
-    if (tabActiva === 'visitantes') fetchVisitas();
+    if (tabActiva === 'visitantes') {
+      fetchVisitas();
+      fetchVisitasHoy();
+    }
     if (tabActiva === 'roles' || (tabActiva === 'usuarios' && rol === 'admin')) fetchRoles();
-  }, [tabActiva, fetchVisitas, rol]);
+  }, [tabActiva, fetchVisitas, fetchVisitasHoy, rol]);
 
   useEffect(() => {
     if (tabActiva !== 'visitantes') return;
-    const interval = setInterval(fetchVisitas, 60000);
+    const interval = setInterval(() => {
+      fetchVisitas();
+      fetchVisitasHoy();
+    }, 60000);
     return () => clearInterval(interval);
-  }, [tabActiva, fetchVisitas]);
+  }, [tabActiva, fetchVisitas, fetchVisitasHoy]);
 
   useEffect(() => {
     if (tabActiva !== 'ia-tokens') return;
@@ -1378,6 +1405,69 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         El identificador rota cada medianoche para garantizar privacidad absoluta.
                       </p>
                     </div>
+                  </div>
+
+                  {/* Tabla en vivo de hoy */}
+                  <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-sm">
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                          Datos en vivo de hoy
+                        </h3>
+                        <p className="text-[10px] text-[var(--fin-ink-faint)] mt-1">Se actualiza cada consulta (cada minuto en el panel)</p>
+                      </div>
+                      <button
+                        onClick={fetchVisitasHoy}
+                        className="flex items-center gap-1.5 rounded-lg border border-[var(--fin-line)] bg-[var(--fin-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)] transition-colors"
+                        disabled={loadingVisitasHoy}
+                      >
+                        <RefreshCw className={`h-3 w-3 ${loadingVisitasHoy ? 'animate-spin' : ''}`} />
+                        Actualizar
+                      </button>
+                    </div>
+
+                    {loadingVisitasHoy && !visitasHoy ? (
+                      <div className="flex h-20 items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-[var(--fin-ink-faint)]" />
+                      </div>
+                    ) : visitasHoy ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[var(--fin-soft)]/50">
+                            <tr className="text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                              <th className="px-4 py-3">Fecha</th>
+                              <th className="px-4 py-3 text-right">Visitas de hoy</th>
+                              <th className="px-4 py-3 text-right">Visitantes únicos</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--fin-line)]">
+                            <tr className="hover:bg-[var(--fin-soft)]/30 transition-colors">
+                              <td className="px-4 py-3.5 font-medium text-[var(--fin-ink)]">
+                                {new Date(visitasHoy.fecha + 'T00:00:00').toLocaleDateString('es-CO', {
+                                  weekday: 'long',
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                })}
+                              </td>
+                              <td className="px-4 py-3.5 text-right">
+                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/15 px-2.5 py-1 font-bold text-sky-600 dark:text-sky-400">
+                                  {visitasHoy.visitas_hoy.toLocaleString('es-CO')}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 text-right">
+                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-2.5 py-1 font-bold text-emerald-600 dark:text-emerald-400">
+                                  {visitasHoy.unicos_hoy.toLocaleString('es-CO')}
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="py-6 text-center text-sm text-[var(--fin-ink-faint)]">No hay datos en vivo disponibles aún.</p>
+                    )}
                   </div>
 
                   {/* Gráfica Día a Día (Estilo Unificado) */}
