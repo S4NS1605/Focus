@@ -356,8 +356,11 @@
   gap: 0.75rem;
 }
 
-.btn-primary,
-.btn-secondary {
+/* Con scope al tour: estos dos nombres son tan genéricos que sin él pisaban
+   los botones de la landing, que carga antes y acababa con el radio y el
+   `flex: 1` de aquí. */
+.welcome-tour-finanzas .btn-primary,
+.welcome-tour-finanzas .btn-secondary {
   padding: 0.75rem 1rem;
   border-radius: 8px;
   border: none;
@@ -373,23 +376,23 @@
   flex: 1;
 }
 
-.btn-primary {
+.welcome-tour-finanzas .btn-primary {
   background: var(--fin-accent);
   color: var(--fin-on-accent);
 }
 
-.btn-primary:hover {
+.welcome-tour-finanzas .btn-primary:hover {
   background: var(--fin-accent-hover);
   transform: translateY(-2px);
 }
 
-.btn-secondary {
+.welcome-tour-finanzas .btn-secondary {
   background: var(--fin-soft);
   color: var(--fin-ink);
   border: 1px solid var(--fin-line);
 }
 
-.btn-secondary:hover {
+.welcome-tour-finanzas .btn-secondary:hover {
   background: var(--fin-bg-soft);
   border-color: var(--fin-ink-faint);
 }
@@ -422,8 +425,8 @@
     flex-direction: column;
   }
 
-  .btn-primary,
-  .btn-secondary {
+  .welcome-tour-finanzas .btn-primary,
+  .welcome-tour-finanzas .btn-secondary {
     width: 100%;
   }
 }

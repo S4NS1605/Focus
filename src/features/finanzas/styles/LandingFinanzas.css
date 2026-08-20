@@ -1,13 +1,13 @@
-/* Landing Finanzas — Minimalista, directo, sin pretensiones
-   Paleta: beige (#fbf9f6), verde (#15803d), rojo (#be123c)
+/* Landing Finanzas
+   Estructura y aire tomados de las landings de fintech actuales; los colores
+   son los de Lukapp, para que la landing y la app se lean como el mismo
+   producto.
 
-   Los colores viven en variables propias con prefijo --lp- y colgadas de
-   `.landing-finanzas`, no de `:root`. Antes este fichero redefinía los
-   --fin-* globales con la paleta clara, así que dependía de quién cargara
-   último: finanzas.css ganaba, la landing heredaba tinta clara para modo
-   oscuro y la pintaba sobre su `background: white` fijo. Texto blanco sobre
-   blanco. Con las variables propias la landing ya no puede pisar a la app ni
-   ser pisada por ella.
+   Los colores son variables propias --lp-* colgadas de `.landing-finanzas`, no
+   de `:root`. Antes este fichero redefinía los --fin-* globales con la paleta
+   clara, así que dependía de quién cargara último: ganaba finanzas.css, la
+   landing heredaba tinta clara para modo oscuro y la pintaba sobre su
+   `background: white` fijo. Texto blanco sobre blanco.
 
    El tema se resuelve con el mismo contrato del resto de la app: `data-tema`
    en <html> manda, y si no está, decide el sistema. */
@@ -18,18 +18,18 @@
   --lp-surface-hover: #f5f3f0;
   --lp-line: #ede9e3;
   --lp-ink: #1c1917;
-  --lp-ink-soft: #78716c;
-  --lp-ink-faint: #a8a29e;
+  --lp-ink-soft: #6b6560;
+  --lp-ink-faint: #96908a;
   /* El botón principal y su texto van juntos: en oscuro se invierten los dos,
      y separarlos es como se acaba con un botón claro y letra blanca. */
   --lp-accent: #1c1917;
   --lp-on-accent: #ffffff;
   --lp-in: #15803d;
   --lp-out: #be123c;
-  --lp-nav-bg: rgba(255, 255, 255, 0.95);
-  --lp-sombra-btn: 0 10px 25px rgba(28, 25, 23, 0.15);
-  --lp-sombra-card: 0 10px 30px rgba(0, 0, 0, 0.08);
-  --lp-card-degradado: linear-gradient(135deg, #fbf9f6 0%, #f5f3f0 100%);
+  --lp-nav-bg: rgba(255, 255, 255, 0.85);
+  --lp-sombra-btn: 0 8px 20px -8px rgba(28, 25, 23, 0.35);
+  --lp-sombra-tel: 0 40px 80px -32px rgba(28, 25, 23, 0.35);
+  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(21, 128, 61, 0.07), transparent 70%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,10 +47,10 @@
        son los mismos tonos aclarados hasta que sí. */
     --lp-in: #4ade80;
     --lp-out: #fb7185;
-    --lp-nav-bg: rgba(26, 24, 23, 0.95);
-    --lp-sombra-btn: 0 10px 25px rgba(0, 0, 0, 0.45);
-    --lp-sombra-card: 0 10px 30px rgba(0, 0, 0, 0.4);
-    --lp-card-degradado: linear-gradient(135deg, #221f1e 0%, #2d2a28 100%);
+    --lp-nav-bg: rgba(26, 24, 23, 0.85);
+    --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+    --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
+    --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(74, 222, 128, 0.06), transparent 70%);
   }
 }
 
@@ -66,456 +66,555 @@
   --lp-on-accent: #1a1817;
   --lp-in: #4ade80;
   --lp-out: #fb7185;
-  --lp-nav-bg: rgba(26, 24, 23, 0.95);
-  --lp-sombra-btn: 0 10px 25px rgba(0, 0, 0, 0.45);
-  --lp-sombra-card: 0 10px 30px rgba(0, 0, 0, 0.4);
-  --lp-card-degradado: linear-gradient(135deg, #221f1e 0%, #2d2a28 100%);
+  --lp-nav-bg: rgba(26, 24, 23, 0.85);
+  --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+  --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
+  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(74, 222, 128, 0.06), transparent 70%);
 }
 
 .landing-finanzas {
   width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   color: var(--lp-ink);
   background: var(--lp-bg);
   line-height: 1.6;
+  /* La landing manda sobre su propio lienzo: sin esto, en móvil el fondo de la
+     app se ve por debajo del último bloque. */
+  min-height: 100dvh;
+}
+
+.landing-finanzas ::selection {
+  background: var(--lp-ink);
+  color: var(--lp-bg);
 }
 
 /* NAVBAR */
-.nav-bar {
+.landing-finanzas .nav-bar {
   position: sticky;
   top: 0;
   z-index: 100;
   background: var(--lp-nav-bg);
   border-bottom: 1px solid var(--lp-line);
-  backdrop-filter: blur(10px);
-  padding: 1rem 0;
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
-.nav-content {
-  max-width: 1200px;
+.landing-finanzas .nav-content {
+  max-width: 1140px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 1.1rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.logo {
-  font-size: 1.25rem;
+.landing-finanzas .logo {
+  font-size: 1.1rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--lp-ink);
 }
 
-.nav-links {
+.landing-finanzas .nav-links {
   display: flex;
   align-items: center;
   gap: 2rem;
 }
 
-.nav-links a {
+.landing-finanzas .nav-links a {
   color: var(--lp-ink-soft);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   transition: color 0.2s;
 }
 
-.nav-links a:hover {
+.landing-finanzas .nav-links a:hover {
   color: var(--lp-ink);
 }
 
-.link-btn {
+.landing-finanzas .link-btn {
   background: var(--lp-accent);
   color: var(--lp-on-accent);
-  border: 1px solid transparent;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
   font-family: inherit;
 }
 
-.link-btn:hover {
-  opacity: 0.9;
+.landing-finanzas .link-btn:hover {
+  opacity: 0.85;
 }
 
-.menu-btn {
+.landing-finanzas .menu-btn {
   display: none;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--lp-ink);
+  padding: 0.25rem;
 }
 
 /* HERO */
-.hero {
-  max-width: 1200px;
+.landing-finanzas .hero {
+  position: relative;
+  max-width: 1140px;
   margin: 0 auto;
-  padding: 4rem 1.5rem;
+  padding: clamp(3.5rem, 9vw, 7rem) 1.5rem clamp(3rem, 7vw, 5.5rem);
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(2rem, 5vw, 4.5rem);
   align-items: center;
 }
 
-.hero-text h1 {
-  font-size: 2.5rem;
+.landing-finanzas .hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--lp-halo);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* El titular es el elemento de la página. clamp() lo deja enorme en escritorio
+   sin que rompa el móvil, y el interlineado baja de 1.6 a 1.05 porque a este
+   cuerpo el aire sobra dentro y hace falta fuera. */
+.landing-finanzas .hero-text h1 {
+  font-size: clamp(2.4rem, 6.2vw, 4.4rem);
   font-weight: 700;
-  line-height: 1.2;
-  margin: 0 0 1rem;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  margin: 0 0 1.5rem;
   color: var(--lp-ink);
+  text-wrap: balance;
 }
 
-.hero-text > p {
-  font-size: 1.1rem;
+.landing-finanzas .hero-text h1 em {
+  font-style: normal;
+  color: var(--lp-in);
+}
+
+.landing-finanzas .hero-sub {
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
   color: var(--lp-ink-soft);
-  margin: 0 0 2rem;
-  line-height: 1.7;
+  margin: 0 0 2.25rem;
+  line-height: 1.65;
+  max-width: 34ch;
 }
 
-.hero-ctas {
+.landing-finanzas .hero-ctas {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
 
-.btn-primary,
-.btn-secondary {
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  border: none;
+.landing-finanzas .btn-primary,
+.landing-finanzas .btn-secondary {
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95rem;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
   font-family: inherit;
 }
 
-.btn-primary {
+.landing-finanzas .btn-primary {
   background: var(--lp-accent);
   color: var(--lp-on-accent);
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
+.landing-finanzas .btn-primary:hover {
+  transform: translateY(-1px);
   box-shadow: var(--lp-sombra-btn);
 }
 
-.btn-secondary {
-  background: var(--lp-surface);
+.landing-finanzas .btn-secondary {
+  background: transparent;
   color: var(--lp-ink);
-  border: 1px solid var(--lp-line);
+  border-color: var(--lp-line);
 }
 
-.btn-secondary:hover {
+.landing-finanzas .btn-secondary:hover {
   background: var(--lp-surface-hover);
   border-color: var(--lp-ink-faint);
 }
 
-.hero-note {
+.landing-finanzas .hero-note {
   font-size: 0.85rem;
   color: var(--lp-ink-faint);
   margin: 0;
 }
 
-.hero-visual {
+/* MOCKUP */
+.landing-finanzas .hero-visual {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.card-visual {
-  background: var(--lp-card-degradado);
+/* El marco del teléfono es lo que convierte una tarjeta suelta en "así se ve
+   la app". Sin él, el mockup parece un componente perdido al lado del texto. */
+.landing-finanzas .telefono {
+  width: min(320px, 100%);
+  border-radius: 40px;
+  padding: 10px;
+  background: var(--lp-surface);
   border: 1px solid var(--lp-line);
-  border-radius: 12px;
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 320px;
-  box-shadow: var(--lp-sombra-card);
+  box-shadow: var(--lp-sombra-tel);
 }
 
-.balance-section {
+.landing-finanzas .telefono-pantalla {
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 31px;
+  padding: 1.5rem 1.15rem;
+}
+
+.landing-finanzas .balance-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.35rem;
+  padding-bottom: 1.35rem;
   border-bottom: 1px solid var(--lp-line);
 }
 
-.balance-section .label {
-  font-size: 0.8rem;
+.landing-finanzas .balance-section .label {
+  font-size: 0.72rem;
   color: var(--lp-ink-faint);
   text-transform: uppercase;
+  letter-spacing: 0.07em;
   font-weight: 600;
 }
 
-.balance-section .amount {
-  font-size: 1.5rem;
+.landing-finanzas .balance-section .amount {
+  font-size: 2rem;
   font-weight: 700;
-  color: var(--lp-in);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
 }
 
-.transactions {
+.landing-finanzas .transactions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.tx {
+.landing-finanzas .tx {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: var(--lp-bg);
-  border-radius: 8px;
-  border: 1px solid var(--lp-line);
+  gap: 0.7rem;
+  padding: 0.65rem 0.7rem;
+  background: var(--lp-surface);
+  border-radius: 12px;
 }
 
-.tx .emoji {
-  font-size: 1.25rem;
+.landing-finanzas .tx-icono {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--lp-bg);
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .tx .desc {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--lp-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.landing-finanzas .tx .amount {
+  font-weight: 600;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
   flex-shrink: 0;
 }
 
-.tx .desc {
-  flex: 1;
-  font-size: 0.85rem;
-  color: var(--lp-ink);
-}
-
-.tx .amount {
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-align: right;
-}
-
-.tx.out .amount {
+.landing-finanzas .tx.out .amount {
   color: var(--lp-out);
 }
 
-.tx.in .amount {
+.landing-finanzas .tx.in .amount {
   color: var(--lp-in);
 }
 
-/* SECTIONS */
-.what-is,
-.how-it-works {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 4rem 1.5rem;
+/* La fila de dictado enseña la promesa del titular sin tener que explicarla. */
+.landing-finanzas .dictado {
+  margin-top: 1.35rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--lp-line);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
-.what-is h2,
-.how-it-works h2,
-.final-cta h2 {
-  font-size: 2rem;
+.landing-finanzas .dictado-boton {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--lp-out);
+  color: #ffffff;
+}
+
+.landing-finanzas .dictado-texto {
+  font-size: 0.78rem;
+  color: var(--lp-ink-faint);
+  font-style: italic;
+}
+
+/* SECCIONES */
+.landing-finanzas .what-is,
+.landing-finanzas .how-it-works {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: clamp(3.5rem, 8vw, 6rem) 1.5rem;
+}
+
+.landing-finanzas .seccion-cabecera {
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.landing-finanzas .seccion-etiqueta {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--lp-ink-soft);
+  margin-bottom: 0.6rem;
+}
+
+.landing-finanzas .what-is h2,
+.landing-finanzas .how-it-works h2,
+.landing-finanzas .final-cta h2 {
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
   font-weight: 700;
-  margin: 0 0 2rem;
-  text-align: center;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+/* FEATURES */
+.landing-finanzas .features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.landing-finanzas .feature {
+  padding: 1.6rem;
+  background: var(--lp-surface);
+  border-radius: 18px;
+  border: 1px solid var(--lp-line);
+  transition: border-color 0.25s, transform 0.25s;
+}
+
+.landing-finanzas .feature:hover {
+  border-color: var(--lp-ink-faint);
+  transform: translateY(-2px);
+}
+
+.landing-finanzas .feature-icono {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 1rem;
+  border-radius: 11px;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .feature h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.4rem;
   color: var(--lp-ink);
 }
 
-/* FEATURES GRID */
-.features {
+.landing-finanzas .feature p {
+  font-size: 0.9rem;
+  color: var(--lp-ink-soft);
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* PASOS */
+.landing-finanzas .steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
 }
 
-.feature {
-  padding: 1.5rem;
-  background: var(--lp-surface);
-  border-radius: 8px;
-  border: 1px solid var(--lp-line);
-  transition: all 0.3s;
+.landing-finanzas .step {
+  padding: 1.6rem 0 0;
+  border-top: 2px solid var(--lp-line);
 }
 
-.feature:hover {
-  background: var(--lp-surface-hover);
-  transform: translateY(-4px);
-}
-
-.feature .icon {
-  font-size: 2rem;
+.landing-finanzas .step .number {
   display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-faint);
   margin-bottom: 0.75rem;
 }
 
-.feature h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem;
-  color: var(--lp-ink);
-}
-
-.feature p {
-  font-size: 0.9rem;
-  color: var(--lp-ink-soft);
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* STEPS */
-.steps {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-}
-
-.step {
-  position: relative;
-  padding: 2rem 1.5rem 1.5rem;
-  background: var(--lp-surface);
-  border-radius: 8px;
-  border: 1px solid var(--lp-line);
-  text-align: center;
-}
-
-.step .number {
-  position: absolute;
-  top: -1rem;
-  left: 1.5rem;
-  width: 2rem;
-  height: 2rem;
-  background: var(--lp-accent);
-  color: var(--lp-on-accent);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.step h3 {
+.landing-finanzas .step h3 {
   font-size: 1.05rem;
   font-weight: 600;
-  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.4rem;
   color: var(--lp-ink);
 }
 
-.step p {
+.landing-finanzas .step p {
   font-size: 0.9rem;
   color: var(--lp-ink-soft);
   margin: 0;
+  line-height: 1.55;
 }
 
-/* FINAL CTA */
-.final-cta {
-  max-width: 800px;
-  margin: 4rem auto;
-  padding: 3rem 1.5rem;
+/* CTA FINAL */
+.landing-finanzas .final-cta {
+  max-width: 1140px;
+  margin: 0 auto clamp(3.5rem, 8vw, 6rem);
+  padding: clamp(3rem, 7vw, 5rem) 1.5rem;
   text-align: center;
   background: var(--lp-surface);
-  border-radius: 12px;
+  border-radius: 28px;
   border: 1px solid var(--lp-line);
 }
 
-.final-cta h2 {
-  margin-bottom: 0.5rem;
-}
-
-.final-cta p {
+.landing-finanzas .final-cta p {
   font-size: 1rem;
   color: var(--lp-ink-soft);
-  margin: 0 0 1.5rem;
+  margin: 0.75rem 0 2rem;
 }
 
-.btn-primary-lg {
+.landing-finanzas .btn-primary-lg {
   padding: 1rem 2rem;
   background: var(--lp-accent);
   color: var(--lp-on-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  transition: all 0.2s;
+  gap: 0.6rem;
+  transition: transform 0.2s, box-shadow 0.2s;
   font-family: inherit;
 }
 
-.btn-primary-lg:hover {
-  transform: translateY(-2px);
+.landing-finanzas .btn-primary-lg:hover {
+  transform: translateY(-1px);
   box-shadow: var(--lp-sombra-btn);
 }
 
 /* FOOTER */
-.footer {
-  background: var(--lp-surface);
+.landing-finanzas .footer {
   border-top: 1px solid var(--lp-line);
-  padding: 2rem;
+  padding: 2rem 1.5rem;
   text-align: center;
-  color: var(--lp-ink-soft);
-  font-size: 0.9rem;
+  color: var(--lp-ink-faint);
+  font-size: 0.85rem;
+}
+
+.landing-finanzas .footer p {
+  margin: 0;
 }
 
 /* RESPONSIVE */
+@media (max-width: 900px) {
+  .landing-finanzas .hero {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .landing-finanzas .hero-sub {
+    max-width: none;
+  }
+
+  .landing-finanzas .hero-visual {
+    order: -1;
+  }
+
+  .landing-finanzas .telefono {
+    width: min(280px, 100%);
+  }
+}
+
 @media (max-width: 768px) {
-  .hero {
-    grid-template-columns: 1fr;
-    padding: 2rem 1.5rem;
-  }
-
-  .hero-text h1 {
-    font-size: 1.75rem;
-  }
-
-  .features,
-  .steps {
-    grid-template-columns: 1fr;
-  }
-
-  .nav-links {
+  .landing-finanzas .nav-links {
     display: none;
   }
 
-  .nav-links.open {
+  .landing-finanzas .nav-links.open {
     display: flex;
     position: absolute;
-    top: 60px;
+    top: 100%;
     left: 0;
     right: 0;
     flex-direction: column;
+    align-items: stretch;
     background: var(--lp-bg);
-    padding: 1rem;
+    padding: 1rem 1.5rem 1.25rem;
     gap: 1rem;
     border-bottom: 1px solid var(--lp-line);
   }
 
-  .menu-btn {
+  .landing-finanzas .menu-btn {
     display: block;
   }
 }
 
 @media (max-width: 480px) {
-  .hero-text h1 {
-    font-size: 1.5rem;
-  }
-
-  .hero-ctas {
+  .landing-finanzas .hero-ctas {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .btn-primary,
-  .btn-secondary {
+  .landing-finanzas .btn-primary,
+  .landing-finanzas .btn-secondary {
     width: 100%;
     justify-content: center;
   }
+}
 
-  .what-is,
-  .how-it-works {
-    padding: 2rem 1rem;
-  }
-
-  .what-is h2,
-  .how-it-works h2 {
-    font-size: 1.5rem;
+@media (prefers-reduced-motion: reduce) {
+  .landing-finanzas *,
+  .landing-finanzas *::before {
+    transition: none !important;
   }
 }

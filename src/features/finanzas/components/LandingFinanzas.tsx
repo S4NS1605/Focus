@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
-import { ChevronRight, Menu, X } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  Building2,
+  FileText,
+  Lock,
+  Menu,
+  Mic,
+  PenLine,
+  ShieldCheck,
+  UtensilsCrossed,
+  Car,
+  Banknote,
+  X,
+  type LucideIcon
+} from 'lucide-react';
 import '../styles/LandingFinanzas.css';
 
 interface LandingProps {
@@ -7,6 +22,60 @@ interface LandingProps {
   onSeeDemo?: () => void;
   onLogin?: () => void;
 }
+
+const QUE_ES: { Icono: LucideIcon; titulo: string; texto: string }[] = [
+  {
+    Icono: PenLine,
+    titulo: 'Lenguaje natural',
+    texto: '"gasté 45k en pizza" se convierte automáticamente en un gasto de comida.'
+  },
+  {
+    Icono: FileText,
+    titulo: 'Extractos de bancos',
+    texto: 'Davivienda, Bancolombia, Nequi, Nu — sube el PDF y listo.'
+  },
+  {
+    Icono: Building2,
+    titulo: 'Múltiples cuentas',
+    texto: 'Débito, crédito, efectivo, ahorros — todo en un saldo único.'
+  },
+  {
+    Icono: BarChart3,
+    titulo: 'Análisis automático',
+    texto: 'Gráficos por categoría. Tendencias. Gastos recurrentes. Sin juzgar.'
+  },
+  {
+    Icono: Lock,
+    titulo: 'Tus datos son tuyos',
+    texto: 'Todo es local. Nada se vende. Nada se guarda en servidores extranjeros.'
+  },
+  {
+    Icono: ShieldCheck,
+    titulo: 'Sin algoritmos raros',
+    texto: 'Matemática transparente. El código está en GitHub. Sin sorpresas.'
+  }
+];
+
+const PASOS: { titulo: string; texto: string }[] = [
+  { titulo: 'Crea una cuenta', texto: 'Email. Listo.' },
+  { titulo: 'Agrega tu dinero', texto: 'Débito, crédito, efectivo. Donde esté tu plata.' },
+  { titulo: 'Registra gastos', texto: 'Escribe como hablas. Lukapp entiende.' },
+  { titulo: 'Analiza', texto: 'Entiende dónde va tu dinero, sin rodeos.' }
+];
+
+/* Los tres movimientos del mockup. Cifras en pesos y de cuantía creíble para
+   Colombia: un almuerzo de $28.500 y un pago de cliente de $2.5M cuentan la
+   historia de un independiente, que es a quien va dirigida la app. */
+const MOVIMIENTOS: {
+  Icono: LucideIcon;
+  desc: string;
+  monto: string;
+  tipo: 'out' | 'in';
+}[] = [
+  { Icono: UtensilsCrossed, desc: 'Almuerzo en La Bodega', monto: '−$28.500', tipo: 'out' },
+  { Icono: Car, desc: 'Uber a casa', monto: '−$15.300', tipo: 'out' },
+  { Icono: Banknote, desc: 'Pago de cliente', monto: '+$2.500.000', tipo: 'in' }
+];
 
 export const LandingFinanzas: React.FC<LandingProps> = ({
   onGetStarted,
@@ -17,15 +86,24 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
 
   return (
     <div className="landing-finanzas">
-      {/* NAVBAR */}
       <nav className="nav-bar">
         <div className="nav-content">
-          <div className="logo">💰 Lukapp</div>
+          <span className="logo">Lukapp</span>
 
           <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-            <a href="#que-es" onClick={() => setMenuOpen(false)}>Qué es</a>
-            <a href="#como-funciona" onClick={() => setMenuOpen(false)}>Cómo funciona</a>
-            <button className="link-btn" onClick={() => { onLogin?.(); setMenuOpen(false); }}>
+            <a href="#que-es" onClick={() => setMenuOpen(false)}>
+              Qué es
+            </a>
+            <a href="#como-funciona" onClick={() => setMenuOpen(false)}>
+              Cómo funciona
+            </a>
+            <button
+              className="link-btn"
+              onClick={() => {
+                onLogin?.();
+                setMenuOpen(false);
+              }}
+            >
               Acceder
             </button>
           </div>
@@ -33,148 +111,117 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
           <button
             className="menu-btn"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={menuOpen}
           >
-            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+            {menuOpen ? <X size={22} strokeWidth={1.75} /> : <Menu size={22} strokeWidth={1.75} />}
           </button>
         </div>
       </nav>
 
-      {/* HERO */}
       <section className="hero">
         <div className="hero-text">
-          <h1>Sabe exactamente dónde está tu plata</h1>
-          <p>
-            Registra gastos en lenguaje natural. Importa extractos de tus bancos.
-            Entiende tendencias sin que nadie te juzgue.
+          <h1>
+            Sabe exactamente dónde
+            <br />
+            está <em>tu plata</em>.
+          </h1>
+          <p className="hero-sub">
+            Registra gastos hablando. Importa los extractos de tu banco. Entiende
+            en qué se te va el mes sin que nadie te juzgue.
           </p>
 
           <div className="hero-ctas">
             <button className="btn-primary" onClick={onGetStarted}>
               Empezar gratis
-              <ChevronRight size={18} />
+              <ArrowRight size={17} strokeWidth={2} aria-hidden />
             </button>
             <button className="btn-secondary" onClick={onSeeDemo}>
               Ver demo
             </button>
           </div>
 
-          <p className="hero-note">
-            30 días gratis. No pide tarjeta de crédito.
-          </p>
+          <p className="hero-note">30 días gratis. No pide tarjeta de crédito.</p>
         </div>
 
-        <div className="hero-visual">
-          <div className="card-visual">
-            <div className="balance-section">
-              <span className="label">Tu saldo hoy</span>
-              <span className="amount">$5.340</span>
-            </div>
-            <div className="transactions">
-              <div className="tx out">
-                <span className="emoji">🍔</span>
-                <span className="desc">Almuerzo en La Bodega</span>
-                <span className="amount">-$28.500</span>
+        <div className="hero-visual" aria-hidden="true">
+          <div className="telefono">
+            <div className="telefono-pantalla">
+              <div className="balance-section">
+                <span className="label">Tu saldo hoy</span>
+                <span className="amount">$5.340</span>
               </div>
-              <div className="tx out">
-                <span className="emoji">🚕</span>
-                <span className="desc">Uber a casa</span>
-                <span className="amount">-$15.300</span>
+
+              <div className="transactions">
+                {MOVIMIENTOS.map(({ Icono, desc, monto, tipo }) => (
+                  <div className={`tx ${tipo}`} key={desc}>
+                    <span className="tx-icono">
+                      <Icono size={15} strokeWidth={1.75} />
+                    </span>
+                    <span className="desc">{desc}</span>
+                    <span className="amount">{monto}</span>
+                  </div>
+                ))}
               </div>
-              <div className="tx in">
-                <span className="emoji">💵</span>
-                <span className="desc">Pago de cliente</span>
-                <span className="amount">+$2.500.000</span>
+
+              <div className="dictado">
+                <span className="dictado-boton">
+                  <Mic size={16} strokeWidth={1.75} />
+                </span>
+                <span className="dictado-texto">"gasté 45 mil en almuerzo"</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* QUÉ ES */}
       <section className="what-is" id="que-es">
-        <h2>Qué es Lukapp</h2>
+        <header className="seccion-cabecera">
+          <span className="seccion-etiqueta">Qué es</span>
+          <h2>Todo tu dinero, en un solo sitio</h2>
+        </header>
+
         <div className="features">
-          <div className="feature">
-            <span className="icon">✍️</span>
-            <h3>Lenguaje natural</h3>
-            <p>"gasté 45k en pizza" se convierte automáticamente en un gasto de comida.</p>
-          </div>
-
-          <div className="feature">
-            <span className="icon">📄</span>
-            <h3>Extractos de bancos</h3>
-            <p>Davivienda, Bancolombia, Nequi, Nu — sube el PDF y listo.</p>
-          </div>
-
-          <div className="feature">
-            <span className="icon">🏦</span>
-            <h3>Múltiples cuentas</h3>
-            <p>Débito, crédito, efectivo, ahorros — todo en un saldo único.</p>
-          </div>
-
-          <div className="feature">
-            <span className="icon">📊</span>
-            <h3>Análisis automático</h3>
-            <p>Gráficos por categoría. Tendencias. Gastos recurrentes. Sin juzgar.</p>
-          </div>
-
-          <div className="feature">
-            <span className="icon">🔒</span>
-            <h3>Tus datos son tuyos</h3>
-            <p>Todo es local. Nada se vende. Nada se guarda en servidores extranjeros.</p>
-          </div>
-
-          <div className="feature">
-            <span className="icon">⚡</span>
-            <h3>Sin algoritmos raros</h3>
-            <p>Matemática transparente. El código está en GitHub. Sin sorpresas.</p>
-          </div>
+          {QUE_ES.map(({ Icono, titulo, texto }) => (
+            <article className="feature" key={titulo}>
+              <span className="feature-icono">
+                <Icono size={18} strokeWidth={1.5} aria-hidden />
+              </span>
+              <h3>{titulo}</h3>
+              <p>{texto}</p>
+            </article>
+          ))}
         </div>
       </section>
 
-      {/* CÓMO FUNCIONA */}
       <section className="how-it-works" id="como-funciona">
-        <h2>Cómo funciona</h2>
-        <div className="steps">
-          <div className="step">
-            <div className="number">1</div>
-            <h3>Crea una cuenta</h3>
-            <p>Email. Listo.</p>
-          </div>
+        <header className="seccion-cabecera">
+          <span className="seccion-etiqueta">Cómo funciona</span>
+          <h2>Cuatro pasos y ya</h2>
+        </header>
 
-          <div className="step">
-            <div className="number">2</div>
-            <h3>Agrega tu dinero</h3>
-            <p>Débito, crédito, efectivo. Donde esté tu plata.</p>
-          </div>
-
-          <div className="step">
-            <div className="number">3</div>
-            <h3>Registra gastos</h3>
-            <p>Escribe como hablas. Lukapp entiende.</p>
-          </div>
-
-          <div className="step">
-            <div className="number">4</div>
-            <h3>Analiza</h3>
-            <p>Entiende dónde va tu dinero, sin rodeos.</p>
-          </div>
-        </div>
+        <ol className="steps">
+          {PASOS.map(({ titulo, texto }, i) => (
+            <li className="step" key={titulo}>
+              <span className="number">{String(i + 1).padStart(2, '0')}</span>
+              <h3>{titulo}</h3>
+              <p>{texto}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
-      {/* CTA FINAL */}
       <section className="final-cta">
         <h2>¿Listo?</h2>
-        <p>30 días para entender tu dinero</p>
+        <p>30 días para entender tu dinero.</p>
         <button className="btn-primary-lg" onClick={onGetStarted}>
           Empezar ahora
-          <ChevronRight size={20} />
+          <ArrowRight size={18} strokeWidth={2} aria-hidden />
         </button>
       </section>
 
-      {/* FOOTER */}
       <footer className="footer">
-        <p>© 2026 Lukapp | Tu dinero, bajo control</p>
+        <p>© 2026 Lukapp — Tu dinero, bajo control</p>
       </footer>
     </div>
   );
