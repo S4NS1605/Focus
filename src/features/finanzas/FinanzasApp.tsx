@@ -35,7 +35,12 @@ import { useAjustesGmf } from './data/usePreferencias';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
 import { contactoPorApodo } from './lib/contactos';
-import { useMostrarAhorro, useMostrarEfectivoSeparado, useOnboarding } from './data/usePreferencias';
+import {
+  useMostrarAhorro,
+  useMostrarEfectivoSeparado,
+  useOnboarding,
+  useQuickStart,
+} from './data/usePreferencias';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { CategoriasEditor } from './components/CategoriasEditor';
 import { AnalisisMovimiento } from './components/AnalisisMovimiento';
@@ -225,9 +230,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
   // siquiera se dibujaba, sin forma de volver.
   const [section, setSection] = useState<SectionId>('inicio');
   const [mostrarReporte, setMostrarReporte] = useState(false);
-  const [mostrarQuickStart, setMostrarQuickStart] = useState(() => {
-    return !localStorage.getItem('__lukapp_quickstart_seen__');
-  });
+  const { mostrarQuickStart, ocultar: ocultarQuickStart, volverAMostrar: volverAMostrarQuickStart } =
+    useQuickStart();
 
   const today = bogotaDate();
   const thisMonth = monthKey(today);
@@ -463,12 +467,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
       >
         {/* Quick Start Guide para nuevos usuarios */}
         {mostrarQuickStart && (
-          <QuickStartGuideFinanzas
-            onDismiss={() => {
-              setMostrarQuickStart(false);
-              localStorage.setItem('__lukapp_quickstart_seen__', 'true');
-            }}
-          />
+          <QuickStartGuideFinanzas onDismiss={ocultarQuickStart} />
         )}
 
         {/* Storage that cannot remember has to say so — silently losing a month of
@@ -615,6 +614,14 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             onMostrarAhorro={setMostrarAhorro}
             mostrarEfectivoSeparado={mostrarEfectivoSeparado}
             onMostrarEfectivoSeparado={setMostrarEfectivoSeparado}
+            onVolverAVerGuia={
+              mostrarQuickStart
+                ? undefined
+                : () => {
+                    volverAMostrarQuickStart();
+                    setSection('inicio');
+                  }
+            }
           />
         ) : null}
 

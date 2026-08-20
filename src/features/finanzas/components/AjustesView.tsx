@@ -8,6 +8,7 @@ import {
   Landmark,
   PiggyBank,
   Repeat,
+  Rocket,
   Tag,
   Target,
   Users,
@@ -24,6 +25,8 @@ interface AjustesViewProps {
   onMostrarAhorro: (valor: boolean) => void;
   mostrarEfectivoSeparado: boolean;
   onMostrarEfectivoSeparado: (valor: boolean) => void;
+  /** Ausente mientras la guía ya está visible: no hay nada que volver a abrir. */
+  onVolverAVerGuia?: () => void;
 }
 
 /** Cada panel con su icono. Van aquí y no en sections.ts para que ese fichero
@@ -112,6 +115,7 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
   onMostrarAhorro,
   mostrarEfectivoSeparado,
   onMostrarEfectivoSeparado,
+  onVolverAVerGuia,
 }) => (
   <div className="flex flex-col gap-7">
     <h1
@@ -176,7 +180,12 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
 
         <label
           className="flex cursor-pointer items-center gap-3 px-4 py-3.5"
-          style={{ boxShadow: temaToggle || cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
+          style={{
+            boxShadow:
+              onVolverAVerGuia || temaToggle || cuenta
+                ? 'inset 0 -1px 0 0 var(--fin-line)'
+                : undefined,
+          }}
         >
           <span
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
@@ -199,6 +208,35 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             className="h-6 w-6 shrink-0 accent-[var(--fin-in)]"
           />
         </label>
+
+        {onVolverAVerGuia ? (
+          <button
+            type="button"
+            onClick={onVolverAVerGuia}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
+            style={{ boxShadow: temaToggle || cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
+          >
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+              aria-hidden="true"
+            >
+              <Rocket className="h-[18px] w-[18px] text-[var(--fin-ink-soft)]" strokeWidth={2} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
+                Volver a ver los primeros pasos
+              </span>
+              <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+                La guía que sale al empezar, otra vez en Inicio
+              </span>
+            </span>
+            <ChevronRight
+              className="h-4 w-4 shrink-0 text-[var(--fin-ink-ghost)]"
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+          </button>
+        ) : null}
 
         {temaToggle ? (
           <div

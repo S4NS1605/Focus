@@ -14,7 +14,12 @@ const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
 const CLAVE_EFECTIVO_SEPARADO = 'finanzas:resumen:efectivo-separado';
 const CLAVE_NOMBRE = 'finanzas:onboarding:nombre';
 const CLAVE_ONBOARDING = 'finanzas:onboarding:terminado';
+const CLAVE_QUICKSTART = 'finanzas:onboarding:quickstart-visto';
 const CLAVE_UVT = 'finanzas:gmf:uvt';
+
+/** La clave que usaba la guía antes de vivir aquí. Se lee una sola vez, al
+ * arrancar, para no volver a mostrarle la guía a quien ya la cerró. */
+const CLAVE_QUICKSTART_VIEJA = '__lukapp_quickstart_seen__';
 const CLAVE_CUENTAS_GMF = 'finanzas:gmf:cuentas';
 const CLAVE_REGIMEN = 'finanzas:gmf:regimen';
 const CLAVE_CUENTA_EXENTA = 'finanzas:gmf:cuenta-exenta';
@@ -66,6 +71,10 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
   // Nunca se baja a 'no' desde la nube: si en cualquier dispositivo ya se
   // terminó la bienvenida, se terminó en todos.
   if (metadata[CLAVE_ONBOARDING]) setIf(CLAVE_ONBOARDING, 'si');
+  // Este sí baja en los dos sentidos, al revés que la bienvenida: si pides
+  // volver a ver la guía desde el portátil, la quieres también en el teléfono.
+  if (metadata[CLAVE_QUICKSTART] !== undefined)
+    setIf(CLAVE_QUICKSTART, metadata[CLAVE_QUICKSTART] ? 'si' : 'no');
   if (metadata[CLAVE_UVT] !== undefined) setIf(CLAVE_UVT, JSON.stringify(metadata[CLAVE_UVT]));
   if (metadata[CLAVE_CUENTAS_GMF] !== undefined)
     setIf(CLAVE_CUENTAS_GMF, JSON.stringify(metadata[CLAVE_CUENTAS_GMF]));
@@ -198,6 +207,53 @@ export const useOnboarding = () => {
   }, []);
 
   return { terminado, nombre, guardarNombre, terminar };
+};
+
+/**
+ * La guía de primeros pasos que sale arriba de Inicio.
+ *
+ * Vive con las demás preferencias y no en un localStorage suelto porque
+ * haberla cerrado es un hecho sobre la persona, no sobre este navegador:
+ * quien ya la leyó en el portátil no necesita verla otra vez en el teléfono.
+ * Y a diferencia de la bienvenida, esta se puede volver a abrir desde Ajustes,
+ * así que el valor viaja en los dos sentidos.
+ */
+export const useQuickStart = () => {
+  const [visto, setEstado] = useState(() => {
+    if (leerBooleano(CLAVE_QUICKSTART, false)) return true;
+    // Quien la cerró cuando la marca era local se queda con ella cerrada.
+    try {
+      if (localStorage.getItem(CLAVE_QUICKSTART_VIEJA)) {
+        guardarBooleano(CLAVE_QUICKSTART, true);
+        localStorage.removeItem(CLAVE_QUICKSTART_VIEJA);
+        return true;
+      }
+    } catch {
+      // Sin localStorage la guía sale siempre, que es el mal menor.
+    }
+    return false;
+  });
+
+  const ocultar = useCallback(() => {
+    setEstado(true);
+    guardarBooleano(CLAVE_QUICKSTART, true);
+  }, []);
+
+  const volverAMostrar = useCallback(() => {
+    setEstado(false);
+    guardarBooleano(CLAVE_QUICKSTART, false);
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== CLAVE_QUICKSTART) return;
+      setEstado(leerBooleano(CLAVE_QUICKSTART, false));
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return { mostrarQuickStart: !visto, ocultar, volverAMostrar };
 };
 
 /**
