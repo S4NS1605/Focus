@@ -1887,3 +1887,165 @@
 .landing-finanzas .pantalla-app.reiniciando {
   opacity: 0.12;
 }
+
+/* Modal PWA Install */
+.pwa-install {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pwa-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  backdrop-filter: blur(2px);
+}
+
+.pwa-modal {
+  position: relative;
+  z-index: 10001;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  background: var(--lp-bg);
+  border-radius: 24px 24px 0 0;
+  padding: 32px 24px;
+  pointer-events: auto;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .pwa-modal {
+    border-radius: 24px;
+    max-height: 80vh;
+  }
+}
+
+.pwa-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pwa-cabecera h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+}
+
+.pwa-cerrar {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--lp-ink-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.pwa-cerrar:hover {
+  background: var(--lp-surface-hover);
+}
+
+.pwa-descripcion {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--lp-ink-soft);
+}
+
+.pwa-pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.pwa-paso {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.pwa-numero {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--lp-ink);
+}
+
+.pwa-contenido h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--lp-ink);
+}
+
+.pwa-contenido p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--lp-ink-soft);
+  line-height: 1.5;
+}
+
+.pwa-beneficios {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--lp-surface);
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+.pwa-beneficio {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 0.85rem;
+  color: var(--lp-ink-soft);
+  line-height: 1.5;
+}
+
+.pwa-beneficio svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--lp-in);
+  margin-top: 2px;
+}
+
+.pwa-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pwa-continuar {
+  width: 100%;
+}

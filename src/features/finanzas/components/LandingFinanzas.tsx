@@ -8,6 +8,7 @@ import { FormasDeRegistrar } from './landing/FormasDeRegistrar';
 import { Privacidad } from './landing/Privacidad';
 import { BandaCifras } from './landing/BandaCifras';
 import { Registro } from './landing/Registro';
+import { PWAInstall } from './landing/PWAInstall';
 import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
@@ -57,6 +58,8 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [compacta, setCompacta] = useState(false);
+  const [mostrarPWA, setMostrarPWA] = useState(false);
+  const [pwaYaVisto, setPwaYaVisto] = useState(false);
 
   /* La barra se encoge al bajar. `passive` porque el handler no llama a
      preventDefault y sin eso Chrome bloquea el hilo de scroll en móvil. */
@@ -66,6 +69,34 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
     window.addEventListener('scroll', alScroll, { passive: true });
     return () => window.removeEventListener('scroll', alScroll);
   }, []);
+
+  const handleGetStarted = () => {
+    const ua = navigator.userAgent.toLowerCase();
+    const isMobile = /iphone|ipad|ipod|android/.test(ua);
+
+    if (isMobile && !pwaYaVisto) {
+      setMostrarPWA(true);
+      return;
+    }
+
+    onGetStarted?.();
+  };
+
+  const handlePWAClose = () => {
+    setMostrarPWA(false);
+  };
+
+  const handlePWASkip = () => {
+    setPwaYaVisto(true);
+    setMostrarPWA(false);
+    onGetStarted?.();
+  };
+
+  const handlePWAProceed = () => {
+    setPwaYaVisto(true);
+    setMostrarPWA(false);
+    onGetStarted?.();
+  };
 
   return (
     <div className="landing-finanzas">
@@ -102,7 +133,7 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
         </div>
       </nav>
 
-      <Hero onGetStarted={onGetStarted} onSeeDemo={onSeeDemo} />
+      <Hero onGetStarted={handleGetStarted} onSeeDemo={onSeeDemo} />
       <Ticker frases={FRASES_TICKER} />
       <DemoParser />
       <BandaCifras />
@@ -111,15 +142,23 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
       <FormasDeRegistrar />
       <Privacidad />
 
+      {mostrarPWA && (
+        <PWAInstall
+          onClose={handlePWAClose}
+          onSkip={handlePWASkip}
+          onProceed={handlePWAProceed}
+        />
+      )}
+
       {sesion ? (
         <Registro sesion={sesion} onIrAEntrar={onLogin} />
       ) : (
         <section className="final-cta">
           <Reveal>
             <h2>¿Listo?</h2>
-            <p>30 días para entender tu dinero.</p>
-            <button className="btn-primary-lg" onClick={onGetStarted}>
-              Empezar ahora
+            <p>Toma el control de tu dinero desde hoy.</p>
+            <button className="btn-primary-lg" onClick={handleGetStarted}>
+              Comenzar ahora
               <ArrowRight size={18} strokeWidth={2} aria-hidden />
             </button>
           </Reveal>

@@ -41,14 +41,14 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted, onSeeDemo }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            Sabe exactamente dónde
+            Controla tus finanzas
           </motion.span>
           <motion.span
             initial={quieto ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
           >
-            está <em>tu plata</em>.
+            sin <em>perder tiempo</em>.
           </motion.span>
         </h1>
 
@@ -58,8 +58,8 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted, onSeeDemo }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.24 }}
         >
-          Registra gastos hablando. Importa los extractos de tu banco. Entiende
-          en qué se te va el mes sin que nadie te juzgue.
+          Registra movimientos hablando. Sincroniza con tu banco. Visualiza patrones
+          de gasto en tiempo real.
         </motion.p>
 
         <motion.div
@@ -69,7 +69,7 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted, onSeeDemo }) => {
           transition={{ duration: 0.6, delay: 0.34 }}
         >
           <button className="btn-primary" onClick={onGetStarted}>
-            Empezar gratis
+            Comenzar ahora
             <ArrowRight size={17} strokeWidth={2} aria-hidden />
           </button>
           <button className="btn-secondary" onClick={onSeeDemo}>
@@ -77,14 +77,6 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted, onSeeDemo }) => {
           </button>
         </motion.div>
 
-        <motion.p
-          className="hero-note"
-          initial={quieto ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.46 }}
-        >
-          30 días gratis. No pide tarjeta de crédito.
-        </motion.p>
       </div>
 
       <div className="hero-visual">

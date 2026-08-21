@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowDown, Calendar, CreditCard, Sparkles, User } from 'lucide-react';
+import { ArrowDown, Calendar, CreditCard, MessageCircle, User } from 'lucide-react';
 import { parseTransaction } from '../../lib/parseTransaction';
 import { CATALOGO_BASE } from '../../categorias';
 import { formatCop } from '../../lib/formatCop';
@@ -74,7 +74,7 @@ export const DemoParser: React.FC = () => {
 
       <Reveal className="demo-caja" delay={0.1}>
         <label className="demo-campo">
-          <Sparkles size={18} strokeWidth={1.75} aria-hidden />
+          <MessageCircle size={18} strokeWidth={1.75} aria-hidden />
           <input
             type="text"
             value={texto}
