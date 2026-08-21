@@ -12,7 +12,7 @@ import { PWAInstall } from './landing/PWAInstall';
 import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
-import '../styles/LandingFinanzas.css';
+import '../styles/LandingLukApp.css';
 
 /* La cinta que corre bajo el hero. Son frases que la app de verdad entiende
    —las mismas que el visitante puede pegar en el demo de abajo— así que además
@@ -49,7 +49,7 @@ const ENLACES = [
   { href: '#registro', texto: 'Crear cuenta' }
 ];
 
-export const LandingFinanzas: React.FC<LandingProps> = ({
+export const LandingLukApp: React.FC<LandingProps> = ({
   onGetStarted,
   onLogin,
   sesion

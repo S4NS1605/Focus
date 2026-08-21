@@ -20,7 +20,7 @@ import { useCallback, useSyncExternalStore } from 'react';
  */
 
 /** El prefijo bajo el que vive Finanzas. Todo lo demás cuelga de aquí. */
-export const BASE_FINANZAS = '/finanzas';
+export const BASE_LUKAPP = '/finanzas';
 
 const normalizar = (ruta: string): string => {
   // Sin barra final, salvo que sea la raíz: `/finanzas/app/` y `/finanzas/app`
@@ -30,7 +30,7 @@ const normalizar = (ruta: string): string => {
 };
 
 const leer = (): string =>
-  typeof window === 'undefined' ? BASE_FINANZAS : normalizar(window.location.pathname);
+  typeof window === 'undefined' ? BASE_LUKAPP : normalizar(window.location.pathname);
 
 let rutaActual = leer();
 const suscriptores = new Set<() => void>();
@@ -76,7 +76,7 @@ export const useRuta = () => {
   const ruta = useSyncExternalStore(
     suscribir,
     () => rutaActual,
-    () => BASE_FINANZAS,
+    () => BASE_LUKAPP,
   );
 
   const ir = useCallback((destino: string) => irA(destino), []);
@@ -93,6 +93,6 @@ export const useRuta = () => {
  */
 export const segmentosDe = (ruta: string): string[] =>
   normalizar(ruta)
-    .replace(BASE_FINANZAS, '')
+    .replace(BASE_LUKAPP, '')
     .split('/')
     .filter(Boolean);
