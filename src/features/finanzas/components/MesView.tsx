@@ -1,16 +1,19 @@
-import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { CategorySlice, MonthTotals } from '../lib/aggregate';
 import { formatCop } from '../lib/formatCop';
 import { monthKeyLabel } from '../lib/localDate';
+import { resumenDelMes } from '../lib/resumenMes';
 import { CategoryBreakdown } from './CategoryBreakdown';
 import { DetalleMes } from './DetalleMes';
+import { ResumenWrapped } from './ResumenWrapped';
 import { TendenciasView } from './TendenciasView';
 
 interface MesViewProps {
   month: string;
   maxMonth: string;
+  hoy: string;
   onCambiarMes: (mes: string) => void;
   shift: (mes: string, pasos: number) => string;
   totals: MonthTotals;
@@ -39,6 +42,7 @@ interface MesViewProps {
 export const MesView: React.FC<MesViewProps> = ({
   month,
   maxMonth,
+  hoy,
   onCambiarMes,
   shift,
   totals,
@@ -53,6 +57,15 @@ export const MesView: React.FC<MesViewProps> = ({
   const siguiente = shift(month, 1);
   // No se puede navegar al futuro: no hay nada que mirar allá.
   const haySiguiente = siguiente <= maxMonth;
+
+  const [resumenAbierto, setResumenAbierto] = useState(false);
+  // Se calcula solo al abrir: recorre todo el historial (para el promedio de
+  // comparación), y esta pantalla se renderiza mucho más seguido de lo que
+  // alguien va a tocar "Tu resumen".
+  const tarjetasResumen = useMemo(
+    () => (resumenAbierto ? resumenDelMes(transacciones, month, hoy) : []),
+    [resumenAbierto, transacciones, month, hoy],
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -83,6 +96,21 @@ export const MesView: React.FC<MesViewProps> = ({
           <ChevronRight className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setResumenAbierto(true)}
+        className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-4 py-3.5 text-left text-[var(--fin-on-accent)]"
+      >
+        <Sparkles className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold">Tu resumen de {monthKeyLabel(month)}</span>
+          <span className="mt-0.5 block text-[13px] opacity-70">
+            Lo mejor y lo raro del mes, en una historia
+          </span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 opacity-60" strokeWidth={2.5} aria-hidden="true" />
+      </button>
 
       <div>
         <p className="text-center text-[13px] text-[var(--fin-ink-faint)]">
@@ -115,6 +143,10 @@ export const MesView: React.FC<MesViewProps> = ({
       <DetalleMes delMes={delMes} transacciones={transacciones} mes={month} />
 
       <TendenciasView transacciones={transacciones} mes={month} />
+
+      {resumenAbierto ? (
+        <ResumenWrapped tarjetas={tarjetasResumen} onCerrar={() => setResumenAbierto(false)} />
+      ) : null}
     </div>
   );
 };

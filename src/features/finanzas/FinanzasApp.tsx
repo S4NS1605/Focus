@@ -609,6 +609,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
           <MesView
             month={month}
             maxMonth={thisMonth}
+            hoy={today}
             onCambiarMes={setMonth}
             shift={shiftMonth}
             totals={totals}
