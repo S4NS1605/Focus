@@ -208,8 +208,17 @@ export const Captura: React.FC<CapturaProps> = ({
         )}
 
         {/* Las categorías, en una fila que se desliza. La adivinada va primero y
- ya viene puesta, así que lo normal es no tocar nada aquí. */}
-        <div className="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+ ya viene puesta, así que lo normal es no tocar nada aquí.
+
+ `stopPropagation` en el toque: sin esto, deslizar la fila para ver más
+ categorías es indistinguible de un swipe-para-cancelar sobre toda la
+ hoja — `useSwipeGesture` está en `capturaRef`, que envuelve esta fila,
+ así que el mismo gesto que mueve las pastillas también cerraba la hoja
+ entera y devolvía al dashboard a mitad de elegir categoría. */}
+        <div
+          className="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
           {opciones.map((entrada) => {
             const activa = category === entrada.clave;
             const Icono = entrada.Icono;
