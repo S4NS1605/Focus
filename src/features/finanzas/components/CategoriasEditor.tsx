@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Check, Lock, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import type { Transaction } from '../types';
-import { COLORES_CATEGORIA, ICONOS_CATEGORIA, iconoDeCategoria } from '../categorias';
+import {
+  COLORES_CATEGORIA,
+  ICONOS_CATEGORIA,
+  iconoDeCategoria,
+  sugerirIconoCategoria,
+} from '../categorias';
 import type { CategoriaPersonal } from '../categorias';
 import { useCatalogo } from '../catalogoContexto';
 import { tint } from '../types';
@@ -85,8 +90,22 @@ const Formulario: React.FC<{
   const [nombre, setNombre] = useState(inicial?.nombre ?? '');
   const [icon, setIcon] = useState(inicial?.icon ?? 'Package');
   const [color, setColor] = useState<string>(inicial?.color ?? COLORES_CATEGORIA[0]);
+  // Al editar una categoría ya tiene ícono propio, así que no se le encima una
+  // sugerencia por retocar el nombre. Al crear una, sí — hasta que la persona
+  // toque el selector con la mano, momento en que la sugerencia se apaga.
+  const [iconoManual, setIconoManual] = useState(inicial !== undefined);
 
   const listo = nombre.trim() !== '';
+
+  const cambiarNombre = (valor: string) => {
+    setNombre(valor);
+    if (!iconoManual) setIcon(sugerirIconoCategoria(valor));
+  };
+
+  const cambiarIconoManual = (valor: string) => {
+    setIconoManual(true);
+    setIcon(valor);
+  };
 
   return (
     <form
@@ -106,7 +125,7 @@ const Formulario: React.FC<{
       <input
         id="cat-nombre"
         value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
+        onChange={(e) => cambiarNombre(e.target.value)}
         placeholder="Suscripciones"
         maxLength={28}
         autoFocus
@@ -115,7 +134,7 @@ const Formulario: React.FC<{
 
       <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Ícono</p>
       <div className="mt-1.5">
-        <SelectorIcono valor={icon} onCambiar={setIcon} />
+        <SelectorIcono valor={icon} onCambiar={cambiarIconoManual} />
       </div>
 
       <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Color</p>

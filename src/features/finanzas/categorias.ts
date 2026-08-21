@@ -97,6 +97,55 @@ export const iconoDeCategoria = (nombre: string | null | undefined): LucideIcon 
   (nombre && ICONOS[nombre]) || Package;
 
 /**
+ * Palabras que hacen sugerir cada ícono al crear una categoría, en el orden en
+ * que se revisan. Es un mapa de palabras clave y no una llamada a un modelo:
+ * el catálogo son 24 íconos fijos, así que no hay nada que un LLM adivine
+ * mejor que un match de texto, y esto responde al tecleo sin red ni demora.
+ * Es solo el punto de partida — `SelectorIcono` deja escogerlo a mano.
+ */
+const PISTAS_ICONO: Array<{ icono: string; palabras: string[] }> = [
+  { icono: 'ShoppingCart', palabras: ['mercado', 'super', 'supermercado', 'compras'] },
+  { icono: 'Utensils', palabras: ['comida', 'restaurante', 'almuerzo', 'cena', 'domicilio', 'comer'] },
+  { icono: 'Coffee', palabras: ['cafe', 'café', 'snack', 'onces', 'desayuno'] },
+  { icono: 'Bus', palabras: ['transporte', 'bus', 'taxi', 'uber', 'gasolina', 'carro', 'metro', 'parqueadero'] },
+  { icono: 'Lightbulb', palabras: ['servicios', 'luz', 'agua', 'gas', 'internet', 'recibo', 'energia', 'energía'] },
+  { icono: 'Smartphone', palabras: ['celular', 'telefono', 'teléfono', 'plan', 'datos', 'streaming', 'suscripcion', 'suscripción'] },
+  { icono: 'Pill', palabras: ['salud', 'medico', 'médico', 'medicina', 'droguer', 'eps', 'doctor', 'clinica', 'clínica'] },
+  { icono: 'Dumbbell', palabras: ['gimnasio', 'gym', 'ejercicio', 'deporte'] },
+  { icono: 'Home', palabras: ['hogar', 'casa', 'arriendo', 'alquiler', 'administracion', 'administración'] },
+  { icono: 'Film', palabras: ['entretenimiento', 'cine', 'pelicula', 'película', 'salida', 'rumba', 'fiesta'] },
+  { icono: 'Gamepad2', palabras: ['juego', 'videojuego', 'gaming'] },
+  { icono: 'Shirt', palabras: ['ropa', 'zapatos', 'vestido', 'moda'] },
+  { icono: 'Scissors', palabras: ['peluqueria', 'peluquería', 'belleza', 'estetica', 'estética', 'manicure', 'barberia', 'barbería'] },
+  { icono: 'Book', palabras: ['educacion', 'educación', 'colegio', 'universidad', 'curso', 'libro', 'matricula', 'matrícula'] },
+  { icono: 'RefreshCw', palabras: ['transferencia', 'traslado', 'giro'] },
+  { icono: 'PiggyBank', palabras: ['ahorro', 'ahorros'] },
+  { icono: 'DollarSign', palabras: ['ingreso', 'sueldo', 'salario', 'pago', 'nomina', 'nómina'] },
+  { icono: 'PawPrint', palabras: ['mascota', 'perro', 'veterinaria'] },
+  { icono: 'Cat', palabras: ['gato'] },
+  { icono: 'Baby', palabras: ['bebe', 'bebé', 'hijo', 'hija', 'pañal', 'panal'] },
+  { icono: 'Gift', palabras: ['regalo', 'cumpleanos', 'cumpleaños', 'navidad'] },
+  { icono: 'Plane', palabras: ['viaje', 'vuelo', 'vacaciones', 'tiquete'] },
+  { icono: 'Wrench', palabras: ['reparacion', 'reparación', 'mantenimiento', 'arreglo', 'ferreteria', 'ferretería'] },
+];
+
+const sinTildes = (texto: string): string =>
+  texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+
+/** Adivina el ícono a partir del nombre que se está tecleando. `Package` si nada calza. */
+export const sugerirIconoCategoria = (nombre: string): string => {
+  const texto = sinTildes(nombre.trim());
+  if (texto === '') return 'Package';
+  for (const { icono, palabras } of PISTAS_ICONO) {
+    if (palabras.some((palabra) => texto.includes(sinTildes(palabra)))) return icono;
+  }
+  return 'Package';
+};
+
+/**
  * Colours offered in the picker. These are the same hues the built-in
  * categories use, which were chosen so neighbours in a sorted breakdown never
  * read as the same colour. Reusing them keeps a custom category visually part
