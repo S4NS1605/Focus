@@ -136,9 +136,17 @@ export const GuiaApp: React.FC<GuiaAppProps> = ({ pasos, onCerrar }) => {
      nunca con las dos. Así no hace falta medir su altura para saber dónde
      empieza: puesto por abajo, crece hacia arriba solo. Medirla obligaría a
      pintarlo antes de saber dónde ponerlo, y eso se ve como un salto. */
-  let estilo: React.CSSProperties;
+  /* `x`/`y` y no `transform: 'translate(...)'`: en cuanto se anima `scale` en
+     el mismo `motion.div`, Framer Motion toma el control completo de la
+     propiedad `transform` y descarta cualquier valor puesto a mano en
+     `style.transform`. Con eso el centrado desaparecía y la tarjeta quedaba
+     con su borde izquierdo —no su centro— donde debía estar el centro,
+     empujada hacia la derecha y cortada contra el canto de la pantalla.
+     `x`/`y` sí son motion values: Framer los combina con el resto en vez de
+     pisarlos. */
+  let estilo: React.CSSProperties & { x?: string | number; y?: string | number };
   if (caja === null) {
-    estilo = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: ancho };
+    estilo = { top: '50%', left: '50%', x: '-50%', y: '-50%', width: ancho };
   } else {
     const espacioAbajo = vh - (caja.top + caja.height);
     const debajo = espacioAbajo > ESPACIO_MINIMO;
@@ -150,7 +158,7 @@ export const GuiaApp: React.FC<GuiaAppProps> = ({ pasos, onCerrar }) => {
 
     estilo = {
       left: izquierda,
-      transform: 'translateX(-50%)',
+      x: '-50%',
       width: ancho,
       ...(debajo
         ? { top: caja.top + caja.height + aire + SEPARACION }
