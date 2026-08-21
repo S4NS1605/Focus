@@ -627,6 +627,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
                   void almacen.fijarPresupuesto(categoria, montoCop)
                 }
                 onQuitar={(categoria) => void almacen.quitarPresupuesto(categoria)}
+                onNuevaTransaccion={(categoria) =>
+                  setPending({ ...movimientoEnBlanco(), category: categoria })
+                }
               />
             }
           />
@@ -772,6 +775,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
                   void almacen.fijarPresupuesto(categoria, montoCop)
                 }
                 onQuitar={(categoria) => void almacen.quitarPresupuesto(categoria)}
+                onNuevaTransaccion={(categoria) =>
+                  setPending({ ...movimientoEnBlanco(), category: categoria })
+                }
               />
             ) : panelAjustes === 'metas' ? (
               <MetasView
