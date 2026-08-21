@@ -166,13 +166,58 @@ export const GuiaApp: React.FC<GuiaAppProps> = ({ pasos, onCerrar }) => {
     };
   }
 
+  /* Las cuatro tiras que rodean el recorte sin taparlo.
+     Antes el bloqueador era un solo div de pantalla completa: paraba clics
+     en toda la app, incluido el propio elemento resaltado, así que la guía
+     lo señalaba pero tocarlo no hacía nada — no se podía probar el
+     micrófono, ni ningún otro control, mientras la guía lo explicaba. Cuatro
+     tiras alrededor del hueco dejan pasar el clic justo ahí y lo siguen
+     parando en cualquier otro lado. */
+  const bloqueador = 'fixed z-[60]';
+  const alBloquear = (e: React.MouseEvent) => e.stopPropagation();
+
   return (
     <>
-      {/* El bloqueador. El oscurecido lo pinta el recorte con su sombra, pero
-          una sombra no para un clic: sin esta capa se puede tocar la app por
-          debajo del velo y navegar a otra pantalla con la guía abierta,
-          dejándola señalando algo que ya no está. */}
-      <div className="fixed inset-0 z-[60]" onClick={(e) => e.stopPropagation()} aria-hidden />
+      {caja === null ? (
+        <div className={`${bloqueador} inset-0`} onClick={alBloquear} aria-hidden />
+      ) : (
+        <>
+          <div
+            className={bloqueador}
+            style={{ top: 0, left: 0, right: 0, height: Math.max(0, caja.top - aire) }}
+            onClick={alBloquear}
+            aria-hidden
+          />
+          <div
+            className={bloqueador}
+            style={{ top: caja.top + caja.height + aire, left: 0, right: 0, bottom: 0 }}
+            onClick={alBloquear}
+            aria-hidden
+          />
+          <div
+            className={bloqueador}
+            style={{
+              top: Math.max(0, caja.top - aire),
+              height: caja.height + aire * 2,
+              left: 0,
+              width: Math.max(0, caja.left - aire),
+            }}
+            onClick={alBloquear}
+            aria-hidden
+          />
+          <div
+            className={bloqueador}
+            style={{
+              top: Math.max(0, caja.top - aire),
+              height: caja.height + aire * 2,
+              left: caja.left + caja.width + aire,
+              right: 0,
+            }}
+            onClick={alBloquear}
+            aria-hidden
+          />
+        </>
+      )}
 
       {caja !== null ? (
         <motion.div
@@ -204,7 +249,7 @@ export const GuiaApp: React.FC<GuiaAppProps> = ({ pasos, onCerrar }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="guia-titulo"
-        className="fixed z-[62] rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5 shadow-[0_20px_60px_rgb(0_0_0/0.35)]"
+        className="fixed z-[62] rounded-[var(--fin-r-card)] bg-[var(--fin-guia-card)] p-5 shadow-[0_20px_60px_rgb(0_0_0/0.35)]"
         style={estilo}
         initial={quieto ? false : { opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}

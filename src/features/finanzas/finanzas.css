@@ -39,6 +39,11 @@
   --fin-surface: #ffffff;
   --fin-card-hover: #efece7;
 
+  /* Solo para el globo de la guía: flota sobre su propio velo oscuro, no sobre
+     el fondo de la app, así que necesita más opacidad que --fin-card o se lee
+     lavado contra ese negro. */
+  --fin-guia-card: rgb(255 255 255 / 0.92);
+
   /* Liquid-glass surfaces (iOS 26 "Liquid Glass" material): a blurred, saturated
      backdrop plus a bright top rim standing in for a specular highlight, and a
      soft floating shadow standing in for the lift. Kept as tokens rather than
@@ -158,6 +163,7 @@
     --fin-bg-soft: #221f1e;
     --fin-surface: #2d2a28;
     --fin-card-hover: #3a3734;
+    --fin-guia-card: rgb(24 22 21 / 0.94);
 
     /* Dimmer than the light theme's: a bright rim reads as a highlight against
        a dark glass surface, but the light-mode value would look like a stray
@@ -206,6 +212,7 @@
   --fin-bg-soft: #221f1e;
   --fin-surface: #2d2a28;
   --fin-card-hover: #3a3734;
+  --fin-guia-card: rgb(24 22 21 / 0.94);
 
   --fin-glass-highlight: rgb(255 255 255 / 0.12);
   --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
