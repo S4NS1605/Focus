@@ -23,15 +23,16 @@ export const HojaPanel: React.FC<HojaPanelProps> = ({ titulo, onCerrar, children
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18, ease: 'easeOut' }}
+      exit={{ opacity: 0, y: 16 }}
+      transition={{ type: 'spring', stiffness: 340, damping: 32 }}
       className="fixed inset-0 z-40 overflow-y-auto overscroll-contain bg-[var(--fin-bg)]"
       role="dialog"
       aria-modal="true"
       aria-label={titulo}
     >
-      <div className="mx-auto w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+3rem)]">
+      <div className="mx-auto w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+3rem)] lg:max-w-[1100px] 2xl:max-w-[1400px]">
         {/* La cabecera se queda pegada arriba: en una lista larga uno tiene que
  poder cerrar sin volver hasta el principio. */}
         <div className="sticky top-0 z-10 -mx-4 mb-5 flex items-center justify-between gap-3 bg-[var(--fin-bg)] px-4 pb-3 pt-1">

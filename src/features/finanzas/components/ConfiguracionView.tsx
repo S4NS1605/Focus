@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Pencil, Settings2, Wallet } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
@@ -71,7 +72,13 @@ const FilaCajita: React.FC<{
   };
 
   return (
-    <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-3.5">
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+      className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-3.5"
+    >
       <div className="flex items-center gap-3">
         <span
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)]"
@@ -106,33 +113,47 @@ const FilaCajita: React.FC<{
               className="w-full bg-transparent text-right text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:outline-none"
             />
           </div>
-          <button
+          <motion.button
             type="button"
             onClick={() => {
               if (saldoNuevo !== null) onFijarSaldo(cajita.id, saldoNuevo);
             }}
             disabled={!saldoCambio}
             aria-label={`Guardar saldo de ${cajita.nombre}`}
+            whileHover={saldoCambio ? { scale: 1.08 } : undefined}
+            whileTap={saldoCambio ? { scale: 0.92 } : undefined}
+            animate={{ scale: saldoCambio ? 1 : 0.85 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className="rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] p-2 text-[var(--fin-on-accent)] transition-opacity disabled:opacity-20"
           >
             <Check className="h-3.5 w-3.5" strokeWidth={3} />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             type="button"
             onClick={() => setEditando((v) => !v)}
             aria-label={`Editar ${cajita.nombre}`}
             aria-expanded={editando}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            animate={{ rotate: editando ? 90 : 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
+          </motion.button>
         </div>
       </div>
 
+      <AnimatePresence initial={false}>
       {editando ? (
-        <form
+        <motion.form
+          key="editar"
           onSubmit={guardar}
-          className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="mt-3 overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3"
         >
           <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
             Nombre
@@ -220,9 +241,10 @@ const FilaCajita: React.FC<{
           >
             Guardar cambios
           </button>
-        </form>
+        </motion.form>
       ) : null}
-    </li>
+      </AnimatePresence>
+    </motion.li>
   );
 };
 
@@ -250,14 +272,20 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
     // `w-full` es obligatorio -- ver el comentario en TendenciasView.tsx
     // sobre por qué un mx-auto sin w-full no llena dentro de un padre flex
     // (este componente es el tab por defecto dentro del flex de Configuración).
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
       {sinCuentas ? (
         <div className="rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-10 text-center">
-          <Wallet
-            className="mx-auto h-9 w-9 text-[var(--fin-ink-ghost)]"
-            strokeWidth={1.5}
-            aria-hidden="true"
-          />
+          <motion.div
+            className="mx-auto flex h-9 w-9 items-center justify-center"
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Wallet
+              className="h-9 w-9 text-[var(--fin-ink-ghost)]"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+          </motion.div>
           <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">
             Todavía no tienes cuentas.
           </p>
@@ -266,7 +294,12 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
           </p>
         </div>
       ) : (
-        <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3">
+        <motion.section
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3"
+        >
           <p className="flex items-start gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             <Settings2
               className="mt-px h-3.5 w-3.5 shrink-0"
@@ -276,7 +309,7 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
             Escribe el saldo que ves en tu banco y confirma con el visto. La app calcula sola la
             diferencia y la deja anotada en el historial.
           </p>
-        </section>
+        </motion.section>
       )}
 
       {GRUPOS.map((grupo) => {
@@ -288,7 +321,7 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({
             <h2 className="px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
               {grupo.titulo}
             </h2>
-            <ul className="mt-2 grid grid-cols-1 items-start gap-2 lg:grid-cols-2">
+            <ul className="mt-2 grid grid-cols-1 items-start gap-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {delGrupo.map((cajita) => (
                 <FilaCajita
                   key={cajita.id}
