@@ -30,6 +30,10 @@
   --lp-sombra-btn: 0 8px 20px -8px rgba(28, 25, 23, 0.35);
   --lp-sombra-tel: 0 40px 80px -32px rgba(28, 25, 23, 0.35);
   --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(21, 128, 61, 0.07), transparent 70%);
+  /* La pila vive en un token porque hay que repetirla dentro del atajo `font`
+     de --fin-t-cifra, y ahí no se puede escribir `inherit`: el atajo exige una
+     familia de verdad y descarta la declaración entera si no la encuentra. */
+  --lp-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -74,8 +78,7 @@
 
 .landing-finanzas {
   width: 100%;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--lp-font);
   color: var(--lp-ink);
   background: var(--lp-bg);
   line-height: 1.6;
@@ -344,24 +347,6 @@
   }
 }
 
-.landing-finanzas .telefono-destello {
-  position: absolute;
-  inset: -16%;
-  pointer-events: none;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(21, 128, 61, 0.3), transparent 62%);
-}
-
-:root[data-tema='oscuro'] .landing-finanzas .telefono-destello {
-  background: radial-gradient(circle, rgba(74, 222, 128, 0.24), transparent 62%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-tema='claro']) .landing-finanzas .telefono-destello {
-    background: radial-gradient(circle, rgba(74, 222, 128, 0.24), transparent 62%);
-  }
-}
-
 .landing-finanzas .telefono-marco {
   position: relative;
   width: 393px;
@@ -450,7 +435,10 @@
   --fin-warn: #d97706;
   --fin-r-card: 20px;
   --fin-r-pill: 9999px;
-  --fin-t-cifra: 700 44px/1 inherit;
+  /* Con `inherit` como familia el navegador tira la declaración entera y la
+     cifra caía a 16px peso 400 — el número que manda en la pantalla quedaba
+     del tamaño de un párrafo. El atajo necesita una familia real. */
+  --fin-t-cifra: 700 44px/1 var(--lp-font);
   --fin-track-cifra: -0.03em;
 
   height: 100%;
@@ -548,6 +536,57 @@
   50% {
     opacity: 0;
   }
+}
+
+/* LA ZONA DEL SALDO
+   El número grande y, colgando de él, la pastilla de lo que acaba de cambiar.
+   Esa pastilla es la que hace legible "la suma": sin ella el número se mueve y
+   el visitante ve QUE cambió, pero no CUÁNTO ni en qué sentido. Con ella, el
+   gasto y el ingreso dejan de verse iguales. */
+.landing-finanzas .saldo-zona {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
+/* Absoluta y centrada: si empujara el layout, la pastilla de gastos de abajo
+   daría un salto de 20px cada vez que entra un movimiento. */
+.landing-finanzas .saldo-delta {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  pointer-events: none;
+}
+
+/* LA BARRA CUANDO YA ENTENDIÓ
+   Deja de ser un campo de texto y pasa a ser un resultado: el borde toma el
+   color del movimiento y aparece la categoría que la app dedujo. */
+.landing-finanzas .barra-dictado.reconociendo {
+  border-color: currentColor;
+}
+
+.landing-finanzas .dictado-entendido {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex-shrink: 0;
+  padding: 0.24rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* El texto de lo dictado deja de ser gris cuando ya se reconoció: pasa a ser
+   la frase confirmada, no la que se está escribiendo. */
+.landing-finanzas .barra-dictado.reconociendo .dictado-texto {
+  color: var(--lp-ink);
+  font-style: normal;
 }
 
 /* SECCIONES */
@@ -1836,4 +1875,15 @@
   font-size: 0.95rem;
   line-height: 1.6;
   color: var(--lp-ink-soft);
+}
+
+/* El mes se desvanece antes de volver a empezar, en vez de borrarse en un
+   fotograma. Con las cifras saltando sin contar durante este rato, el bucle se
+   cierra en lugar de cortarse. */
+.landing-finanzas .pantalla-app {
+  transition: opacity 0.42s ease;
+}
+
+.landing-finanzas .pantalla-app.reiniciando {
+  opacity: 0.12;
 }
