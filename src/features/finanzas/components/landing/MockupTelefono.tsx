@@ -5,6 +5,7 @@ import { TransactionList } from '../TransactionList';
 import { CATALOGO_BASE } from '../../categorias';
 import { formatCop } from '../../lib/formatCop';
 import { monthKeyLabel } from '../../lib/localDate';
+import { BarraEstado } from './BarraEstado';
 import { CifraViva } from './CifraViva';
 import { useEnPantalla, useTecleo } from './ganchos';
 import {
@@ -232,6 +233,7 @@ export const MockupTelefono: React.FC = () => {
 
         <div className="telefono-pantalla">
           <span className="isla-dinamica" />
+          <BarraEstado />
 
           <div className={`pantalla-app ${reiniciando ? 'reiniciando' : ''}`}>
             <div className="flex items-center justify-between">
@@ -336,6 +338,7 @@ export const MockupTelefono: React.FC = () => {
           </div>
 
           <span className="pantalla-velo" />
+          <span className="indicador-inicio" />
         </div>
       </div>
     </div>
