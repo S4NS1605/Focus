@@ -1,0 +1,38 @@
+{
+  /* El servidor de Express.
+   *
+   * Existe porque hasta ahora `server.ts` y `server_lib` no estaban en NINGÚN
+   * proyecto: `tsconfig.app.json` incluye `src`, `tsconfig.api.json` incluye
+   * `api`, `tsconfig.node.json` incluye `vite.config.ts`, y el servidor no lo
+   * miraba nadie. Eso no era una pega teórica — en e17db70 se metieron unas
+   * comillas invertidas literales dentro del template literal del prompt del
+   * asesor, el archivo dejó de parsear, y sobrevivió TRES commits con el build
+   * en verde porque `tsc -b` no tenía forma de leerlo. Lo que estaba desplegado
+   * seguía respondiendo desde el último build bueno, así que tampoco se notaba
+   * desde fuera.
+   *
+   * Las reglas van flojas a propósito. `express` y `cors` no traen tipos y
+   * ninguna ruta anota `req`/`res`, así que exigir `noImplicitAny` serían 58
+   * errores de un trabajo que no es este. Lo que este proyecto tiene que
+   * garantizar es que el archivo PARSEA y que no hay disparates evidentes;
+   * tiparlo de verdad es otra tarea, y cuando se haga basta con subir estas
+   * dos opciones. */
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.server.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "skipLibCheck": true,
+    /* Igual que los otros proyectos: el servidor se arranca con un cargador de
+       TypeScript, así que los imports llevan la extensión `.ts` de verdad. */
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "moduleDetection": "force",
+
+    "strict": false,
+    "noImplicitAny": false
+  },
+  "include": ["server.ts", "server_lib"]
+}

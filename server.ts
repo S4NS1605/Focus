@@ -309,7 +309,14 @@ const registrarUsoIA = (
 
   // Persistencia en Supabase: si la tabla existe, el historial sobrevive a cualquier reinicio del servidor
   if (cliente) {
-    void cliente
+    /* `Promise.resolve` envolviendo la consulta: el constructor de Supabase es
+       un thenable, no una promesa, así que su `.then()` devuelve `PromiseLike`
+       y ahí no existe `.catch`. En ejecución funcionaba de casualidad; para el
+       compilador era un acceso a un método inexistente, y era el único punto
+       del servidor donde un fallo de red al guardar telemetría podía acabar en
+       un rechazo sin capturar. */
+    void Promise.resolve(
+      cliente
       .from('telemetria_ia')
       .insert({
         id: registro.id,
@@ -326,7 +333,8 @@ const registrarUsoIA = (
         prompt_texto: registro.promptText || null,
         respuesta_texto: registro.respuestaTexto || null,
         creado_en: registro.timestamp,
-      })
+      }),
+    )
       .then(({ error }) => {
         if (error) {
           // Si la tabla aún no se ha creado en Supabase, no rompe nada (continúa con memoria local)
@@ -1042,6 +1050,18 @@ app.post('/api/asesor-ia', async (req, res) => {
     return res.status(400).json({ error: 'Falta el prompt del usuario' });
   }
 
+  /* Lo que devuelve cada proveedor, solo hasta donde se lee.
+     `res.json()` es `unknown`, así que sin esto cada `data.choices` era un
+     acceso a ciegas que TypeScript no podía revisar — y son justo las líneas
+     donde un cambio de formato del proveedor se manifiesta como una respuesta
+     vacía y silenciosa. Los campos van opcionales a posta: describen lo que se
+     espera, no lo que se garantiza, y por eso siguen leyéndose con `?.`. */
+  type RespuestaChat = { choices?: { message?: { content?: string } }[] };
+  type RespuestaGemini = {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+  };
+  type RespuestaClaude = { content?: { text?: string }[] };
+
   // Detectar proveedor de IA disponible
   const groqKey = process.env.GROQ_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
@@ -1059,13 +1079,14 @@ Tienes acceso al resumen financiero real del usuario:
 ${finanzasContext ? JSON.stringify(finanzasContext, null, 2) : 'No hay datos financieros registrados aún.'}
 
 Reglas clave:
-1. Responde de forma concisa usando Markdown estructurado (negritas, viñetas, listas numeradas).
-2. NUNCA uses tablas markdown (|---|) ni código (```). Las respuestas van en un chat móvil donde no se ven bien.
-3. Usa listas numeradas (1. 2. 3.) o viñetas (-) para estructurar información.
-4. Si el usuario pregunta por sus gastos o ingresos, usa los datos del contexto financiero en Pesos Colombianos (COP).
-5. Da recomendaciones realistas y accionables (ahorro, CDT, recorte de gastos hormiga, presupuestos por categoría, manejo de deudas).
-6. No des recomendaciones de inversión de alto riesgo sin advertencias.
-7. Mantén las respuestas breves y directas al grano (máximo 2 a 4 párrafos).`;
+1. SÉ BREVE. Máximo 70 palabras. Si de verdad hace falta desglosar, hasta 3 viñetas cortas y ya.
+2. Responde lo que te preguntaron y para. No repitas la pregunta, no anuncies lo que vas a hacer, no resumas al final lo que acabas de decir.
+3. NO cierres ofreciendo más ayuda ni dando ánimos. Nada de "si quieres podemos revisar...", "estoy aquí para ayudarte" ni "¡Ánimo!". Si quiere más, pregunta.
+4. Nada de tablas markdown ni bloques de código: esto se lee en un chat de móvil y ahí no se ven.
+5. Si preguntan por sus gastos o ingresos, usa el contexto financiero en pesos colombianos (COP) y da la cifra concreta ANTES que el consejo.
+6. Da recomendaciones realistas y accionables (ahorro, CDT, recorte de gastos hormiga, presupuestos por categoría, manejo de deudas).
+7. No des recomendaciones de inversión de alto riesgo sin advertencias.
+8. Si te cuentan algo personal o difícil, reconócelo en UNA frase y sigue con lo financiero. No hagas de psicólogo ni listes consejos de salud mental.`;
 
   const inicio = Date.now();
   try {
@@ -1094,11 +1115,11 @@ Reglas clave:
             { role: 'user', content: prompt },
           ],
           temperature: 0.6,
-          max_tokens: 450,
+          max_tokens: 200,
         }),
       });
       if (groqRes.ok) {
-        const data = await groqRes.json();
+        const data = (await groqRes.json()) as RespuestaChat;
         respuestaTexto = data.choices?.[0]?.message?.content || '';
       } else {
         const detalle = await groqRes.text().catch(() => '');
@@ -1124,11 +1145,11 @@ Reglas clave:
             })) : []),
             { role: 'user', content: prompt },
           ],
-          max_tokens: 450,
+          max_tokens: 200,
         }),
       });
       if (dsRes.ok) {
-        const data = await dsRes.json();
+        const data = (await dsRes.json()) as RespuestaChat;
         respuestaTexto = data.choices?.[0]?.message?.content || '';
       }
     }
@@ -1149,11 +1170,11 @@ Reglas clave:
             })) : []),
             { role: 'user', parts: [{ text: prompt }] },
           ],
-          generationConfig: { maxOutputTokens: 450, temperature: 0.6 },
+          generationConfig: { maxOutputTokens: 200, temperature: 0.6 },
         }),
       });
       if (geminiRes.ok) {
-        const data = await geminiRes.json();
+        const data = (await geminiRes.json()) as RespuestaGemini;
         respuestaTexto = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       }
     }
@@ -1179,11 +1200,11 @@ Reglas clave:
             })) : []),
             { role: 'user', content: prompt },
           ],
-          max_tokens: 450,
+          max_tokens: 200,
         }),
       });
       if (clRes.ok) {
-        const data = await clRes.json();
+        const data = (await clRes.json()) as RespuestaClaude;
         respuestaTexto = data.content?.[0]?.text || '';
       }
     }
@@ -1353,7 +1374,7 @@ app.post('/api/transcribir', async (req, res) => {
       return res.status(200).json({ offline: true, error: 'Transcription failed' });
     }
 
-    const { text } = await whisperRes.json();
+    const { text } = (await whisperRes.json()) as { text?: string };
     return res.status(200).json({ success: true, text: text || '' });
   } catch (error: any) {
     console.error('Error en transcripción:', error);
