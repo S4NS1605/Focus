@@ -1,19 +1,34 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RippleButton } from './RippleButton';
 import { ChevronDown, Trash2 } from 'lucide-react';
+import { RippleButton } from './RippleButton';
 import { COPY } from '../copy';
+import { RippleButton } from './RippleButton';
 import { iconoDeCajita } from '../cajitaIconos';
+import { RippleButton } from './RippleButton';
 import type { CajitaMovKind } from '../data/modelos';
+import { RippleButton } from './RippleButton';
 import { CAJITA_MOV_ICON, CAJITA_MOV_LABELS } from '../data/modelos';
+import { RippleButton } from './RippleButton';
 import type { ResumenCajita } from '../lib/cajitas';
+import { RippleButton } from './RippleButton';
 import { historialDeCajita } from '../lib/cajitas';
+import { RippleButton } from './RippleButton';
 import { rendimientoEstimado } from '../lib/rendimiento';
+import { RippleButton } from './RippleButton';
 import { bogotaDate } from '../lib/localDate';
+import { RippleButton } from './RippleButton';
 import type { CajitaMovimiento } from '../data/modelos';
+import { RippleButton } from './RippleButton';
 import { formatCop, formatAmountInput, parseAmountInput, parseSaldoInput, conPuntos } from '../lib/formatCop';
+import { RippleButton } from './RippleButton';
 import { dayLabel } from '../lib/localDate';
+import { RippleButton } from './RippleButton';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
+import { RippleButton } from './RippleButton';
 
 interface CajitaCardProps {
   resumen: ResumenCajita;

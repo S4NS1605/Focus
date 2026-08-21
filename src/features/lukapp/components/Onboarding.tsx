@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { RippleButton } from './RippleButton';
 import { ArrowRight, Check, Mic } from 'lucide-react';
+import { RippleButton } from './RippleButton';
 import { formatAmountInput } from '../lib/formatCop';
+import { RippleButton } from './RippleButton';
 import { TecladoNumerico } from './TecladoNumerico';
+import { RippleButton } from './RippleButton';
 
 interface OnboardingProps {
   onTerminar: (datos: { nombre: string; banco: string | null; saldoCop: number | null }) => void;

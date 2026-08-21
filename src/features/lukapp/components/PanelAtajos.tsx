@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Check, Copy, ExternalLink, KeyRound, Plus, Smartphone, Trash2 } from 'lucide-react';
+import { RippleButton } from './RippleButton';
 import { apiUrl } from '../../../lib/api';
+import { RippleButton } from './RippleButton';
 import { obtenerSupabase } from '../data/supabase';
+import { RippleButton } from './RippleButton';
 
 /** El Atajo ya armado en iCloud: trae el disparador y la petición prellenados,
     solo falta que cada quien pegue su llave en el encabezado Authorization.

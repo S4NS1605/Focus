@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Send, Trash2, X } from 'lucide-react';
+import { RippleButton } from './RippleButton';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
+import { RippleButton } from './RippleButton';
 import { TIPO_LABELS } from '../data/modelos';
+import { RippleButton } from './RippleButton';
 import type { Transaction } from '../types';
+import { RippleButton } from './RippleButton';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
+import { RippleButton } from './RippleButton';
 import { saldoDeCajita } from '../lib/cajitas';
+import { RippleButton } from './RippleButton';
 import { iconoDeCajita } from '../cajitaIconos';
+import { RippleButton } from './RippleButton';
 
 interface DetalleCajitaProps {
   cajita: Cajita;

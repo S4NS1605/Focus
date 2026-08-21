@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Landmark, Scale } from 'lucide-react';
+import { RippleButton } from './RippleButton';
 import type { Transaction } from '../types';
+import { RippleButton } from './RippleButton';
 import type { RegimenGmf, ValorUvt } from '../lib/gmf';
+import { RippleButton } from './RippleButton';
 import {
+import { RippleButton } from './RippleButton';
   ADVERTENCIA_GMF,
   NOTAS_GMF,
   TOPE_EXENTO_UVT,
@@ -10,6 +14,7 @@ import {
   uvtDesactualizada,
 } from '../lib/gmf';
 import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../lib/formatCop';
+import { RippleButton } from './RippleButton';
 
 interface PanelGmfProps {
   transacciones: readonly Transaction[];

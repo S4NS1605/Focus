@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RippleButton } from './RippleButton';
 import { AlertTriangle, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { RippleButton } from './RippleButton';
 import type { Sesion } from '../data/useSesion';
+import { RippleButton } from './RippleButton';
 import type { Tema } from '../data/useTema';
+import { RippleButton } from './RippleButton';
 import { BrandMark } from './BrandMark';
+import { RippleButton } from './RippleButton';
 import { TemaToggle } from './TemaToggle';
+import { RippleButton } from './RippleButton';
 
 interface LoginPanelProps {
   sesion: Sesion;

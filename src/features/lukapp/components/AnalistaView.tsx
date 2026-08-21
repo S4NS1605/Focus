@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { RippleButton } from './RippleButton';
 import {
+import { RippleButton } from './RippleButton';
   AlertTriangle,
   CheckCircle2,
   ChevronDown,
@@ -15,10 +17,15 @@ import {
   X,
 } from 'lucide-react';
 import type { Transaction } from '../types';
+import { RippleButton } from './RippleButton';
 import { planearImportacion } from '../analista/aMovimientos';
+import { RippleButton } from './RippleButton';
 import type { Trabajo } from '../analista/useAnalista';
+import { RippleButton } from './RippleButton';
 import { useAnalista } from '../analista/useAnalista';
+import { RippleButton } from './RippleButton';
 import { AnalistaReporte } from './AnalistaReporte';
+import { RippleButton } from './RippleButton';
 
 interface AnalistaViewProps {
   existentes: readonly Transaction[];

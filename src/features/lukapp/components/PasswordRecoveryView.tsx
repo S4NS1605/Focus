@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { RippleButton } from './RippleButton';
 import { obtenerSupabase } from '../data/supabase';
+import { RippleButton } from './RippleButton';
 
 interface PasswordRecoveryViewProps {
   email?: string;
