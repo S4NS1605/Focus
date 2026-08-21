@@ -73,7 +73,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
         </p>
       ) : null}
 
-      <div className="pointer-events-auto flex items-center gap-2.5">
+      {/* `data-guia` ancla el globo de la guía de bienvenida al bloque entero
+   —píldora y micrófono—, que es como se explica: los tres botones son
+   la misma idea, anotar. */}
+      <div data-guia="anotar" className="pointer-events-auto flex items-center gap-2.5">
         <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-1.5">
           <button
             type="button"

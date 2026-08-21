@@ -14,12 +14,10 @@ const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
 const CLAVE_EFECTIVO_SEPARADO = 'finanzas:resumen:efectivo-separado';
 const CLAVE_NOMBRE = 'finanzas:onboarding:nombre';
 const CLAVE_ONBOARDING = 'finanzas:onboarding:terminado';
-const CLAVE_QUICKSTART = 'finanzas:onboarding:quickstart-visto';
+const CLAVE_GUIA_BASICA = 'finanzas:guia:basica';
+const CLAVE_GUIA_SECCIONES = 'finanzas:guia:secciones';
 const CLAVE_UVT = 'finanzas:gmf:uvt';
 
-/** La clave que usaba la guía antes de vivir aquí. Se lee una sola vez, al
- * arrancar, para no volver a mostrarle la guía a quien ya la cerró. */
-const CLAVE_QUICKSTART_VIEJA = '__lukapp_quickstart_seen__';
 const CLAVE_CUENTAS_GMF = 'finanzas:gmf:cuentas';
 const CLAVE_REGIMEN = 'finanzas:gmf:regimen';
 const CLAVE_CUENTA_EXENTA = 'finanzas:gmf:cuenta-exenta';
@@ -71,10 +69,12 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
   // Nunca se baja a 'no' desde la nube: si en cualquier dispositivo ya se
   // terminó la bienvenida, se terminó en todos.
   if (metadata[CLAVE_ONBOARDING]) setIf(CLAVE_ONBOARDING, 'si');
-  // Este sí baja en los dos sentidos, al revés que la bienvenida: si pides
-  // volver a ver la guía desde el portátil, la quieres también en el teléfono.
-  if (metadata[CLAVE_QUICKSTART] !== undefined)
-    setIf(CLAVE_QUICKSTART, metadata[CLAVE_QUICKSTART] ? 'si' : 'no');
+  // La guía baja en los dos sentidos, al revés que la bienvenida: si pides
+  // volver a verla desde el portátil, la quieres también en el teléfono.
+  if (metadata[CLAVE_GUIA_BASICA] !== undefined)
+    setIf(CLAVE_GUIA_BASICA, metadata[CLAVE_GUIA_BASICA] ? 'si' : 'no');
+  if (metadata[CLAVE_GUIA_SECCIONES] !== undefined)
+    setIf(CLAVE_GUIA_SECCIONES, JSON.stringify(metadata[CLAVE_GUIA_SECCIONES]));
   if (metadata[CLAVE_UVT] !== undefined) setIf(CLAVE_UVT, JSON.stringify(metadata[CLAVE_UVT]));
   if (metadata[CLAVE_CUENTAS_GMF] !== undefined)
     setIf(CLAVE_CUENTAS_GMF, JSON.stringify(metadata[CLAVE_CUENTAS_GMF]));
@@ -210,50 +210,72 @@ export const useOnboarding = () => {
 };
 
 /**
- * La guía de primeros pasos que sale arriba de Inicio.
+ * La guía de la app: los globos que señalan la interfaz de verdad.
  *
- * Vive con las demás preferencias y no en un localStorage suelto porque
- * haberla cerrado es un hecho sobre la persona, no sobre este navegador:
- * quien ya la leyó en el portátil no necesita verla otra vez en el teléfono.
- * Y a diferencia de la bienvenida, esta se puede volver a abrir desde Ajustes,
- * así que el valor viaja en los dos sentidos.
+ * Son dos cosas distintas guardadas aparte, y separarlas importa:
+ *
+ *   - `basica` es el recorrido que sale una sola vez al terminar la bienvenida
+ *     — el saldo, el micrófono y la barra de abajo. Es el mapa.
+ *   - `secciones` es la lista de sitios cuya explicación ya se enseñó. Cada
+ *     globo de estos sale solo la primera vez que se entra a Dinero, a Mes o al
+ *     Asesor, y no antes: explicar las tres el primer día es pedirle a alguien
+ *     que recuerde un sitio al que todavía no ha ido.
+ *
+ * Ninguna de las dos se calcula a partir de los datos, por lo mismo que
+ * `useOnboarding` no se calcula con `transacciones.length`: haber visto una
+ * explicación es un hecho sobre la persona, no sobre su plata.
  */
-export const useQuickStart = () => {
-  const [visto, setEstado] = useState(() => {
-    if (leerBooleano(CLAVE_QUICKSTART, false)) return true;
-    // Quien la cerró cuando la marca era local se queda con ella cerrada.
-    try {
-      if (localStorage.getItem(CLAVE_QUICKSTART_VIEJA)) {
-        guardarBooleano(CLAVE_QUICKSTART, true);
-        localStorage.removeItem(CLAVE_QUICKSTART_VIEJA);
-        return true;
-      }
-    } catch {
-      // Sin localStorage la guía sale siempre, que es el mal menor.
-    }
-    return false;
-  });
+export const useGuiaApp = () => {
+  const [basicaVista, setBasicaVista] = useState(() => leerBooleano(CLAVE_GUIA_BASICA, false));
+  const [seccionesVistas, setSeccionesVistas] = useState<string[]>(() =>
+    leerLista(CLAVE_GUIA_SECCIONES),
+  );
 
-  const ocultar = useCallback(() => {
-    setEstado(true);
-    guardarBooleano(CLAVE_QUICKSTART, true);
+  const terminarBasica = useCallback(() => {
+    setBasicaVista(true);
+    guardarBooleano(CLAVE_GUIA_BASICA, true);
   }, []);
 
-  const volverAMostrar = useCallback(() => {
-    setEstado(false);
-    guardarBooleano(CLAVE_QUICKSTART, false);
+  const marcarSeccion = useCallback((id: string) => {
+    setSeccionesVistas((previas) => {
+      if (previas.includes(id)) return previas;
+      const lista = [...previas, id];
+      try {
+        localStorage.setItem(CLAVE_GUIA_SECCIONES, JSON.stringify(lista));
+        guardarEnSupabase(CLAVE_GUIA_SECCIONES, lista);
+      } catch {
+        // La guía sigue funcionando; solo volverá a salir en otra visita.
+      }
+      return lista;
+    });
+  }, []);
+
+  /* "Ver la guía otra vez", desde Ajustes. Borra las dos marcas: quien la pide
+     quiere el recorrido entero, no la mitad que le quede pendiente. */
+  const reiniciar = useCallback(() => {
+    setBasicaVista(false);
+    guardarBooleano(CLAVE_GUIA_BASICA, false);
+    setSeccionesVistas([]);
+    try {
+      localStorage.setItem(CLAVE_GUIA_SECCIONES, JSON.stringify([]));
+      guardarEnSupabase(CLAVE_GUIA_SECCIONES, []);
+    } catch {
+      // Igual que arriba.
+    }
   }, []);
 
   useEffect(() => {
     const alCambiar = (e: StorageEvent) => {
-      if (e.key !== null && e.key !== CLAVE_QUICKSTART) return;
-      setEstado(leerBooleano(CLAVE_QUICKSTART, false));
+      if (e.key === null || e.key === CLAVE_GUIA_BASICA)
+        setBasicaVista(leerBooleano(CLAVE_GUIA_BASICA, false));
+      if (e.key === null || e.key === CLAVE_GUIA_SECCIONES)
+        setSeccionesVistas(leerLista(CLAVE_GUIA_SECCIONES));
     };
     window.addEventListener('storage', alCambiar);
     return () => window.removeEventListener('storage', alCambiar);
   }, []);
 
-  return { mostrarQuickStart: !visto, ocultar, volverAMostrar };
+  return { basicaVista, seccionesVistas, terminarBasica, marcarSeccion, reiniciar };
 };
 
 /**

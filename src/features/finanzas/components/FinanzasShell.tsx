@@ -84,13 +84,20 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
       className="fin-glass fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)]"
       aria-label="Secciones"
     >
-      <div className="flex w-full max-w-[720px] items-center justify-around px-2 pb-[4.75rem] pt-2">
+      {/* `data-guia` es el ancla de la guía de bienvenida. Es el único
+   acoplamiento entre ella y esta barra: la guía busca la marca, no la
+   estructura, así que esto se puede reordenar sin romperla. */}
+      <div
+        data-guia="nav"
+        className="flex w-full max-w-[720px] items-center justify-around px-2 pb-[4.75rem] pt-2"
+      >
         {SECTIONS.map((item) => {
           const activa = item.id === section;
           return (
             <button
               key={item.id}
               type="button"
+              data-guia={`nav-${item.id}`}
               onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
               className="flex min-w-0 flex-1 flex-col items-center gap-1 py-1.5"

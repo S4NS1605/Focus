@@ -128,10 +128,15 @@ export const InicioView: React.FC<InicioViewProps> = ({
     {/* El número. Es el único texto de la app por encima de 28px, y por eso se
  entiende sin leer nada más que es lo importante. */}
     <p className="mt-6 text-center text-[13px] text-[var(--fin-ink-faint)]">Tienes en total</p>
+    {/* `self-center` y no solo `text-center`: como hijo de una columna flex el
+ botón se estiraba a todo el ancho, así que su caja medía 688px para un
+ número de 150. Se veía igual —el texto ya iba centrado— hasta que la
+ guía le puso un foco encima y alumbró una barra casi vacía. */}
     <button
       type="button"
+      data-guia="saldo"
       onClick={onVerMes}
-      className="mt-1 text-center tabular-nums text-[var(--fin-ink)]"
+      className="mt-1 self-center text-center tabular-nums text-[var(--fin-ink)]"
       style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
     >
       {formatCop(patrimonioCop)}

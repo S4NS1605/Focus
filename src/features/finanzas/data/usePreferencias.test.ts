@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useMostrarAhorro } from './usePreferencias';
+import { useGuiaApp, useMostrarAhorro } from './usePreferencias';
 
 const CLAVE = 'finanzas:resumen:ahorro';
 
@@ -104,5 +104,65 @@ describe('useMostrarAhorro', () => {
     });
 
     expect(result.current.mostrarAhorro).toBe(true);
+  });
+});
+
+describe('useGuiaApp', () => {
+  it('a alguien recién llegado le debe el recorrido básico y los tres sitios', () => {
+    const { result } = renderHook(() => useGuiaApp());
+
+    expect(result.current.basicaVista).toBe(false);
+    expect(result.current.seccionesVistas).toEqual([]);
+  });
+
+  it('haber visto la guía se queda pegado entre sesiones', () => {
+    const primera = renderHook(() => useGuiaApp());
+    act(() => primera.result.current.terminarBasica());
+    primera.unmount();
+
+    const segunda = renderHook(() => useGuiaApp());
+    expect(segunda.result.current.basicaVista).toBe(true);
+  });
+
+  it('anota cada sitio explicado, y no lo repite si se vuelve a entrar', () => {
+    const { result } = renderHook(() => useGuiaApp());
+
+    act(() => result.current.marcarSeccion('dinero'));
+    act(() => result.current.marcarSeccion('mes'));
+    act(() => result.current.marcarSeccion('dinero'));
+
+    expect(result.current.seccionesVistas).toEqual(['dinero', 'mes']);
+  });
+
+  it('los sitios explicados sobreviven a recargar', () => {
+    const primera = renderHook(() => useGuiaApp());
+    act(() => primera.result.current.marcarSeccion('asesor'));
+    primera.unmount();
+
+    const segunda = renderHook(() => useGuiaApp());
+    expect(segunda.result.current.seccionesVistas).toEqual(['asesor']);
+  });
+
+  it('pedirla de nuevo devuelve el recorrido entero, no la mitad que faltaba', () => {
+    const { result } = renderHook(() => useGuiaApp());
+    act(() => result.current.terminarBasica());
+    act(() => result.current.marcarSeccion('dinero'));
+
+    act(() => result.current.reiniciar());
+
+    expect(result.current.basicaVista).toBe(false);
+    expect(result.current.seccionesVistas).toEqual([]);
+  });
+
+  it('reiniciar tampoco deja rastro en el almacenamiento', () => {
+    const primera = renderHook(() => useGuiaApp());
+    act(() => primera.result.current.terminarBasica());
+    act(() => primera.result.current.marcarSeccion('mes'));
+    act(() => primera.result.current.reiniciar());
+    primera.unmount();
+
+    const segunda = renderHook(() => useGuiaApp());
+    expect(segunda.result.current.basicaVista).toBe(false);
+    expect(segunda.result.current.seccionesVistas).toEqual([]);
   });
 });

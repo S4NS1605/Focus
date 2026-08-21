@@ -224,10 +224,10 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
-                Volver a ver los primeros pasos
+                Volver a ver la guía
               </span>
               <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
-                La guía que sale al empezar, otra vez en Inicio
+                Te vuelve a señalar cómo funciona la app
               </span>
             </span>
             <ChevronRight

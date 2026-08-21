@@ -36,10 +36,10 @@ import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
 import { contactoPorApodo } from './lib/contactos';
 import {
+  useGuiaApp,
   useMostrarAhorro,
   useMostrarEfectivoSeparado,
   useOnboarding,
-  useQuickStart,
 } from './data/usePreferencias';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { CategoriasEditor } from './components/CategoriasEditor';
@@ -74,7 +74,8 @@ import type { PanelAjustes, SectionId } from './sections';
 import { TemaToggle } from './components/TemaToggle';
 import type { Tema } from './data/useTema';
 import { TransactionList } from './components/TransactionList';
-import { QuickStartGuideFinanzas } from './components/QuickStartGuideFinanzas';
+import { GuiaApp } from './components/guia/GuiaApp';
+import { PASOS_BASICOS, PASOS_POR_SECCION } from './components/guia/pasos';
 import './finanzas.css';
 
 /**
@@ -245,14 +246,26 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
     [ir],
   );
   const [mostrarReporte, setMostrarReporte] = useState(false);
-  const { mostrarQuickStart, ocultar: ocultarQuickStart, volverAMostrar: volverAMostrarQuickStart } =
-    useQuickStart();
+  const guia = useGuiaApp();
+
+  /* CUÁNDO SALE LA GUÍA
+     El recorrido básico espera a que termine la bienvenida: mientras esa está
+     abierta tapa la pantalla entera, así que iluminar el saldo por debajo no
+     señalaría nada. Después, los globos de cada sitio salen solos la primera
+     vez que se entra, y solo cuando el básico ya pasó — llegar a Dinero con dos
+     capas de explicación encima es exactamente lo que se quería evitar. */
+  const guiaBasicaAbierta = onboarding.terminado && !guia.basicaVista;
+  const pasoDeSeccion = PASOS_POR_SECCION[section];
+  const guiaSeccionAbierta =
+    onboarding.terminado &&
+    guia.basicaVista &&
+    pasoDeSeccion !== undefined &&
+    !guia.seccionesVistas.includes(section);
 
   // La hoja de anotar se dibuja encima, sin bloquear el scroll de detrás, así
-  // que al cerrarse devuelve la página donde estuviera — y con la guía de
-  // primeros pasos ocupando la primera pantalla, "donde estuviera" es a media
-  // guía, cortada por arriba. Al volver de anotar lo que se quiere ver es el
-  // total y el movimiento recién guardado, y los dos están arriba del todo.
+  // que al cerrarse devuelve la página donde estuviera. Al volver de anotar lo
+  // que se quiere ver es el total y el movimiento recién guardado, y los dos
+  // están arriba del todo.
   const cerrarCaptura = useCallback(() => {
     setPending(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -498,11 +511,6 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
           />
         }
       >
-        {/* Quick Start Guide para nuevos usuarios */}
-        {mostrarQuickStart && (
-          <QuickStartGuideFinanzas onDismiss={ocultarQuickStart} />
-        )}
-
         {/* Storage that cannot remember has to say so — silently losing a month of
  entries is far worse than an ugly banner. */}
         {!almacen.persistente ? (
@@ -648,10 +656,10 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             mostrarEfectivoSeparado={mostrarEfectivoSeparado}
             onMostrarEfectivoSeparado={setMostrarEfectivoSeparado}
             onVolverAVerGuia={
-              mostrarQuickStart
+              guiaBasicaAbierta
                 ? undefined
                 : () => {
-                    volverAMostrarQuickStart();
+                    guia.reiniciar();
                     setSection('inicio');
                   }
             }
@@ -940,6 +948,23 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
               onboarding.terminar();
             }}
             onAnotarHablando={() => setPending(movimientoEnBlanco())}
+          />
+        ) : null}
+
+        {/* LA GUÍA
+            Dos recorridos que nunca coinciden: el básico enseña el mapa una
+            sola vez, y el de cada sitio sale al llegar por primera vez. La
+            condición de `guiaSeccionAbierta` ya exige que el básico haya
+            pasado, así que no hace falta ordenarlos aquí. */}
+        {guiaBasicaAbierta ? (
+          <GuiaApp pasos={PASOS_BASICOS} onCerrar={guia.terminarBasica} />
+        ) : null}
+
+        {guiaSeccionAbierta && pasoDeSeccion ? (
+          <GuiaApp
+            key={section}
+            pasos={[pasoDeSeccion]}
+            onCerrar={() => guia.marcarSeccion(section)}
           />
         ) : null}
 
