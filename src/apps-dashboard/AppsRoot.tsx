@@ -111,7 +111,7 @@ export const AppsRoot: React.FC = () => {
       estadisticas: '/estadisticas',
     };
     const TITULOS: Record<string, string> = {
-      finanzas: 'Finanzas | Ecosistema',
+      finanzas: 'LukApp | Ecosistema',
       superadmin: 'Superadmin | Ecosistema',
       estadisticas: 'Visitantes | Ecosistema',
     };
