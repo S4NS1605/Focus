@@ -9,6 +9,7 @@ import { CategoryBreakdown } from './CategoryBreakdown';
 import { DetalleMes } from './DetalleMes';
 import { ResumenWrapped } from './ResumenWrapped';
 import { TendenciasView } from './TendenciasView';
+import { RippleButton } from './RippleButton';
 
 interface MesViewProps {
   month: string;
@@ -97,9 +98,10 @@ export const MesView: React.FC<MesViewProps> = ({
         </button>
       </div>
 
-      <button
+      <RippleButton
         type="button"
         onClick={() => setResumenAbierto(true)}
+        rippleColor="rgba(255,255,255,0.5)"
         className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-4 py-3.5 text-left text-[var(--fin-on-accent)]"
       >
         <Sparkles className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
@@ -110,7 +112,7 @@ export const MesView: React.FC<MesViewProps> = ({
           </span>
         </span>
         <ChevronRight className="h-4 w-4 shrink-0 opacity-60" strokeWidth={2.5} aria-hidden="true" />
-      </button>
+      </RippleButton>
 
       <div>
         <p className="text-center text-[13px] text-[var(--fin-ink-faint)]">

@@ -4,12 +4,12 @@ import { useTema } from '../features/lukapp/data/useTema';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';
 import { apiUrl } from '../lib/api';
 import { LoginPanel } from '../features/lukapp/components/LoginPanel';
-import { FinanzasApp } from '../features/lukapp/FinanzasApp';
+import { LukAppMain } from '../features/lukapp/LukAppApp';
 import { AppLauncher } from './AppLauncher';
 import { SuperadminPanel } from './SuperadminPanel';
 import { EstadisticasPanel } from './EstadisticasPanel';
-import { LandingFinanzas } from '../features/lukapp/components/LandingFinanzas';
-import { BASE_FINANZAS, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
+import { LandingLukApp } from '../features/lukapp/components/LandingLukApp';
+import { BASE_LUKAPP, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
@@ -60,11 +60,11 @@ export const AppsRoot: React.FC = () => {
     if (!enPortada) return;
     // Con sesión ya no hay portada que enseñar: la raíz es la app.
     if (sesion.estado.modo === 'autenticado' || sesion.estado.modo === 'local') {
-      reemplazar(`${BASE_FINANZAS}/app`);
+      reemplazar(`${BASE_LUKAPP}/app`);
       return;
     }
     if (localStorage.getItem('__lukapp_landing_seen__')) {
-      reemplazar(`${BASE_FINANZAS}/entrar`);
+      reemplazar(`${BASE_LUKAPP}/entrar`);
     }
   }, [enPortada, reemplazar, sesion.estado.modo]);
 
@@ -223,9 +223,9 @@ export const AppsRoot: React.FC = () => {
     if (enPortada) {
       const entrar = () => {
         localStorage.setItem('__lukapp_landing_seen__', 'true');
-        ir(`${BASE_FINANZAS}/entrar`);
+        ir(`${BASE_LUKAPP}/entrar`);
       };
-      return <LandingFinanzas onGetStarted={entrar} onLogin={entrar} sesion={sesion} />;
+      return <LandingLukApp onGetStarted={entrar} onLogin={entrar} sesion={sesion} />;
     }
     return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
   }
@@ -233,7 +233,7 @@ export const AppsRoot: React.FC = () => {
   if (activeApp === 'finanzas') {
     return (
       <>
-        <FinanzasApp onBack={() => setActiveApp(null)} />
+        <LukAppMain onBack={() => setActiveApp(null)} />
         {bannerAdmin}
       </>
     );
