@@ -278,18 +278,66 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
           );
         }
 
+        /* LOS EFECTIVOS DUPLICADOS
+           El sembrado de abajo dejó de ser idempotente el día que se le pasó
+           `nuevoId('caj')` en vez del `ID_EFECTIVO` que `cuentaEfectivo` trae
+           por defecto. Ese cambio arreglaba un choque real de clave primaria
+           —con un id fijo, el Efectivo de un usuario colisionaba con el de
+           otro en Postgres— pero a cambio dejó al id sin poder identificar
+           nunca la cuenta ya sembrada: de las tres condiciones de la guarda,
+           las dos de id son ahora inalcanzables y solo queda comparar el
+           nombre, que depende de haber leído antes lo que ya existe.
+
+           Y hay dos momentos en que no se ha leído: un aparato nuevo cuya
+           primera carga se cae a la caché local por un fallo de red —la caché
+           está vacía, así que siembra otro— y el doble montaje de StrictMode.
+           Los dos acaban con dos filas «Efectivo» de ids distintos que luego
+           se sincronizan tan campantes.
+
+           Aquí se colapsan. El superviviente es el MÁS VIEJO, y a igualdad de
+           fecha el de id menor: tiene que ser una regla determinista o dos
+           aparatos elegirían supervivientes distintos y se borrarían el uno al
+           otro en bucle. Y solo se retiran los que no tienen nada dentro: si
+           un duplicado llegó a tener saldo o movimientos se deja en paz y que
+           lo resuelva su dueño. Enseñar dos cuentas es feo; mover la plata de
+           alguien sin preguntarle es otra cosa. */
+        const esEfectivo = (c: (typeof cargado.cajitas)[number]) =>
+          c.id === ID_EFECTIVO ||
+          c.id === ID_EFECTIVO_VIEJO ||
+          c.nombre.trim().toLowerCase() === 'efectivo';
+
+        const efectivos = cargado.cajitas.filter(esEfectivo);
+        if (efectivos.length > 1) {
+          const porAntiguedad = [...efectivos].sort((a, b) =>
+            a.createdAt === b.createdAt
+              ? a.id.localeCompare(b.id)
+              : a.createdAt.localeCompare(b.createdAt),
+          );
+
+          const vacia = (id: string) =>
+            !cargado.cajitaMovimientos.some((m) => m.cajitaId === id) &&
+            !cargado.transacciones.some((t) => t.cuentaId === id);
+
+          const sobrantes = porAntiguedad.slice(1).filter((c) => vacia(c.id));
+          if (sobrantes.length > 0) {
+            const fuera = new Set(sobrantes.map((c) => c.id));
+            cargado.cajitas = cargado.cajitas.filter((c) => !fuera.has(c.id));
+            for (const c of sobrantes) {
+              try {
+                await repo.borrarCajita(c.id);
+              } catch {
+                // Sin conexión se queda en la cola. La lista de arriba ya está
+                // limpia, así que el duplicado deja de verse igualmente.
+              }
+            }
+          }
+        }
+
         // Cash is seeded rather than shipped as a synthetic entry, so it behaves
         // like every other account: it holds a balance, appears in Configuración,
         // and can be renamed or archived. Keyed uniquely per user so multiple accounts
         // do not collide on the primary key in Postgres.
-        if (
-          !cargado.cajitas.some(
-            (c) =>
-              c.id === ID_EFECTIVO ||
-              c.id === ID_EFECTIVO_VIEJO ||
-              c.nombre.toLowerCase() === 'efectivo',
-          )
-        ) {
+        if (!cargado.cajitas.some(esEfectivo)) {
           const efectivo = cuentaEfectivo(new Date().toISOString(), nuevoId('caj'));
           cargado.cajitas = [...cargado.cajitas, efectivo];
           try {

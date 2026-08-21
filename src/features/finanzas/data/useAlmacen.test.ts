@@ -4,6 +4,7 @@ import type { Transaction } from '../types';
 import { RepositorioMemoria } from './repositorio';
 import type { Repositorio } from './repositorio';
 import { saldoDeCajita } from '../lib/cajitas';
+import type { Cajita } from './modelos';
 import { useAlmacen } from './useAlmacen';
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
@@ -707,5 +708,101 @@ describe('useAlmacen — recargar', () => {
     expect(result.current.datos.transacciones).toHaveLength(1);
     expect(result.current.error).toBeNull();
     caido.mockRestore();
+  });
+});
+
+describe('useAlmacen — el Efectivo duplicado', () => {
+  const efectivo = (id: string, createdAt: string): Cajita => ({
+    id,
+    nombre: 'Efectivo',
+    icon: 'Wallet',
+    tipo: 'cuenta',
+    metaCop: null,
+    tasaEaPct: null,
+    createdAt,
+    archivedAt: null,
+  });
+
+  it('siembra Efectivo una sola vez cuando no hay nada', async () => {
+    const { result } = await montar();
+
+    const efectivos = result.current.datos.cajitas.filter(
+      (c) => c.nombre.toLowerCase() === 'efectivo',
+    );
+    expect(efectivos).toHaveLength(1);
+  });
+
+  it('colapsa los Efectivo vacíos que dejó el sembrado repetido', async () => {
+    // El caso real: se sembró dos veces con ids distintos, y ninguna llegó a
+    // tener movimientos.
+    const repo = new RepositorioMemoria({
+      cajitas: [
+        efectivo('caj-b', '2026-08-02T10:00:00.000Z'),
+        efectivo('caj-a', '2026-08-01T10:00:00.000Z'),
+      ],
+    });
+
+    const { result } = await montar(repo);
+
+    const efectivos = result.current.datos.cajitas.filter(
+      (c) => c.nombre.toLowerCase() === 'efectivo',
+    );
+    expect(efectivos).toHaveLength(1);
+    // Sobrevive el más viejo, y no el primero del array: la regla tiene que ser
+    // la misma en todos los aparatos o se borran el uno al otro en bucle.
+    expect(efectivos[0]!.id).toBe('caj-a');
+  });
+
+  it('deja en paz un duplicado que sí tiene plata dentro', async () => {
+    const repo = new RepositorioMemoria({
+      cajitas: [
+        efectivo('caj-a', '2026-08-01T10:00:00.000Z'),
+        efectivo('caj-con-saldo', '2026-08-02T10:00:00.000Z'),
+      ],
+      cajitaMovimientos: [
+        {
+          id: 'mov-1',
+          cajitaId: 'caj-con-saldo',
+          kind: 'ajuste',
+          deltaCop: 50000,
+          categoria: null,
+          occurredOn: '2026-08-02',
+          nota: '',
+          createdAt: '2026-08-02T10:00:00.000Z',
+        },
+      ],
+    });
+
+    const { result } = await montar(repo);
+
+    const ids = result.current.datos.cajitas
+      .filter((c) => c.nombre.toLowerCase() === 'efectivo')
+      .map((c) => c.id)
+      .sort();
+    expect(ids).toEqual(['caj-a', 'caj-con-saldo']);
+  });
+
+  it('no toca las cuentas que no son Efectivo', async () => {
+    const repo = new RepositorioMemoria({
+      cajitas: [
+        efectivo('caj-a', '2026-08-01T10:00:00.000Z'),
+        efectivo('caj-b', '2026-08-02T10:00:00.000Z'),
+        {
+          id: 'caj-nequi',
+          nombre: 'Nequi',
+          icon: 'Wallet',
+          tipo: 'cuenta',
+          metaCop: null,
+          tasaEaPct: null,
+          createdAt: '2026-08-01T11:00:00.000Z',
+          archivedAt: null,
+        },
+      ],
+    });
+
+    const { result } = await montar(repo);
+
+    const nombres = result.current.datos.cajitas.map((c) => c.nombre).sort();
+    expect(nombres).toEqual(['Efectivo', 'Nequi']);
   });
 });
