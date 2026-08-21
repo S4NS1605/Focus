@@ -1607,16 +1607,15 @@
     max-width: none;
   }
 
-  .landing-finanzas .hero-visual {
-    order: -1;
-  }
-
   .landing-finanzas .telefono {
     width: min(280px, 100%);
   }
 
   /* El mockup baja debajo del texto: en una columna, la explicación va primero
-     y la pantalla la ilustra después.
+     y la pantalla la ilustra después. Sin ninguna regla de `order` aquí: el
+     orden del DOM ya pone `.hero-text` antes que `.hero-visual`, así que
+     forzar `order: -1` en el visual —como hacía antes— lo empujaba delante
+     del texto, justo al revés de lo que dice este comentario.
 
      minmax(0, 1fr) y no 1fr: el mínimo `auto` de una pista de grid es el ancho
      de su contenido más ancho, así que una pista con un mockup dentro se niega
