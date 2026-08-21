@@ -32,7 +32,6 @@ const FRASES_TICKER = [
 
 interface LandingProps {
   onGetStarted?: () => void;
-  onSeeDemo?: () => void;
   onLogin?: () => void;
   /**
    * Opcional para que la portada se pueda montar suelta (una vista de
@@ -52,7 +51,6 @@ const ENLACES = [
 
 export const LandingFinanzas: React.FC<LandingProps> = ({
   onGetStarted,
-  onSeeDemo,
   onLogin,
   sesion
 }) => {
@@ -133,7 +131,7 @@ export const LandingFinanzas: React.FC<LandingProps> = ({
         </div>
       </nav>
 
-      <Hero onGetStarted={handleGetStarted} onSeeDemo={onSeeDemo} />
+      <Hero onGetStarted={handleGetStarted} />
       <Ticker frases={FRASES_TICKER} />
       <DemoParser />
       <BandaCifras />
