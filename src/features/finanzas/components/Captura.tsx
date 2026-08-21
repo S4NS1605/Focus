@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Check, Keyboard, X } from 'lucide-react';
 import { tint } from '../types';
@@ -62,6 +62,7 @@ export const Captura: React.FC<CapturaProps> = ({
 
   const descRef = useRef<HTMLTextAreaElement>(null);
   const capturaRef = useRef<HTMLDivElement>(null);
+  const categoriasRef = useRef<HTMLDivElement>(null);
   const catalogo = useCatalogo();
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
@@ -73,6 +74,29 @@ export const Captura: React.FC<CapturaProps> = ({
       onCancel();
     },
   });
+
+  // `useSwipeGesture` engancha sus listeners con `addEventListener` NATIVO
+  // directo sobre `capturaRef`, no por las props sintéticas de React. Un
+  // `onTouchStart={(e) => e.stopPropagation()}` en la fila de categorías (como
+  // se intentó antes) no alcanza a evitarlo: en el DOM real, el listener nativo
+  // del ancestro se dispara mientras el toque todavía está subiendo, ANTES de
+  // que React llegue a ejecutar el handler sintético del descendiente. Por eso
+  // deslizar la fila para ver más categorías seguía disparando el swipe que
+  // cierra toda la hoja. La única forma de ganarle en el orden es un listener
+  // nativo propio, más cerca del toque que el de `capturaRef`.
+  useEffect(() => {
+    const fila = categoriasRef.current;
+    if (!fila) return;
+    const detener = (e: TouchEvent) => e.stopPropagation();
+    fila.addEventListener('touchstart', detener);
+    fila.addEventListener('touchmove', detener);
+    fila.addEventListener('touchend', detener);
+    return () => {
+      fila.removeEventListener('touchstart', detener);
+      fila.removeEventListener('touchmove', detener);
+      fila.removeEventListener('touchend', detener);
+    };
+  }, []);
 
   useBloqueoScroll(true);
 
@@ -209,16 +233,12 @@ export const Captura: React.FC<CapturaProps> = ({
 
         {/* Las categorías, en una fila que se desliza. La adivinada va primero y
  ya viene puesta, así que lo normal es no tocar nada aquí.
-
- `stopPropagation` en el toque: sin esto, deslizar la fila para ver más
- categorías es indistinguible de un swipe-para-cancelar sobre toda la
- hoja — `useSwipeGesture` está en `capturaRef`, que envuelve esta fila,
- así que el mismo gesto que mueve las pastillas también cerraba la hoja
- entera y devolvía al dashboard a mitad de elegir categoría. */}
+ El `stopPropagation` real que evita que este deslizar cierre la hoja
+ entera vive en el `useEffect` de arriba (`categoriasRef`), no aquí —
+ ver ese comentario para el porqué. */}
         <div
+          ref={categoriasRef}
           className="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchEnd={(e) => e.stopPropagation()}
         >
           {opciones.map((entrada) => {
             const activa = category === entrada.clave;
