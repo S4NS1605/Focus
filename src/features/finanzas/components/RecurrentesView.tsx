@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Plus, Repeat, Trash2 } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Pendiente, Recurrente } from '../lib/recurrentes';
@@ -6,6 +7,7 @@ import { pendientesDelMes, totalMensual } from '../lib/recurrentes';
 import { useCatalogo } from '../catalogoContexto';
 import { formatCop, parseAmountInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
+import { RippleButton } from './RippleButton';
 
 interface RecurrentesViewProps {
   recurrentes: readonly Recurrente[];
@@ -250,12 +252,13 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
             ) : null}
 
             <div className="mt-4 flex gap-2">
-              <button
+              <RippleButton
                 type="submit"
+                rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)]"
               >
                 Guardar
-              </button>
+              </RippleButton>
               <button
                 type="button"
                 onClick={() => setCreando(false)}
