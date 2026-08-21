@@ -136,8 +136,15 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
         ) : null}
 
         {/* Crear */}
+        <AnimatePresence initial={false}>
         {creando ? (
-          <form onSubmit={crear} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onSubmit={crear}
+            className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <label
               htmlFor="rec-nombre"
               className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
@@ -267,7 +274,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                 Cancelar
               </button>
             </div>
-          </form>
+          </motion.form>
         ) : (
           <button
             type="button"
@@ -278,6 +285,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
             Nuevo recurrente
           </button>
         )}
+        </AnimatePresence>
 
         {/* Lista */}
         {vivos.length === 0 ? (
