@@ -144,6 +144,11 @@
   /* Lo mínimo que puede medir algo que se toca con el dedo. Debajo de esto la
      gente falla el toque. Es el número que usa Apple. */
   --fin-tap: 44px;
+
+  /* La altura de la barra de navegación de abajo, ya sin el hueco vacío que
+     antes reservaba para el botón de anotar. `BotonAnotar` la lee para
+     posicionarse justo encima sin superponerse ni dejar un salto raro. */
+  --fin-nav-h: 60px;
 }
 
 /* Dark. Warm near-black rather than pure #000: the light theme is a warm cream,

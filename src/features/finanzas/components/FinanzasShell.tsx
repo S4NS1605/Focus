@@ -78,8 +78,12 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
 
     {accion}
 
-    {/* La barra de navegación. Va detrás del botón de anotar (z menor) porque
- ese botón es la acción principal y nunca debe quedar tapado. */}
+    {/* La barra de navegación. Pegada al fondo, con su propia altura fija —
+ antes tenía un hueco vacío abajo (`pb-[4.75rem]`) donde se metía el botón
+ de anotar por encima, así que el menú quedaba arriba y el micrófono
+ abajo, más cerca del borde. `BotonAnotar` ahora se posiciona por su
+ cuenta justo encima de esta barra, usando su altura (`--fin-nav-h`) para
+ no superponerse. */}
     <nav
       className="fin-glass fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)]"
       aria-label="Secciones"
@@ -89,7 +93,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
    estructura, así que esto se puede reordenar sin romperla. */}
       <div
         data-guia="nav"
-        className="flex w-full max-w-[720px] items-center justify-around px-2 pb-[4.75rem] pt-2"
+        className="flex h-[var(--fin-nav-h)] w-full max-w-[720px] items-center justify-around px-2"
       >
         {SECTIONS.map((item) => {
           const activa = item.id === section;

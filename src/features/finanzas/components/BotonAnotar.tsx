@@ -61,7 +61,15 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+    <div
+      // Encima del menú, no encima del borde de la pantalla: antes vivía en
+      // bottom-0 y se metía en un hueco que la barra de navegación dejaba
+      // vacío abajo, así que quedaba por debajo de "Inicio"/"Dinero"/etc en
+      // vez de arriba. Ahora se separa del fondo por la altura de esa barra
+      // (`--fin-nav-h`) más su franja segura y un respiro propio.
+      className="pointer-events-none fixed inset-x-0 z-30 flex flex-col items-center gap-2"
+      style={{ bottom: 'calc(env(safe-area-inset-bottom) + var(--fin-nav-h) + 0.75rem)' }}
+    >
       {/* Lo que salió mal se dice. Antes un fallo de transcripción se tragaba
  en silencio y la única señal era que no pasaba nada. */}
       {dictation.error ? (
