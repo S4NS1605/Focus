@@ -2,17 +2,11 @@ import React from 'react';
 import type { Transaction } from '../types';
 import { RippleButton } from './RippleButton';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
-import { RippleButton } from './RippleButton';
 import { ES_PASIVO } from '../data/modelos';
-import { RippleButton } from './RippleButton';
 import { iconoDeCajita } from '../cajitaIconos';
-import { RippleButton } from './RippleButton';
 import { idsPasivos, saldosPorCajita, totalVisible } from '../lib/cajitas';
-import { RippleButton } from './RippleButton';
 import { formatCop } from '../lib/formatCop';
-import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
-import { RippleButton } from './RippleButton';
 
 interface DineroViewProps {
   transacciones: readonly Transaction[];

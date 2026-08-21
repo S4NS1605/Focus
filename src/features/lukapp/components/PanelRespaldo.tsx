@@ -2,9 +2,7 @@ import React, { useRef, useState } from 'react';
 import { AlertTriangle, Download, FileText, HardDriveDownload, Upload } from 'lucide-react';
 import { RippleButton } from './RippleButton';
 import type { Instantanea } from '../data/repositorio';
-import { RippleButton } from './RippleButton';
 import {
-import { RippleButton } from './RippleButton';
   aCsv,
   armarRespaldo,
   leerRespaldo,
@@ -13,7 +11,6 @@ import { RippleButton } from './RippleButton';
   resumirRespaldo,
 } from '../lib/respaldo';
 import { descargarExcel } from '../lib/exportarExcel';
-import { RippleButton } from './RippleButton';
 
 interface PanelRespaldoProps {
   datos: Instantanea;

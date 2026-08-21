@@ -2,27 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, BrainCircuit, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { RippleButton } from './RippleButton';
 import type { Transaction } from '../types';
-import { RippleButton } from './RippleButton';
 import type { Cajita } from '../data/modelos';
-import { RippleButton } from './RippleButton';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
-import { RippleButton } from './RippleButton';
 import type { ParsedTransaction } from '../lib/parseTransaction';
-import { RippleButton } from './RippleButton';
 
 import type { LexicoAprendido } from '../lib/aprendizaje';
-import { RippleButton } from './RippleButton';
 import type { CategoriaPersonal } from '../categorias';
-import { RippleButton } from './RippleButton';
 
 import { apiUrl } from '../../../lib/api';
-import { RippleButton } from './RippleButton';
 import { obtenerSupabase } from '../data/supabase';
-import { RippleButton } from './RippleButton';
 import { bogotaDate, asesorEnHorario, ASESOR_DESDE } from '../lib/localDate';
-import { RippleButton } from './RippleButton';
 import { ES_PASIVO } from '../data/modelos';
-import { RippleButton } from './RippleButton';
 
 interface Message {
   id: string;

@@ -2,7 +2,6 @@ import React from 'react';
 import { Check, Users, X } from 'lucide-react';
 import { RippleButton } from './RippleButton';
 import type { Duda } from '../lib/contactos';
-import { RippleButton } from './RippleButton';
 
 interface DudaContactoProps {
   /** The single question to show, or null when there is nothing to ask. */
