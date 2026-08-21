@@ -161,7 +161,7 @@ crearse una cuenta.
 src/
   components/            portafolio público
   apps-dashboard/        lanzador + panel de superadmin
-  features/finanzas/
+  features/lukapp/
     lib/                 lógica pura: saldos, señales, tendencias, fechas Bogotá
     data/                repositorios (memoria, IndexedDB, Supabase) y hooks
     components/          UI

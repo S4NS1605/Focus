@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSesion } from '../features/finanzas/data/useSesion';
-import { useTema } from '../features/finanzas/data/useTema';
-import { obtenerSupabase } from '../features/finanzas/data/supabase';
+import { useSesion } from '../features/lukapp/data/useSesion';
+import { useTema } from '../features/lukapp/data/useTema';
+import { obtenerSupabase } from '../features/lukapp/data/supabase';
 import { apiUrl } from '../lib/api';
-import { LoginPanel } from '../features/finanzas/components/LoginPanel';
-import { FinanzasApp } from '../features/finanzas/FinanzasApp';
+import { LoginPanel } from '../features/lukapp/components/LoginPanel';
+import { FinanzasApp } from '../features/lukapp/FinanzasApp';
 import { AppLauncher } from './AppLauncher';
 import { SuperadminPanel } from './SuperadminPanel';
 import { EstadisticasPanel } from './EstadisticasPanel';
-import { LandingFinanzas } from '../features/finanzas/components/LandingFinanzas';
-import { BASE_FINANZAS, segmentosDe, useRuta } from '../features/finanzas/data/useRuta';
+import { LandingFinanzas } from '../features/lukapp/components/LandingFinanzas';
+import { BASE_FINANZAS, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';

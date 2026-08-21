@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import { FinanzasShell } from './FinanzasShell';
+import { LukAppShell } from './LukAppShell';
 import { SECTIONS } from '../sections';
 
 const props = {
@@ -15,16 +15,16 @@ const props = {
  * escondiera cosas distintas. Ahora hay uno solo, así que lo que se comprueba
  * es que esté completo y que no dependa del ancho de la pantalla.
  */
-describe('FinanzasShell', () => {
+describe('LukAppShell', () => {
   it('tiene una sola barra de navegación', () => {
-    render(<FinanzasShell {...props} />);
+    render(<LukAppShell {...props} />);
     // Este es el test que impide volver atrás. Dos barras eran la causa de que
     // hubiera funciones alcanzables en un aparato y no en el otro.
     expect(screen.getAllByRole('navigation', { name: 'Secciones' })).toHaveLength(1);
   });
 
   it('muestra los cuatro destinos', () => {
-    render(<FinanzasShell {...props} />);
+    render(<LukAppShell {...props} />);
     const nav = screen.getByRole('navigation', { name: 'Secciones' });
     for (const item of SECTIONS) {
       expect(within(nav).getByText(item.label)).toBeTruthy();
@@ -32,7 +32,7 @@ describe('FinanzasShell', () => {
   });
 
   it('marca cuál es el destino actual', () => {
-    render(<FinanzasShell {...props} />);
+    render(<LukAppShell {...props} />);
     const nav = screen.getByRole('navigation', { name: 'Secciones' });
     const actual = within(nav).getAllByRole('button', { current: 'page' });
     expect(actual).toHaveLength(1);
@@ -41,14 +41,14 @@ describe('FinanzasShell', () => {
 
   it('avisa a quién corresponda al tocar otro destino', () => {
     const onSectionChange = vi.fn();
-    render(<FinanzasShell {...props} onSectionChange={onSectionChange} />);
+    render(<LukAppShell {...props} onSectionChange={onSectionChange} />);
     const nav = screen.getByRole('navigation', { name: 'Secciones' });
     within(nav).getByText('Dinero').click();
     expect(onSectionChange).toHaveBeenCalledWith('dinero');
   });
 
   it('pinta el contenido que recibe', () => {
-    render(<FinanzasShell {...props} />);
+    render(<LukAppShell {...props} />);
     expect(screen.getByText('contenido')).toBeTruthy();
   });
 });

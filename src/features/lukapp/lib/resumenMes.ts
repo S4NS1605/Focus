@@ -160,7 +160,7 @@ export const textoParaCompartir = (
   const estrella = buscar(tarjetas, 'categoriaEstrella');
   const racha = buscar(tarjetas, 'racha');
 
-  const lineas = [`Mi resumen de ${portada ? monthKeyLabel(portada.mes) : 'el mes'} en Finanzas:`];
+  const lineas = [`Mi resumen de ${portada ? monthKeyLabel(portada.mes) : 'el mes'} en LukApp:`];
   if (balance) lineas.push(`Balance: ${formatCop(balance.totals.balance)}`);
   if (estrella) {
     lineas.push(`Categoría estrella: ${nombreDe(estrella.slice.category)} (${formatCop(estrella.slice.total)})`);

@@ -31,7 +31,7 @@ const SHELL_URL = '/ecosistema';
  * requests must pass straight through: falling back to this app's shell for a
  * portfolio URL would serve the wrong site the moment the network drops.
  */
-const RUTAS_APP = ['/ecosistema', '/finanzas', '/superadmin'];
+const RUTAS_APP = ['/ecosistema', '/lukapp', '/superadmin'];
 
 const esRutaDeLaApp = (url) =>
   RUTAS_APP.some((r) => url.pathname === r || url.pathname.startsWith(`${r}/`));

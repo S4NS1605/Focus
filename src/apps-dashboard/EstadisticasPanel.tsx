@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BarChart3, Clock, Globe, Link2, Loader2, Monitor, Smartphone, Tablet } from 'lucide-react';
-import { TemaToggle } from '../features/finanzas/components/TemaToggle';
-import type { Tema } from '../features/finanzas/data/useTema';
-import { obtenerSupabase } from '../features/finanzas/data/supabase';
+import { TemaToggle } from '../features/lukapp/components/TemaToggle';
+import type { Tema } from '../features/lukapp/data/useTema';
+import { obtenerSupabase } from '../features/lukapp/data/supabase';
 import type { Conteo, Visita } from './estadisticas';
 import { banderaDePais, diasHasta, nombreDePais, resumir } from './estadisticas';
 

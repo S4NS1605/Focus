@@ -3,10 +3,10 @@ import { SECTIONS } from '../sections';
 import type { SectionId } from '../sections';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
-interface FinanzasShellProps {
+interface LukAppShellProps {
   section: SectionId;
   onSectionChange: (section: SectionId) => void;
-  /** La barra flotante de anotar. La pone FinanzasApp para no duplicar estado. */
+  /** La barra flotante de anotar. La pone LukAppMain para no duplicar estado. */
   accion?: React.ReactNode;
   onBack?: () => void;
   children: React.ReactNode;
@@ -31,7 +31,7 @@ interface FinanzasShellProps {
  * contenido se centra en una columna en vez de reorganizarse: la app no cambia
  * de forma, solo de ancho. Y así no hay dos mapas que mantener de acuerdo.
  */
-export const FinanzasShell: React.FC<FinanzasShellProps> = ({
+export const LukAppShell: React.FC<LukAppShellProps> = ({
   section,
   onSectionChange,
   accion,

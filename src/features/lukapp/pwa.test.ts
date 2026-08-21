@@ -64,7 +64,7 @@ describe('service worker', () => {
     // Registered at scope "/", so it also sees the portfolio. Falling back to
     // this app's shell for a portfolio URL would serve the wrong site offline.
     expect(sw).toContain('esRutaDeLaApp');
-    expect(sw).toContain("['/ecosistema', '/finanzas', '/superadmin']");
+    expect(sw).toContain("['/ecosistema', '/lukapp', '/superadmin']");
   });
 
   it('only ever handles GET', () => {

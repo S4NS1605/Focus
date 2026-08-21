@@ -1,7 +1,7 @@
-import type { AnalisisResultado } from '../../src/features/finanzas/analista/tipos.ts';
-import { totalesDelAnalisis, rebanadasDelAnalisis } from '../../src/features/finanzas/analista/totales.ts';
-import { formatCop } from '../../src/features/finanzas/lib/formatCop.ts';
-import { CATEGORY_LABELS } from '../../src/features/finanzas/types.ts';
+import type { AnalisisResultado } from '../../src/features/lukapp/analista/tipos.ts';
+import { totalesDelAnalisis, rebanadasDelAnalisis } from '../../src/features/lukapp/analista/totales.ts';
+import { formatCop } from '../../src/features/lukapp/lib/formatCop.ts';
+import { CATEGORY_LABELS } from '../../src/features/lukapp/types.ts';
 import { pareceNequi, parsearNequi, periodoNequi } from './nequi.ts';
 import { pareceNu, parsearNu, periodoNu } from './nu.ts';
 import { pareceBancolombia, parsearBancolombia, periodoBancolombia } from './bancolombia.ts';

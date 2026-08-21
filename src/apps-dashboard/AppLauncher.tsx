@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Shield, LogOut, ArrowRight, PieChart, Sparkles } from 'lucide-react';
-import { TemaToggle } from '../features/finanzas/components/TemaToggle';
-import { BrandMark } from '../features/finanzas/components/BrandMark';
-import type { Tema } from '../features/finanzas/data/useTema';
+import { TemaToggle } from '../features/lukapp/components/TemaToggle';
+import { BrandMark } from '../features/lukapp/components/BrandMark';
+import type { Tema } from '../features/lukapp/data/useTema';
 import type { AppId } from './AppsRoot';
 
 interface AppLauncherProps {

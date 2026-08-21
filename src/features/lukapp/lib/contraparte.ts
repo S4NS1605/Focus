@@ -3,7 +3,7 @@
  *
  * This lives on the client side of the tree even though the statement templates
  * also use it, matching the direction those templates already import in
- * (server_lib -> src/features/finanzas/lib). The alternative — a copy on each
+ * (server_lib -> src/features/lukapp/lib). The alternative — a copy on each
  * side — would let the analysis and the categoriser disagree about who a
  * movement was with.
  *

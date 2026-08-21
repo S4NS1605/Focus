@@ -53,7 +53,7 @@ type Fase = 'tecleando' | 'reconocido' | 'aplicado' | 'reiniciando' | 'reapareci
  * día y el formato de las cifras no pueden desincronizarse de lo que ve alguien
  * que ya usa Lukapp.
  *
- * Lo que sí es de la portada son los tokens: `finanzas.css` no se carga aquí, y
+ * Lo que sí es de la portada son los tokens: `lukapp.css` no se carga aquí, y
  * cargarlo entero por un mockup traería la hoja completa de la app. En su lugar
  * el contenedor `.pantalla-app` declara los `--fin-*` que la fila usa, mapeados
  * desde la paleta de la landing.

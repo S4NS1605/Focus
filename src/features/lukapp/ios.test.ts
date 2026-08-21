@@ -85,7 +85,7 @@ const MINIMO_IOS = 16;
 describe('campos táctiles', () => {
   const encontrados: { archivo: string; px: number; extracto: string }[] = [];
 
-  for (const ruta of [...archivos('src/features/finanzas'), ...archivos('src/apps-dashboard')]) {
+  for (const ruta of [...archivos('src/features/lukapp'), ...archivos('src/apps-dashboard')]) {
     const fuente = readFileSync(ruta, 'utf8');
     for (const cuerpo of camposDe(fuente)) {
       // `campo`-style shared class strings are resolved by looking at the file's
@@ -114,7 +114,7 @@ describe('campos táctiles', () => {
 
   it('el barrido de verdad encuentra campos, no pasa por vacío', () => {
     // Sin esto el test anterior pasaría también si el regex dejara de casar.
-    const total = [...archivos('src/features/finanzas'), ...archivos('src/apps-dashboard')].flatMap(
+    const total = [...archivos('src/features/lukapp'), ...archivos('src/apps-dashboard')].flatMap(
       (r) => camposDe(readFileSync(r, 'utf8')),
     );
     expect(total.length).toBeGreaterThan(10);

@@ -5,7 +5,7 @@
 
    Los colores son variables propias --lp-* colgadas de `.landing-finanzas`, no
    de `:root`. Antes este fichero redefinía los --fin-* globales con la paleta
-   clara, así que dependía de quién cargara último: ganaba finanzas.css, la
+   clara, así que dependía de quién cargara último: ganaba lukapp.css, la
    landing heredaba tinta clara para modo oscuro y la pintaba sobre su
    `background: white` fijo. Texto blanco sobre blanco.
 
@@ -481,7 +481,7 @@
 
 /* LA PANTALLA DE ADENTRO
    Aquí viven los `--fin-*` que necesita TransactionList, que es el componente
-   de verdad de la app. No se importa finanzas.css: esa hoja cuelga sus tokens
+   de verdad de la app. No se importa lukapp.css: esa hoja cuelga sus tokens
    de `.fin-html` y traería la app entera por un mockup. Se declaran solo los
    que la fila usa, mapeados desde la paleta de la landing para que el teléfono
    siga el tema claro/oscuro con el resto de la página. */

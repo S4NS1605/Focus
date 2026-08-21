@@ -12,7 +12,7 @@ import { RippleButton } from './RippleButton';
 /**
  * Solo saldos. Categorías, 4x1000 y Respaldo vivían apiladas debajo de esto
  * en la misma vista; ahora cada una es su propia pestaña de Configuración
- * (ver PESTANAS_CONFIGURACION en sections.ts) y FinanzasApp.tsx las monta
+ * (ver PESTANAS_CONFIGURACION en sections.ts) y LukAppMain.tsx las monta
  * por separado -- esta vista dejó de saber que existen.
  */
 interface ConfiguracionViewProps {

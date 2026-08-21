@@ -4,7 +4,7 @@ App de finanzas personales para Colombia (COP, zona horaria `America/Bogota`).
 Se registra hablando, funciona sin conexión, y todo cálculo es reconstruible
 desde los movimientos guardados: ningún saldo es un número suelto.
 
-Código en `src/features/finanzas/`. Entrada: [`FinanzasApp.tsx`](FinanzasApp.tsx).
+Código en `src/features/lukapp/`. Entrada: [`FinanzasApp.tsx`](FinanzasApp.tsx).
 
 ---
 

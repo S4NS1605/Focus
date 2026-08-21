@@ -1,4 +1,4 @@
-import type { MovimientoExtraido } from '../../src/features/finanzas/analista/tipos.ts';
+import type { MovimientoExtraido } from '../../src/features/lukapp/analista/tipos.ts';
 import { categorizarDescripcion, exclusionDeDescripcion } from './categorizar.ts';
 import type { PeriodoExtraido } from './nequi.ts';
 

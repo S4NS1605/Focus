@@ -13,7 +13,7 @@ import { useCallback, useSyncExternalStore } from 'react';
  * hace falta, y son menos líneas que la configuración que pediría un router.
  *
  * La ruta vive en un store compartido y no en un `useState` por componente.
- * Con estado por componente, AppsRoot y FinanzasApp tendrían cada uno su copia
+ * Con estado por componente, AppsRoot y LukAppMain tendrían cada uno su copia
  * y un cambio hecho en uno no llegaría nunca al otro: `pushState` no dispara
  * `popstate`, así que la única forma de que ambos vean lo mismo es que ambos
  * lean del mismo sitio.

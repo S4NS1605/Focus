@@ -3,7 +3,7 @@
 // English copy for a private tool and make the shared type a chokepoint that can
 // break the portfolio's type-check.
 export const COPY = {
-  appName: 'Finanzas',
+  appName: 'LukApp',
 
   balance: {
     balance: 'Balance',

@@ -1,4 +1,4 @@
-// Kept out of FinanzasShell.tsx so that file only exports a component — mixing
+// Kept out of LukAppShell.tsx so that file only exports a component — mixing
 // constants with components breaks Fast Refresh, which oxlint flags via
 // react/only-export-components.
 import { BarChart3, Home, Menu, UserCircle, Wallet } from 'lucide-react';

@@ -55,7 +55,7 @@ import { hacerCatalogo } from './categorias';
 import { CajitasView } from './components/CajitasView';
 import { DeudasView } from './components/DeudasView';
 import { MetasView } from './components/MetasView';
-import { FinanzasShell } from './components/FinanzasShell';
+import { LukAppShell } from './components/LukAppShell';
 import { InicioView } from './components/InicioView';
 import { insightsDelMes } from './lib/insights';
 import { DineroView } from './components/DineroView';
@@ -78,7 +78,7 @@ import type { Tema } from './data/useTema';
 import { TransactionList } from './components/TransactionList';
 import { GuiaApp } from './components/guia/GuiaApp';
 import { PASOS_BASICOS, PASOS_POR_SECCION } from './components/guia/pasos';
-import './finanzas.css';
+import './lukapp.css';
 
 /**
  * Rebuilds the parser's output shape from a stored row so editing can reuse
@@ -128,11 +128,11 @@ type Capa = 'buscar' | null;
  * configured the tool must still work exactly as it does today, on device
  * storage and with no login wall it has no way to satisfy.
  */
-export interface FinanzasAppProps {
+export interface LukAppMainProps {
   onBack?: () => void;
 }
 
-export const FinanzasApp: React.FC<FinanzasAppProps> = ({ onBack }) => {
+export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack }) => {
   const sesion = useSesion();
   const { tema, setTema } = useTema();
 
@@ -156,7 +156,7 @@ export const FinanzasApp: React.FC<FinanzasAppProps> = ({ onBack }) => {
       : undefined;
 
   return (
-    <FinanzasPanel
+    <LukAppPanel
       // Remounts on account change, so one user's data can never be left on
       // screen under another's session.
       key={sesion.estado.modo === 'autenticado' ? sesion.estado.userId : 'local'}
@@ -169,7 +169,7 @@ export const FinanzasApp: React.FC<FinanzasAppProps> = ({ onBack }) => {
   );
 };
 
-interface FinanzasPanelProps {
+interface LukAppPanelProps {
   /** Null in local mode, where storage is this device's IndexedDB. */
   userId: string | null;
   cuenta?: { email: string; onSalir: () => void };
@@ -178,7 +178,7 @@ interface FinanzasPanelProps {
   onBack?: () => void;
 }
 
-const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
+const LukAppPanel: React.FC<LukAppPanelProps> = ({
   userId,
   cuenta,
   tema,
@@ -501,7 +501,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
 
   return (
     <CatalogoProvider categorias={categorias}>
-      <FinanzasShell
+      <LukAppShell
         section={section}
         onSectionChange={setSection}
         onBack={onBack}
@@ -1007,7 +1007,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
           cajitasBalances={cajitasBalances}
           emailUsuario={cuenta?.email}
         />
-      </FinanzasShell>
+      </LukAppShell>
     </CatalogoProvider>
   );
 };
