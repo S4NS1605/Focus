@@ -25,12 +25,12 @@
 .tour-modal {
   background: var(--fin-bg);
   border: 1px solid var(--fin-line);
-  border-radius: 16px;
+  border-radius: 20px;
   width: 100%;
-  max-width: 500px;
+  max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 2rem 1.5rem;
+  padding: 2rem 1.75rem 1.5rem;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -49,20 +49,19 @@
 
 .close-btn {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 0.9rem;
+  right: 0.9rem;
   background: none;
   border: none;
-  color: var(--fin-ink-soft);
+  color: var(--fin-ink-faint);
   cursor: pointer;
-  padding: 0.5rem;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .close-btn:hover {
@@ -70,49 +69,55 @@
   color: var(--fin-ink);
 }
 
-/* HEADER */
-.tour-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
+/* CABECERA DEL PASO
+   El glifo va suelto, sin recuadro. Antes vivía en una caja de 56px con borde
+   propio, y eso metía un tercer nivel de caja —modal, recuadro, tarjetas— para
+   enseñar un icono. Sin el marco el icono pesa lo que tiene que pesar: marca el
+   paso y se aparta. */
+.tour-glifo {
+  display: block;
+  color: var(--fin-ink);
+  margin-bottom: 1.1rem;
 }
 
-.tour-header .icon {
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  padding: 12px;
-  background: var(--fin-soft);
-  border-radius: 12px;
-  color: var(--fin-accent);
-  border: 1px solid var(--fin-line);
-}
-
-/* TITLE SECTION */
+/* Todo el modal se alinea a la izquierda. Antes la cabecera iba centrada sobre
+   un cuerpo alineado a la izquierda, y esa mezcla es lo que hacía que el
+   conjunto se leyera como una plantilla y no como una pantalla pensada. */
 .tour-title-section {
-  text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.35rem;
 }
 
 .tour-title-section h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin: 0 0 0.35rem;
   color: var(--fin-ink);
 }
 
 .tour-title-section .subtitle {
-  font-size: 0.95rem;
-  color: var(--fin-ink-soft);
+  font-size: 0.9rem;
+  color: var(--fin-ink-faint);
   margin: 0;
 }
 
-/* BODY */
+/* EL CUERPO
+   La altura la gobierna el componente, que mide el contenido de cada paso y la
+   interpola de uno a otro; aquí solo van el suelo y el recorte. `overflow:
+   hidden` es imprescindible: durante los 0.42s de la transición la caja mide
+   menos que su contenido y sin él el texto se derramaría sobre el pie. */
 .tour-body {
-  margin: 2rem 0;
-  min-height: 120px;
+  min-height: 200px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.tour-body-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 200px;
 }
 
 .tour-content-text {
@@ -128,20 +133,20 @@
   line-height: 1.6;
 }
 
+/* La bajada de énfasis se hace con color y tamaño, no con cursiva. La cursiva
+   en una interfaz se lee como una cita o como un pie de foto, no como "esto es
+   secundario", y a este tamaño además pierde legibilidad. */
 .tour-content-text .subtle {
   font-size: 0.85rem;
   color: var(--fin-ink-faint);
-  font-style: italic;
 }
 
-/* DEMO CONTENT */
+/* El panel gris que envolvía las tarjetas se fue: eran cajas dentro de cajas
+   dentro del modal. Las filas se apoyan ahora directamente sobre el fondo. */
 .tour-content-demo {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--fin-soft);
-  border-radius: 8px;
+  gap: 0.9rem;
 }
 
 /* Input Demo */
@@ -154,10 +159,10 @@
 
 .input-demo .label,
 .output-demo .label {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   color: var(--fin-ink-faint);
 }
 
@@ -224,14 +229,16 @@
   margin-top: 0.75rem;
 }
 
+/* Sin borde: con él parecían botones apagados e invitaban a pulsarlos. Son
+   etiquetas, y ahora se leen como tales. */
 .supported-banks .bank {
   display: inline-block;
-  padding: 0.5rem 0.75rem;
-  background: var(--fin-surface);
-  border: 1px solid var(--fin-line);
-  border-radius: 6px;
-  font-size: 0.8rem;
-  color: var(--fin-ink);
+  padding: 0.42rem 0.7rem;
+  background: var(--fin-soft);
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--fin-ink-soft);
 }
 
 /* Accounts Demo */
@@ -339,118 +346,135 @@
   text-align: right;
 }
 
-/* PROGRESS */
+/* EL PIE
+   Los puntos a la izquierda y los botones a la derecha, en la misma fila. Antes
+   los puntos iban en su propia banda centrada y debajo estaba el contador
+   "2 de 6": dos indicadores, uno encima del otro, diciendo exactamente lo
+   mismo. Se queda el que además sirve para navegar. */
+.tour-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--fin-line);
+}
+
 .tour-progress {
   display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 1.5rem 0;
+  gap: 0.45rem;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
+  padding: 0;
   border-radius: 50%;
   background: var(--fin-line);
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease, width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* El punto activo se alarga en vez de crecer. Escalar un círculo lo deja
+   borroso contra los demás; alargarlo lo convierte en una barrita que se lee
+   como posición dentro de un recorrido. */
 .dot.active {
+  width: 20px;
+  border-radius: 999px;
   background: var(--fin-accent);
-  transform: scale(1.3);
 }
 
-.dot:hover {
+.dot:hover:not(.active) {
   background: var(--fin-ink-faint);
-}
-
-/* FOOTER */
-.tour-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--fin-line);
 }
 
 .buttons {
   display: flex;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Con scope al tour: estos dos nombres son tan genéricos que sin él pisaban
    los botones de la landing, que carga antes y acababa con el radio y el
    `flex: 1` de aquí. */
+/* Con scope al tour: estos dos nombres son tan genéricos que sin él pisaban
+   los botones de la landing, que carga antes. */
 .welcome-tour-finanzas .btn-primary,
 .welcome-tour-finanzas .btn-secondary {
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: 999px;
   border: none;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
   font-family: inherit;
-  flex: 1;
 }
 
 .welcome-tour-finanzas .btn-primary {
+  padding: 0.72rem 1.15rem 0.72rem 1.35rem;
   background: var(--fin-accent);
   color: var(--fin-on-accent);
 }
 
 .welcome-tour-finanzas .btn-primary:hover {
   background: var(--fin-accent-hover);
-  transform: translateY(-2px);
 }
 
+/* "Atrás" ya no compite. Antes los dos botones eran `flex: 1` y ocupaban medio
+   modal cada uno, así que deshacer pesaba visualmente lo mismo que avanzar, y
+   en un recorrido de bienvenida lo que se quiere es que avanzar sea lo obvio.
+   Ahora es texto: está cuando hace falta y no reclama nada. */
 .welcome-tour-finanzas .btn-secondary {
-  background: var(--fin-soft);
-  color: var(--fin-ink);
-  border: 1px solid var(--fin-line);
+  padding: 0.72rem 0.9rem;
+  background: transparent;
+  color: var(--fin-ink-faint);
 }
 
 .welcome-tour-finanzas .btn-secondary:hover {
-  background: var(--fin-bg-soft);
-  border-color: var(--fin-ink-faint);
+  background: var(--fin-soft);
+  color: var(--fin-ink);
 }
 
-.counter {
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--fin-ink-faint);
-  margin: 0;
-}
-
-/* RESPONSIVE */
+/* RESPONSIVE
+   El pie sigue siendo una sola fila también aquí: puntos, Atrás y Siguiente
+   caben de sobra en 375px, y apilarlos volvería a mover el botón principal
+   entre pasos, que es justo lo que se acaba de arreglar. */
 @media (max-width: 640px) {
   .tour-modal {
     max-width: 100%;
     max-height: 100vh;
     border-radius: 0;
-    padding: 1.5rem 1rem;
-  }
-
-  .tour-header .icon {
-    font-size: 2.5rem;
+    padding: 1.75rem 1.25rem 1.25rem;
   }
 
   .tour-title-section h2 {
-    font-size: 1.25rem;
+    font-size: 1.3rem;
   }
 
-  .buttons {
-    flex-direction: column;
+  .tour-body,
+  .tour-body-inner {
+    min-height: 190px;
+  }
+}
+
+/* El fundido de cada paso lo gobierna framer con `useReducedMotion`, pero la
+   entrada del modal y el alargue del punto activo son CSS y hay que apagarlos
+   aquí. */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-tour-finanzas {
+    animation: none;
   }
 
-  .welcome-tour-finanzas .btn-primary,
-  .welcome-tour-finanzas .btn-secondary {
-    width: 100%;
+  .tour-modal {
+    animation: none;
+  }
+
+  .dot {
+    transition: background 0.2s ease;
   }
 }
