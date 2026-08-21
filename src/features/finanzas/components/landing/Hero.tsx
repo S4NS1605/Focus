@@ -14,7 +14,6 @@ import { Parallax } from './adornos';
 
 interface HeroProps {
   onGetStarted?: () => void;
-  onSeeDemo?: () => void;
 }
 
 /* Las burbujas que flotan detrás del teléfono. Llevan los mismos colores de
@@ -29,7 +28,7 @@ const BURBUJAS: { Icono: LucideIcon; color: string; x: string; y: string; dur: n
   { Icono: Home, color: '#ef4444', x: '10%', y: '88%', dur: 11 }
 ];
 
-export const Hero: React.FC<HeroProps> = ({ onGetStarted, onSeeDemo }) => {
+export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
   const quieto = useReducedMotion();
 
   return (
@@ -72,21 +71,6 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted, onSeeDemo }) => {
             Comenzar ahora
             <ArrowRight size={17} strokeWidth={2} aria-hidden />
           </button>
-          {/* El botón de demo lleva su propio peso en vez de ser el hueco que
-              queda al lado del principal: el disco de play dice qué va a pasar
-              antes de leer la etiqueta, y el anillo que sale de él al pasar por
-              encima es la única señal de que esto reproduce algo. */}
-          <button className="btn-demo" onClick={onSeeDemo}>
-            <span className="btn-demo-disco" aria-hidden>
-              <svg width="9" height="11" viewBox="0 0 9 11" fill="none">
-                <path
-                  d="M1.2.85 8.1 4.9a.7.7 0 0 1 0 1.2L1.2 10.15A.7.7 0 0 1 .15 9.55V1.45A.7.7 0 0 1 1.2.85Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>
-            Ver demo
-          </button>
         </motion.div>
 
       </div>
@@ -98,7 +82,13 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted, onSeeDemo }) => {
               <motion.span
                 key={x + y}
                 className="burbuja"
-                style={{ left: x, top: y, background: `${color}1f`, color }}
+                style={{
+                  left: x,
+                  top: y,
+                  background: `${color}e6`,
+                  color: '#fff',
+                  boxShadow: `0 6px 16px -4px ${color}80`,
+                }}
                 initial={{ opacity: 0, scale: 0.6 }}
                 animate={{ opacity: 1, scale: 1, y: [0, -14, 0] }}
                 transition={{
