@@ -10,7 +10,6 @@ import { SuperadminPanel } from './SuperadminPanel';
 import { EstadisticasPanel } from './EstadisticasPanel';
 import { LandingFinanzas } from '../features/finanzas/components/LandingFinanzas';
 import { BASE_FINANZAS, segmentosDe, useRuta } from '../features/finanzas/data/useRuta';
-import { WelcomeTourFinanzas } from '../features/finanzas/components/WelcomeTourFinanzas';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
@@ -46,7 +45,13 @@ export const AppsRoot: React.FC = () => {
   // que no se podía enlazar ninguna de las dos ni volver atrás entre ellas.
   const { ruta, ir, reemplazar } = useRuta();
   const enPortada = activeApp === 'finanzas' && segmentosDe(ruta).length === 0;
-  const [showTour, setShowTour] = useState(false);
+
+  // Quien entra por /finanzas/entrar espera terminar en la app de finanzas.
+  // Pero si resulta tener un rol con privilegios (admin o un rol personalizado
+  // con permisos), lo mandamos al lanzador del ecosistema en su lugar -- el
+  // login de finanzas ya no es la única puerta, así que un admin que solo
+  // pasaba por ahí no debería quedar encerrado en una sola app.
+  const veniaDelLoginFinanzas = React.useRef(activeApp === 'finanzas');
 
   // Quien ya pasó por la portada entra directo al formulario. Reemplaza en vez
   // de empujar: es un salto que el usuario no pidió, y empujarlo dejaría el
@@ -160,8 +165,17 @@ export const AppsRoot: React.FC = () => {
             });
             if (res.ok) {
               const data = await res.json();
-              if (data?.rol === 'admin' || data?.rol === 'usuario') setRol(data.rol);
-              if (Array.isArray(data?.permisos)) setPermisos(data.permisos);
+              const rolRecibido = data?.rol === 'admin' || data?.rol === 'usuario' ? data.rol : null;
+              const permisosRecibidos = Array.isArray(data?.permisos) ? data.permisos : [];
+              if (rolRecibido) setRol(rolRecibido);
+              setPermisos(permisosRecibidos);
+
+              if (veniaDelLoginFinanzas.current) {
+                veniaDelLoginFinanzas.current = false;
+                if (rolRecibido === 'admin' || permisosRecibidos.length > 0) {
+                  setActiveApp(null);
+                }
+              }
             }
           } catch {
             // Sin red, se queda en el 'usuario' sin permisos por defecto.
@@ -211,22 +225,7 @@ export const AppsRoot: React.FC = () => {
         localStorage.setItem('__lukapp_landing_seen__', 'true');
         ir(`${BASE_FINANZAS}/entrar`);
       };
-      return (
-        <>
-          <LandingFinanzas
-            onGetStarted={entrar}
-            onSeeDemo={() => setShowTour(true)}
-            onLogin={entrar}
-            sesion={sesion}
-          />
-          {showTour && (
-            <WelcomeTourFinanzas
-              onComplete={() => setShowTour(false)}
-              onSkip={() => setShowTour(false)}
-            />
-          )}
-        </>
-      );
+      return <LandingFinanzas onGetStarted={entrar} onLogin={entrar} sesion={sesion} />;
     }
     return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
   }

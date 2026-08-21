@@ -68,20 +68,28 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
         {/* Brand sits above the card, not inside it: the card is the task, the
  brand is the context. */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-card)] shadow-sm">
-            <BrandMark className="h-7 w-7" />
+          <span className="relative flex h-16 w-16 items-center justify-center rounded-[1.4rem] bg-[var(--fin-card)] shadow-[0_1px_2px_rgb(0_0_0/0.04),0_10px_28px_-10px_rgb(0_0_0/0.18)]">
+            <span
+              className="absolute inset-0 rounded-[1.4rem] opacity-70"
+              style={{
+                background:
+                  'radial-gradient(120% 120% at 15% 15%, #f59e0b26, transparent 55%), radial-gradient(120% 120% at 85% 30%, #38bdf826, transparent 55%), radial-gradient(120% 120% at 50% 100%, #16c55e26, transparent 55%)',
+              }}
+              aria-hidden
+            />
+            <BrandMark className="relative h-8 w-8" />
           </span>
           <h1 className="mt-4 text-[28px] font-semibold tracking-tight text-[var(--fin-ink)]">
-            Apps Personalizadas
+            Lukapp
           </h1>
           <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-            {modo === 'entrar' ? 'Accede a tu ecosistema.' : 'Crea tu cuenta para empezar.'}
+            {modo === 'entrar' ? 'Tus finanzas, en un solo lugar.' : 'Crea tu cuenta para empezar.'}
           </p>
         </div>
 
         <form
           onSubmit={enviar}
-          className="rounded-[var(--fin-r-sheet)] bg-[var(--fin-card)] p-6 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_12px_32px_-12px_rgb(0_0_0/0.12)] sm:p-7"
+          className="rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)]/60 bg-[var(--fin-card)] p-6 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_16px_40px_-16px_rgb(0_0_0/0.16)] sm:p-7"
         >
           {permitirRegistro ? (
             <div className="mb-6 grid grid-cols-2 gap-1 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-1">

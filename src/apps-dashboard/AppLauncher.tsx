@@ -1,6 +1,8 @@
 import React from 'react';
-import { LayoutGrid, Shield, LogOut, ChevronRight, PieChart, Activity } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Shield, LogOut, ArrowRight, PieChart, Sparkles } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
+import { BrandMark } from '../features/finanzas/components/BrandMark';
 import type { Tema } from '../features/finanzas/data/useTema';
 import type { AppId } from './AppsRoot';
 
@@ -14,97 +16,146 @@ interface AppLauncherProps {
   onSalir: () => void;
 }
 
-export const AppLauncher: React.FC<AppLauncherProps> = ({ rol, tienePermisos, onSelectApp, tema, onCambiarTema, onSalir }) => {
+/* Cada tarjeta lleva su propio color de acento en vez de la paleta genérica
+   indigo/purple de un template: el naranja es el mismo que usa la insignia
+   del login para Finanzas, así que el ecosistema se siente como una sola
+   marca y no como pantallas pegadas entre sí. */
+const ACENTOS = {
+  finanzas: { ring: '#f59e0b', bg: '#f59e0b1a', fg: '#c2760a' },
+  superadmin: { ring: '#8b5cf6', bg: '#8b5cf61a', fg: '#7c3aed' },
+} as const;
+
+export const AppLauncher: React.FC<AppLauncherProps> = ({
+  rol,
+  tienePermisos,
+  onSelectApp,
+  tema,
+  onCambiarTema,
+  onSalir,
+}) => {
+  const quieto = useReducedMotion();
+  const muestraSuperadmin = rol === 'admin' || tienePermisos;
+
   return (
-    <div className="min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] transition-colors duration-300 selection:bg-[var(--fin-primary)] selection:text-white flex flex-col font-sans">
-      
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--fin-line)] bg-[var(--fin-bg)]/80 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4 transition-colors">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[var(--fin-bg)] text-[var(--fin-ink)] transition-colors duration-300 selection:bg-[var(--fin-accent)] selection:text-white">
+      <div className="fin-aurora" aria-hidden="true" />
+
+      <header className="relative z-10 flex items-center justify-between px-5 py-5 sm:px-8 sm:py-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-            <LayoutGrid className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight">Ecosistema</h1>
-            <p className="text-[11px] font-medium text-[var(--fin-ink-soft)] uppercase tracking-wider">Tus Aplicaciones</p>
-          </div>
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--fin-card)] shadow-sm">
+            <BrandMark className="h-5 w-5" />
+          </span>
+          <span className="text-[15px] font-semibold tracking-tight">Lukapp</span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <TemaToggle tema={tema} onCambiar={onCambiarTema} />
-          <div className="h-6 w-px bg-[var(--fin-line)] mx-1"></div>
           <button
             onClick={onSalir}
             className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-out)]"
             title="Cerrar sesión"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-[18px] w-[18px]" strokeWidth={2} />
           </button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto px-4 py-8 sm:p-10">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-8">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Bienvenido de vuelta</h2>
-            <p className="mt-2 text-base text-[var(--fin-ink-soft)]">Selecciona una aplicación para continuar con tu trabajo hoy.</p>
-          </div>
+      <main className="relative z-10 flex flex-1 flex-col items-center px-5 pb-16 pt-6 sm:pt-10">
+        <div className="w-full max-w-3xl">
+          <motion.div
+            initial={quieto ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-10 text-center"
+          >
+            <h1 className="text-[32px] font-semibold tracking-tight sm:text-[38px]">
+              ¿Qué necesitas hoy?
+            </h1>
+            <p className="mt-2 text-[15px] text-[var(--fin-ink-soft)]">
+              Elige una aplicación para continuar.
+            </p>
+          </motion.div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            
-            <button
+          <div className={`grid gap-4 ${muestraSuperadmin ? 'sm:grid-cols-2' : 'mx-auto max-w-sm'}`}>
+            <motion.button
+              initial={quieto ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={quieto ? undefined : { y: -3 }}
+              whileTap={{ scale: 0.985 }}
               onClick={() => onSelectApp('finanzas')}
-              className="group flex h-full flex-col rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-left shadow-sm transition-colors hover:border-emerald-500/40"
+              className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-[var(--fin-line)]/70 bg-[var(--fin-card)] p-6 text-left shadow-[0_1px_2px_rgb(0_0_0/0.04),0_16px_36px_-16px_rgb(0_0_0/0.16)] transition-colors sm:p-7"
+              style={{ borderColor: undefined }}
             >
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                <PieChart className="h-6 w-6" />
-              </div>
-              <h3 className="mb-2 text-xl font-bold">Finanzas</h3>
-              <p className="mb-6 flex-1 text-sm text-[var(--fin-ink-soft)]">
-                Gestiona tus movimientos, metas y cajitas.
-              </p>
-
-              <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                <span className="text-sm font-semibold">Abrir aplicación</span>
-                <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </div>
-            </button>
-
-            {/* Tarjeta de Superadmin: admin siempre la ve; alguien con un rol
-                personalizado la ve si tiene al menos un permiso -- lo que
-                muestre adentro depende de cuáles, eso lo decide el panel. */}
-            {(rol === 'admin' || tienePermisos) && (
-              <button
-                onClick={() => onSelectApp('superadmin')}
-                className="group flex h-full flex-col rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-left shadow-sm transition-colors hover:border-purple-500/40"
+              <span
+                className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+                style={{ background: ACENTOS.finanzas.ring }}
+                aria-hidden
+              />
+              <span
+                className="relative mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl"
+                style={{ background: ACENTOS.finanzas.bg, color: ACENTOS.finanzas.fg }}
               >
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
-                  <Shield className="h-6 w-6" />
-                </div>
-                <h3 className="mb-2 text-xl font-bold">Superadmin</h3>
-                <p className="mb-6 flex-1 text-sm text-[var(--fin-ink-soft)]">
-                  Gestiona usuarios, roles, IA y analítica del sistema.
-                </p>
-
-                <div className="flex items-center justify-between text-purple-600 dark:text-purple-400">
-                  <span className="text-sm font-semibold">Administrar</span>
-                  <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </div>
-              </button>
-            )}
-
-            {/* Placeholder for future apps */}
-            <div className="group relative flex h-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-[var(--fin-line)] bg-[var(--fin-card)]/50 p-6 text-center transition-all duration-300">
-               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
-                <Activity className="h-6 w-6" />
-              </div>
-              <h3 className="mb-2 text-lg font-bold text-[var(--fin-ink-soft)]">Próximamente</h3>
-              <p className="text-sm text-[var(--fin-ink-faint)]">
-                Más aplicaciones llegarán pronto a tu ecosistema.
+                <PieChart className="h-5 w-5" strokeWidth={2.25} />
+              </span>
+              <h2 className="relative text-[19px] font-semibold tracking-tight">Finanzas</h2>
+              <p className="relative mb-6 mt-1.5 flex-1 text-[13.5px] leading-relaxed text-[var(--fin-ink-soft)]">
+                Movimientos, presupuestos y metas — todo en un solo lugar.
               </p>
-            </div>
+              <div
+                className="relative flex items-center gap-1.5 text-[13px] font-semibold"
+                style={{ color: ACENTOS.finanzas.fg }}
+              >
+                Abrir
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" strokeWidth={2.5} />
+              </div>
+            </motion.button>
 
+            {muestraSuperadmin && (
+              <motion.button
+                initial={quieto ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={quieto ? undefined : { y: -3 }}
+                whileTap={{ scale: 0.985 }}
+                onClick={() => onSelectApp('superadmin')}
+                className="group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-[var(--fin-line)]/70 bg-[var(--fin-card)] p-6 text-left shadow-[0_1px_2px_rgb(0_0_0/0.04),0_16px_36px_-16px_rgb(0_0_0/0.16)] transition-colors sm:p-7"
+              >
+                <span
+                  className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+                  style={{ background: ACENTOS.superadmin.ring }}
+                  aria-hidden
+                />
+                <span
+                  className="relative mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl"
+                  style={{ background: ACENTOS.superadmin.bg, color: ACENTOS.superadmin.fg }}
+                >
+                  <Shield className="h-5 w-5" strokeWidth={2.25} />
+                </span>
+                <h2 className="relative text-[19px] font-semibold tracking-tight">Superadmin</h2>
+                <p className="relative mb-6 mt-1.5 flex-1 text-[13.5px] leading-relaxed text-[var(--fin-ink-soft)]">
+                  Usuarios, roles, IA y analítica del sistema.
+                </p>
+                <div
+                  className="relative flex items-center gap-1.5 text-[13px] font-semibold"
+                  style={{ color: ACENTOS.superadmin.fg }}
+                >
+                  Administrar
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" strokeWidth={2.5} />
+                </div>
+              </motion.button>
+            )}
           </div>
+
+          <motion.p
+            initial={quieto ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mt-8 flex items-center justify-center gap-1.5 text-center text-[12.5px] text-[var(--fin-ink-faint)]"
+          >
+            <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
+            Más aplicaciones llegarán pronto a tu ecosistema.
+          </motion.p>
         </div>
       </main>
     </div>
