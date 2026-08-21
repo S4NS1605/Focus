@@ -7,11 +7,11 @@ export interface UseDictation {
   supported: boolean;
   status: DictationStatus;
   /**
-   * Lo último que Groq transcribió del audio acumulado hasta ahora, mientras
-   * se sigue grabando (ver `INTERVALO_PARCIAL_MS` en useAudioCapture.ts). No
-   * es una conexión en vivo a un motor de voz -- se resube el audio entero
-   * cada ~1.6s y por eso puede corregirse a sí mismo con más contexto, igual
-   * que hace Whisper con la versión final.
+   * Lo transcrito hasta ahora, mientras se sigue grabando (ver
+   * `DURACION_SEGMENTO_MS` en useAudioCapture.ts). No es una conexión en vivo
+   * a un motor de voz: es la grabación cortada en segmentos cortos e
+   * independientes, cada uno transcrito por Groq apenas termina y pegado al
+   * texto de los anteriores con un espacio.
    */
   interim: string;
   /** Qué tan fuerte se está hablando ahora mismo, de 0 a 1. Decorativo. */

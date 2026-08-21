@@ -26,12 +26,12 @@ interface DictadoOverlayProps {
  * Antes "escuchando" era un círculo rojo latiendo en una barra flotante de
  * 64px -- se sentía como si el toque solo hubiera activado un interruptor, no
  * como si la app estuviera de verdad escuchando. Ahora, mientras se graba,
- * `useAudioCapture` manda el audio acumulado a transcribir cada ~1.6s (ver
- * `INTERVALO_PARCIAL_MS` ahí) y este componente va mostrando esa respuesta
- * creciente palabra por palabra -- no es una conexión en vivo a un motor de
- * voz en streaming, es Groq respondiendo rapidísimo una y otra vez con un
- * trozo más largo cada vez, pero el resultado en pantalla es el mismo que
- * buscaba: el texto aparece mientras se habla, no de golpe al final.
+ * `useAudioCapture` corta la grabación en segmentos cortos e independientes
+ * (ver `DURACION_SEGMENTO_MS` ahí), transcribe cada uno apenas termina y va
+ * pegando el texto -- no es una conexión en vivo a un motor de voz en
+ * streaming, es Groq respondiendo rapidísimo segmento tras segmento, pero el
+ * resultado en pantalla es el mismo que buscaba: el texto aparece mientras se
+ * habla, no de golpe al final.
  *
  * Por eso `texto` sirve para dos cosas con el mismo tratamiento visual: el
  * parcial que va creciendo mientras se escucha, y la versión definitiva que

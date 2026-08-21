@@ -61,16 +61,26 @@ const MAX_MS = 60_000;
 const MIN_MS = 800;
 
 /**
- * Cada cuánto se manda a transcribir el audio acumulado HASTA AHORA, mientras
- * se sigue grabando -- esto es todo el "streaming": no hay conexión en vivo a
- * ningún motor, es Groq (rapidísimo) contestando cada vez con un trozo más
- * largo. `MediaRecorder` entrega los trozos en orden y cada uno depende del
- * anterior (el encabezado del contenedor solo va en el primero), así que lo
- * que se manda cada vez es la concatenación completa de todos los trozos
- * hasta ese punto -- un archivo válido y cada vez más largo, no un pedazo
- * suelto que Whisper no sabría decodificar.
+ * Cuánto dura cada segmento del "streaming".
+ *
+ * Antes esto usaba el `timeslice` de MediaRecorder para partir UNA grabación
+ * continua en trozos, mandando cada vez la concatenación de todos los trozos
+ * hasta ese momento. Sonaba razonable (WebM debería poder reconstruirse así),
+ * pero en un iPhone de verdad el resultado llegaba sin espacios entre
+ * palabras -- "Melogastéenuntamalqueme" en vez de "Me lo gasté en un tamal
+ * que me...". El contenedor fragmentado no estaba llegando limpio a Whisper.
+ *
+ * Ahora cada segmento es su PROPIA grabación completa, con su propio
+ * `MediaRecorder` que arranca y para solo -- exactamente el mismo mecanismo
+ * que ya se usaba (y funcionaba bien) para la transcripción final de siempre.
+ * Nunca se manda un fragmento a medias, solo archivos completos y válidos; el
+ * texto de cada uno se pega con un espacio de este lado. El costo es un
+ * huequito de audio de la duración de la ida y vuelta a Groq entre un
+ * segmento y el siguiente -- inaudible para esto, y de todas formas la
+ * transcripción DEFINITIVA (la que de verdad se guarda) sigue viniendo de una
+ * sola grabación continua sin cortes, igual que antes de este cambio.
  */
-const INTERVALO_PARCIAL_MS = 1600;
+const DURACION_SEGMENTO_MS = 2200;
 
 /**
  * Lo que Whisper devuelve cuando le llega silencio.
@@ -149,13 +159,21 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analiserRef = useRef<AnalyserNode | null>(null);
   const medidorRafRef = useRef<number | null>(null);
-  // Identifica cada grabación: si una respuesta parcial llega tarde, después
-  // de que ya empezó otra grabación, se descarta en vez de pisar el texto
-  // de la sesión nueva.
+  // Identifica cada grabación: si un segmento de una grabación vieja resuelve
+  // tarde, después de que ya empezó otra, se descarta en vez de pisar el
+  // texto de la sesión nueva.
   const sesionRef = useRef(0);
-  // Nunca dos parciales en vuelo a la vez -- el siguiente trozo simplemente
-  // espera al que ya salió en vez de amontonar peticiones.
-  const parcialEnVueloRef = useRef(false);
+  // El segmento de audio que está grabando el "streaming" ahora mismo, y el
+  // timer que lo corta para pasar al siguiente.
+  const segmentoActivoRef = useRef<MediaRecorder | null>(null);
+  const segmentoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Se pone en falso al parar o cancelar, para que el segmento que esté en
+  // camino en ese momento no encadene uno más después de terminar.
+  const relanzarSegmentosRef = useRef(true);
+  // Lo que ya se transcribió de segmentos anteriores en ESTA grabación, para
+  // pegarle el siguiente segmento con un espacio explícito -- nunca se
+  // concatena audio a medias, solo texto ya transcrito de archivos completos.
+  const textoAcumuladoRef = useRef('');
 
   const detenerMedidor = useCallback(() => {
     if (medidorRafRef.current !== null) {
@@ -205,6 +223,87 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     }
   }, []);
 
+  const detenerSegmentos = useCallback(() => {
+    relanzarSegmentosRef.current = false;
+    if (segmentoTimeoutRef.current !== null) {
+      clearTimeout(segmentoTimeoutRef.current);
+      segmentoTimeoutRef.current = null;
+    }
+    const segmento = segmentoActivoRef.current;
+    if (segmento && segmento.state !== 'inactive') segmento.stop();
+    segmentoActivoRef.current = null;
+  }, []);
+
+  /**
+   * Un segmento del "streaming": una grabación corta, completa y válida por sí
+   * misma. Arranca, graba `DURACION_SEGMENTO_MS`, se detiene, se transcribe, y
+   * si la grabación principal sigue viva arranca el siguiente segmento -- así,
+   * en cadena, hasta que `stop`/`cancel` apagan `relanzarSegmentosRef`.
+   */
+  const iniciarSegmento = useCallback((stream: MediaStream, miSesion: number) => {
+    if (!relanzarSegmentosRef.current || miSesion !== sesionRef.current) return;
+
+    const formato = primerFormatoSoportado();
+    let segmento: MediaRecorder;
+    try {
+      segmento = formato ? new MediaRecorder(stream, { mimeType: formato }) : new MediaRecorder(stream);
+    } catch {
+      // Sin segmentos -- pero la grabación principal (y la transcripción
+      // final) no se enteran ni se afectan por esto.
+      return;
+    }
+
+    const trozosSeg: Blob[] = [];
+    segmento.ondataavailable = (e) => {
+      if (e.data.size > 0) trozosSeg.push(e.data);
+    };
+
+    segmento.onstop = () => {
+      if (segmentoActivoRef.current === segmento) segmentoActivoRef.current = null;
+      if (!relanzarSegmentosRef.current || miSesion !== sesionRef.current) return;
+
+      const continuarConElSiguiente = () => {
+        if (relanzarSegmentosRef.current && miSesion === sesionRef.current) {
+          iniciarSegmento(stream, miSesion);
+        }
+      };
+
+      const tipoSeg = segmento.mimeType || 'audio/webm';
+      const audioSeg = new Blob(trozosSeg, { type: tipoSeg });
+      if (audioSeg.size === 0) {
+        continuarConElSiguiente();
+        return;
+      }
+
+      fetch('/api/transcribir', {
+        method: 'POST',
+        headers: { 'Content-Type': tipoSeg },
+        body: audioSeg,
+      })
+        .then((r) => r.json().catch(() => null))
+        .then((datos: { text?: string; offline?: boolean } | null) => {
+          if (miSesion !== sesionRef.current) return;
+          if (!datos || datos.offline) return;
+          const texto = typeof datos.text === 'string' ? datos.text.trim() : '';
+          // El mismo filtro de alucinaciones que la transcripción final: un
+          // segmento de puro silencio entre frases no debe colarse como
+          // "Gracias" en medio de lo que la persona sí dijo.
+          if (texto && !esAlucinacion(texto)) {
+            textoAcumuladoRef.current = (textoAcumuladoRef.current + ' ' + texto).trim();
+            setInterim(textoAcumuladoRef.current);
+          }
+        })
+        .catch(() => {})
+        .finally(continuarConElSiguiente);
+    };
+
+    segmentoActivoRef.current = segmento;
+    segmento.start();
+    segmentoTimeoutRef.current = setTimeout(() => {
+      if (segmento.state !== 'inactive') segmento.stop();
+    }, DURACION_SEGMENTO_MS);
+  }, []);
+
   // Mantiene fresco el callback sin volver a crear la grabadora.
   useEffect(() => {
     onFinalRef.current = onFinal;
@@ -224,6 +323,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
 
   const stop = useCallback(() => {
     quitarTope();
+    detenerSegmentos();
     const grabadora = grabadoraRef.current;
     if (grabadora && grabadora.state !== 'inactive') {
       // `onstop` hace el resto: cierra el micrófono y sube el audio.
@@ -232,12 +332,13 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     // El último parcial se queda en pantalla mientras se confirma la versión
     // definitiva -- borrar aquí hacía que el texto desapareciera y volviera a
     // aparecer un instante después, como si se hubiera perdido lo dicho.
-  }, [quitarTope]);
+  }, [quitarTope, detenerSegmentos]);
 
   const cancel = useCallback(() => {
     canceladoRef.current = true;
     quitarTope();
     detenerMedidor();
+    detenerSegmentos();
     const grabadora = grabadoraRef.current;
     if (grabadora && grabadora.state !== 'inactive') {
       // `onstop` ve el flag y descarta el audio en vez de subirlo.
@@ -248,7 +349,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       setStatus('idle');
     }
     setInterim('');
-  }, [quitarTope, detenerMedidor]);
+  }, [quitarTope, detenerMedidor, detenerSegmentos]);
 
   const start = useCallback(async () => {
     if (!supported || grabadoraRef.current) return;
@@ -309,59 +410,18 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
 
     trozosRef.current = [];
 
-    /**
-     * El "streaming": no hay conexión en vivo a ningún motor de voz, es Groq
-     * (rapidísimo) contestando de nuevo cada ~1.6s con el audio acumulado
-     * hasta ese momento. Cada respuesta reemplaza a la anterior -- Whisper a
-     * veces se corrige a sí mismo con más contexto, y eso es justo lo que se
-     * quiere mostrar, no un texto que solo crece y nunca se corrige.
-     */
-    const dispararParcial = () => {
-      if (parcialEnVueloRef.current) return;
-      if (trozosRef.current.length === 0) return;
-      parcialEnVueloRef.current = true;
-
-      const tipoParcial = grabadora.mimeType || 'audio/webm';
-      const audioHastaAhora = new Blob(trozosRef.current, { type: tipoParcial });
-      if (audioHastaAhora.size === 0) {
-        parcialEnVueloRef.current = false;
-        return;
-      }
-
-      fetch('/api/transcribir', {
-        method: 'POST',
-        headers: { 'Content-Type': tipoParcial },
-        body: audioHastaAhora,
-      })
-        .then((r) => r.json().catch(() => null))
-        .then((datos: { text?: string; offline?: boolean } | null) => {
-          // Otra grabación ya empezó (se canceló y se volvió a tocar el
-          // micrófono, por ejemplo): esta respuesta ya no es de nadie.
-          if (miSesion !== sesionRef.current) return;
-          if (!datos || datos.offline) return;
-          const texto = typeof datos.text === 'string' ? datos.text.trim() : '';
-          // Un parcial vacío no borra lo que ya se había mostrado: un
-          // silencio de medio segundo entre palabras no debe hacer
-          // parpadear el texto a blanco y de vuelta.
-          if (texto) setInterim(texto);
-        })
-        .catch(() => {})
-        .finally(() => {
-          parcialEnVueloRef.current = false;
-        });
-    };
-
+    // Esta grabación es la fuente de verdad: corre de un tirón, sin cortes,
+    // de principio a fin. `ondataavailable` solo dispara una vez, al soltar
+    // `stop()` -- el streaming en vivo lo hace `iniciarSegmento` por su
+    // cuenta, con sus propias grabaciones cortas e independientes, sin tocar
+    // ni un byte de esta.
     grabadora.ondataavailable = (evento) => {
       if (evento.data.size > 0) trozosRef.current.push(evento.data);
-      // El trozo final (el que suelta `stop()`) llega con el estado ya en
-      // 'inactive' -- ese lo procesa `onstop`, que hace la transcripción
-      // completa y definitiva. Un parcial solo tiene sentido mientras se
-      // sigue grabando.
-      if (grabadora.state === 'recording') dispararParcial();
     };
 
     grabadora.onerror = () => {
       quitarTope();
+      detenerSegmentos();
       cerrarMicrofono();
       grabadoraRef.current = null;
       setStatus('idle');
@@ -436,11 +496,14 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
 
     grabadoraRef.current = grabadora;
     inicioRef.current = Date.now();
-    grabadora.start(INTERVALO_PARCIAL_MS);
+    grabadora.start();
     iniciarMedidor(stream);
+    relanzarSegmentosRef.current = true;
+    textoAcumuladoRef.current = '';
+    iniciarSegmento(stream, miSesion);
     setStatus('listening');
     topeRef.current = setTimeout(stop, MAX_MS);
-  }, [supported, quitarTope, stop, iniciarMedidor, detenerMedidor]);
+  }, [supported, quitarTope, stop, iniciarMedidor, detenerMedidor, detenerSegmentos, iniciarSegmento]);
 
   // Si la pantalla se va mientras graba, se cierra el micrófono igual.
   useEffect(() => stop, [stop]);
