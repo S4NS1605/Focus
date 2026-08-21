@@ -68,6 +68,33 @@ export const gastadoEnCategoria = (
   return total;
 };
 
+/**
+ * Lo que se gasta normalmente al mes en una categoría, para ayudar a poner un
+ * tope realista en vez de adivinar.
+ *
+ * Promedia sobre los meses anteriores donde hubo algún gasto en la categoría
+ * — nunca sobre `mesActual`, porque un mes a medio transcurrir promedia bajo
+ * y sugeriría un tope más chico de lo que la categoría realmente cuesta.
+ * `null` sin historial: no hay nada que sugerir todavía.
+ */
+export const promedioMensualCategoria = (
+  transacciones: readonly Transaction[],
+  categoria: CategoriaClave,
+  mesActual: string,
+): number | null => {
+  const porMes = new Map<string, number>();
+  for (const tx of transacciones) {
+    if (tx.kind !== 'gasto') continue;
+    if (tx.category !== categoria) continue;
+    const mes = monthKey(tx.occurredOn);
+    if (mes === mesActual) continue;
+    porMes.set(mes, (porMes.get(mes) ?? 0) + tx.amountCop);
+  }
+  if (porMes.size === 0) return null;
+  const total = [...porMes.values()].reduce((a, b) => a + b, 0);
+  return Math.round(total / porMes.size);
+};
+
 export const estadoDePresupuesto = (
   presupuesto: Presupuesto,
   transacciones: readonly Transaction[],

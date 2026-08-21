@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pencil, Plus, Receipt, Target, Trash2, TrendingUp } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Presupuesto, TonoPresupuesto } from '../lib/presupuestos';
-import { estadoDeTodos, tonoDe } from '../lib/presupuestos';
+import { estadoDeTodos, promedioMensualCategoria, tonoDe } from '../lib/presupuestos';
 import { useCatalogo } from '../catalogoContexto';
 import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../lib/formatCop';
 
@@ -64,6 +64,15 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
 
   const yaTienen = new Set(presupuestos.map((p) => p.categoria));
   const disponibles = catalogo.lista.filter((c) => !yaTienen.has(c.clave));
+
+  const promedioCrear = useMemo(
+    () => (categoria === '' ? null : promedioMensualCategoria(transacciones, categoria, mes)),
+    [transacciones, categoria, mes],
+  );
+  const promedioEditar = useMemo(
+    () => (editando === null ? null : promedioMensualCategoria(transacciones, editando, mes)),
+    [transacciones, editando, mes],
+  );
 
   const crear = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,12 +146,19 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
             ))}
           </select>
 
-          <label
-            htmlFor="pre-monto"
-            className="mt-3 block text-[13px] font-semibold text-[var(--fin-ink-soft)]"
-          >
-            Máximo al mes
-          </label>
+          <div className="mt-3 flex items-baseline justify-between gap-2">
+            <label
+              htmlFor="pre-monto"
+              className="text-[13px] font-semibold text-[var(--fin-ink-soft)]"
+            >
+              Máximo al mes
+            </label>
+            {promedioCrear !== null ? (
+              <span className="text-[12px] text-[var(--fin-ink-faint)]">
+                Sueles gastar {formatCop(promedioCrear)}/mes
+              </span>
+            ) : null}
+          </div>
           <input
             id="pre-monto"
             value={monto}
@@ -202,12 +218,19 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                       </span>
                     </span>
 
-                    <label
-                      htmlFor={`pre-editar-${e.categoria}`}
-                      className="mt-3 block text-[13px] font-semibold text-[var(--fin-ink-soft)]"
-                    >
-                      Máximo al mes
-                    </label>
+                    <div className="mt-3 flex items-baseline justify-between gap-2">
+                      <label
+                        htmlFor={`pre-editar-${e.categoria}`}
+                        className="text-[13px] font-semibold text-[var(--fin-ink-soft)]"
+                      >
+                        Máximo al mes
+                      </label>
+                      {promedioEditar !== null ? (
+                        <span className="text-[12px] text-[var(--fin-ink-faint)]">
+                          Sueles gastar {formatCop(promedioEditar)}/mes
+                        </span>
+                      ) : null}
+                    </div>
                     <input
                       id={`pre-editar-${e.categoria}`}
                       value={monto}

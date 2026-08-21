@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
-import { estadoDePresupuesto, estadoDeTodos, gastadoEnCategoria, tonoDe } from './presupuestos';
+import {
+  estadoDePresupuesto,
+  estadoDeTodos,
+  gastadoEnCategoria,
+  promedioMensualCategoria,
+  tonoDe,
+} from './presupuestos';
 import type { Presupuesto } from './presupuestos';
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
@@ -174,5 +180,35 @@ describe('tonoDe', () => {
 
   it('bien cuando de verdad va bien', () => {
     expect(tonoDe(estadoCon(50_000, 400_000, '2026-08-25'))).toBe('bien');
+  });
+});
+
+describe('promedioMensualCategoria', () => {
+  it('promedia los meses anteriores, sin contar el mes actual', () => {
+    const promedio = promedioMensualCategoria(
+      [
+        tx({ id: 'a', amountCop: 100_000, occurredOn: '2026-07-05' }),
+        tx({ id: 'b', amountCop: 60_000, occurredOn: '2026-06-10' }),
+        tx({ id: 'c', amountCop: 900_000, occurredOn: '2026-08-15' }),
+      ],
+      'comida',
+      '2026-08',
+    );
+
+    expect(promedio).toBe(80_000);
+  });
+
+  it('sin historial devuelve null, no cero', () => {
+    expect(promedioMensualCategoria([], 'comida', '2026-08')).toBeNull();
+  });
+
+  it('ignora otras categorías', () => {
+    const promedio = promedioMensualCategoria(
+      [tx({ category: 'transporte', occurredOn: '2026-07-05' })],
+      'comida',
+      '2026-08',
+    );
+
+    expect(promedio).toBeNull();
   });
 });
