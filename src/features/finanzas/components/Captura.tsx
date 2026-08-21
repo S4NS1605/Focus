@@ -219,6 +219,7 @@ export const Captura: React.FC<CapturaProps> = ({
           className="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
+        >
           {opciones.map((entrada) => {
             const activa = category === entrada.clave;
             const Icono = entrada.Icono;
