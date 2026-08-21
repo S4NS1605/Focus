@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, X } from 'lucide-react';
+import { ChevronRight, X, Wallet, MessageCircle, FileText, CreditCard, BarChart3, Zap } from 'lucide-react';
 import '../styles/WelcomeTourFinanzas.css';
 
 interface WelcomeTourProps {
@@ -17,7 +17,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
     {
       title: '¿Qué es Lukapp?',
       subtitle: 'Tu dinero, bajo control',
-      icon: '💰',
+      Icon: Wallet,
       content: (
         <div className="tour-content-text">
           <p>Registra cada peso que gastas. Importa extractos de tus bancos. Entiende dónde va tu plata.</p>
@@ -28,7 +28,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
     {
       title: 'Lenguaje natural',
       subtitle: 'Escribe como hablas',
-      icon: '✍️',
+      Icon: MessageCircle,
       content: (
         <div className="tour-content-demo">
           <div className="input-demo">
@@ -39,8 +39,8 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
           <div className="output-demo">
             <div className="label">Lukapp entiende:</div>
             <div className="parsed-item">
-              <span className="emoji">🍔</span>
-              <span className="desc">Comida</span>
+              <span className="category-badge">Comida</span>
+              <span className="desc">Almuerzo con Juan</span>
               <span className="amount">-$45.000</span>
             </div>
           </div>
@@ -50,7 +50,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
     {
       title: 'Importa extractos',
       subtitle: 'De tus bancos colombianos',
-      icon: '📄',
+      Icon: FileText,
       content: (
         <div className="tour-content-text">
           <p>Davivienda, Bancolombia, Nequi, Nu — descarga el PDF y sube.</p>
@@ -67,23 +67,23 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
     {
       title: 'Múltiples cuentas',
       subtitle: 'Débito, crédito, efectivo — todo en uno',
-      icon: '🏦',
+      Icon: CreditCard,
       content: (
         <div className="tour-content-demo">
           <div className="accounts-demo">
             <div className="account-item">
-              <span className="icon">💳</span>
-              <span className="name">Davivienda débito</span>
+              <span className="account-badge">Débito</span>
+              <span className="name">Davivienda</span>
               <span className="balance">$2.450</span>
             </div>
             <div className="account-item">
-              <span className="icon">💰</span>
+              <span className="account-badge">Ahorro</span>
               <span className="name">Alcancía</span>
               <span className="balance">$850</span>
             </div>
             <div className="account-item">
-              <span className="icon">💸</span>
-              <span className="name">Efectivo en bolsillo</span>
+              <span className="account-badge">Efectivo</span>
+              <span className="name">Bolsillo</span>
               <span className="balance">$120</span>
             </div>
           </div>
@@ -97,29 +97,29 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
     {
       title: 'Análisis automático',
       subtitle: 'Ve dónde va tu plata',
-      icon: '📊',
+      Icon: BarChart3,
       content: (
         <div className="tour-content-text">
           <p>Gráficos por categoría. Tendencias. Gastos recurrentes. Cuánto ahorras cada mes.</p>
           <p className="subtle">Sin juzgar. Solo números.</p>
           <div className="categories-demo">
             <div className="category">
-              <span className="emoji">🍔</span>
+              <span className="category-dot" style={{ background: '#f59e0b' }}></span>
               <span className="name">Comida</span>
               <span className="pct">45%</span>
             </div>
             <div className="category">
-              <span className="emoji">🚕</span>
+              <span className="category-dot" style={{ background: '#3b82f6' }}></span>
               <span className="name">Transporte</span>
               <span className="pct">20%</span>
             </div>
             <div className="category">
-              <span className="emoji">💊</span>
+              <span className="category-dot" style={{ background: '#10b981' }}></span>
               <span className="name">Salud</span>
               <span className="pct">15%</span>
             </div>
             <div className="category">
-              <span className="emoji">🎬</span>
+              <span className="category-dot" style={{ background: '#8b5cf6' }}></span>
               <span className="name">Ocio</span>
               <span className="pct">20%</span>
             </div>
@@ -130,7 +130,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
     {
       title: '¿Listo?',
       subtitle: 'Empieza en menos de 5 minutos',
-      icon: '🚀',
+      Icon: Zap,
       content: (
         <div className="tour-content-text">
           <p>Crea una cuenta, agrega tu primera transacción y entiende de una vez dónde va tu plata.</p>
@@ -162,7 +162,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
         </button>
 
         <div className="tour-header">
-          <span className="icon">{current.icon}</span>
+          <current.Icon className="icon" size={32} strokeWidth={1.5} aria-hidden />
         </div>
 
         <div className="tour-title-section">
