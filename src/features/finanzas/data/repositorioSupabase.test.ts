@@ -113,3 +113,50 @@ describe('RepositorioSupabase — errores legibles', () => {
     ).rejects.toThrow('El monto debe ser mayor que cero.');
   });
 });
+
+describe('RepositorioSupabase — los fallos de sesión también hablan español', () => {
+  /** Un cliente cuya única lectura con datos, `categorias`, falla como diga el test. */
+  const clienteQueFalla = (mensaje: string) =>
+    ({
+      from: (tabla: string) => ({
+        select: () => ({
+          eq: () =>
+            Promise.resolve(
+              tabla === 'categorias' ? { data: null, error: { message: mensaje } } : { data: [], error: null },
+            ),
+        }),
+      }),
+    }) as unknown as SupabaseClient;
+
+  it('no deja salir «JWT issued at future» al banner', async () => {
+    // Este es el error de la captura. `crearFetchTolerante` lo reintenta y casi
+    // siempre lo absorbe; si el desfase es tan grande que ni esperando se cura,
+    // lo que se lee tiene que seguir siendo una frase, no jerga en inglés.
+    await expect(
+      new RepositorioSupabase(clienteQueFalla('JWT issued at future'), 'u1').cargarTodo(),
+    ).rejects.toThrow('La hora del servidor no coincide con la de tu sesión.');
+  });
+
+  it('distingue la sesión vencida del desfase de reloj', async () => {
+    // Se parecen —los dos son el token— pero uno se arregla esperando y el otro
+    // volviendo a entrar. Decir lo mismo en ambos casos manda a la persona a
+    // hacer justo lo que no sirve.
+    await expect(
+      new RepositorioSupabase(clienteQueFalla('JWT expired'), 'u1').cargarTodo(),
+    ).rejects.toThrow('Tu sesión venció. Vuelve a entrar.');
+  });
+
+  it('tampoco deja escapar el resto de la familia', async () => {
+    await expect(
+      new RepositorioSupabase(clienteQueFalla('JWSError JWSInvalidSignature'), 'u1').cargarTodo(),
+    ).rejects.toThrow('Tu sesión ya no es válida. Vuelve a entrar.');
+  });
+
+  it('no se traga un error que nada tiene que ver con el token', async () => {
+    // El comodín `/jwt|jws/` es ancho; si se comiera errores ajenos, un fallo
+    // real quedaría disfrazado de sesión inválida y nadie lo encontraría.
+    await expect(
+      new RepositorioSupabase(clienteQueFalla('column "color" does not exist'), 'u1').cargarTodo(),
+    ).rejects.toThrow('No se pudieron leer las categorías: column "color" does not exist');
+  });
+});

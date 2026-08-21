@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { crearFetchTolerante } from './fetchTolerante';
 
 /**
  * These two DO carry the `VITE_` prefix, unlike ANALISTA_TOKEN.
@@ -43,6 +44,17 @@ export const obtenerSupabase = (): SupabaseClient | null => {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
+      },
+      /**
+       * Se envuelve aquí, en el único cliente del navegador, y no en cada
+       * repositorio: el desfase de reloj rechaza por igual lecturas, escrituras
+       * y RPC, así que el sitio donde se arregla una sola vez es el transporte.
+       *
+       * `fetch` se pasa dentro de una lambda porque arrancado del objeto global
+       * pierde su `this` y algunos navegadores lo rechazan con `Illegal invocation`.
+       */
+      global: {
+        fetch: crearFetchTolerante((entrada, init) => fetch(entrada, init)),
       },
     });
   }

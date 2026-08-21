@@ -59,6 +59,24 @@ export class RepositorioSupabase implements Repositorio {
     if (error.message.includes('violates row-level security')) {
       throw new Error('Tu sesión no tiene permiso para este cambio. Vuelve a entrar.');
     }
+
+    // Los fallos de token llegaban crudos y en inglés a un banner de una app
+    // que solo habla español: «No se pudieron leer las categorías: JWT issued
+    // at future». `crearFetchTolerante` ya reintenta el caso del reloj
+    // desfasado y casi siempre lo absorbe sin que nadie lo vea; esto es lo que
+    // se dice si el desfase es tan grande que ni esperando se arregla, y de
+    // paso cubre al resto de la familia, que antes se escapaba igual.
+    if (/issued at future|not yet valid/i.test(error.message)) {
+      throw new Error(
+        'La hora del servidor no coincide con la de tu sesión. Espera unos segundos e inténtalo de nuevo.',
+      );
+    }
+    if (/jwt expired|token is expired/i.test(error.message)) {
+      throw new Error('Tu sesión venció. Vuelve a entrar.');
+    }
+    if (/jwt|jws/i.test(error.message)) {
+      throw new Error('Tu sesión ya no es válida. Vuelve a entrar.');
+    }
     if (error.message.includes('duplicate key')) {
       throw new Error('Ese registro ya existe.');
     }
