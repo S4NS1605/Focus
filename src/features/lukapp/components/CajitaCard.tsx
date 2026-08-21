@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RippleButton } from './RippleButton';
 import { ChevronDown, Trash2 } from 'lucide-react';
 import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';

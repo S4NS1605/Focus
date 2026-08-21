@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Send, Trash2, X } from 'lucide-react';
-import { RippleButton } from './RippleButton';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import { TIPO_LABELS } from '../data/modelos';
 import type { Transaction } from '../types';

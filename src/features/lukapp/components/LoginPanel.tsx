@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RippleButton } from './RippleButton';
 import { AlertTriangle, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import type { Sesion } from '../data/useSesion';
 import type { Tema } from '../data/useTema';

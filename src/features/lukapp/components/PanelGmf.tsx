@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Landmark, Scale } from 'lucide-react';
-import { RippleButton } from './RippleButton';
 import type { Transaction } from '../types';
 import type { RegimenGmf, ValorUvt } from '../lib/gmf';
 import {

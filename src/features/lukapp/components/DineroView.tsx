@@ -1,6 +1,5 @@
 import React from 'react';
 import type { Transaction } from '../types';
-import { RippleButton } from './RippleButton';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { ES_PASIVO } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';

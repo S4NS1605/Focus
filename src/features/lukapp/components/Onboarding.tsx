@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { RippleButton } from './RippleButton';
 import { ArrowRight, Check, Mic } from 'lucide-react';
 import { formatAmountInput } from '../lib/formatCop';
 import { TecladoNumerico } from './TecladoNumerico';

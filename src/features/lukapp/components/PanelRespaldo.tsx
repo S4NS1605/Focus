@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { AlertTriangle, Download, FileText, HardDriveDownload, Upload } from 'lucide-react';
-import { RippleButton } from './RippleButton';
 import type { Instantanea } from '../data/repositorio';
 import {
   aCsv,

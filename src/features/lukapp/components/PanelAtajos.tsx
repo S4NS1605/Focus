@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Check, Copy, ExternalLink, KeyRound, Plus, Smartphone, Trash2 } from 'lucide-react';
-import { RippleButton } from './RippleButton';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 

@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { RippleButton } from './RippleButton';
 import {
   AlertTriangle,
   CheckCircle2,
