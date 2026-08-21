@@ -3,12 +3,20 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { PDFParse } from 'pdf-parse';
 import { tokenValido } from './server_lib/auth.ts';
 import { motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
+import {
+  generarLlave,
+  hashLlave,
+  llaveDeCabecera,
+  movimientoDesdeAtajo,
+  pistaDeLlave,
+} from './server_lib/atajos.ts';
 
 dotenv.config();
 
@@ -1027,6 +1035,161 @@ app.get('/api/salud', (_req, res) => {
     process.env.ANTHROPIC_API_KEY || process.env.DEEPSEEK_API_KEY,
   );
   return res.status(200).json({ ok: true, ia: hayIA });
+});
+
+// ----------------------------------------------------------------------
+// REGISTRO AUTOMÁTICO: llaves para que un Atajo de iOS anote un gasto solo.
+//
+// Dos familias de ruta muy distintas conviven aquí:
+//
+//   /api/atajos/llave*    — las administra el DUEÑO, con su sesión de Supabase
+//                            de siempre (Authorization: Bearer <access_token>).
+//   /api/atajo/movimiento — la llama el TELÉFONO, sin sesión: se autentica con
+//                            la llave misma, que es su única credencial.
+//
+// Por eso este segundo grupo no pasa por `exigirUsuario`: no hay JWT de
+// Supabase que exigir, la llave hace ese papel.
+// ----------------------------------------------------------------------
+
+app.post('/api/atajos/llave', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase en el servidor' });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const etiqueta =
+      typeof req.body?.etiqueta === 'string' && req.body.etiqueta.trim()
+        ? req.body.etiqueta.trim().slice(0, 60)
+        : 'Mi iPhone';
+
+    const llave = generarLlave();
+    const { error } = await cliente.from('llaves_atajo').insert({
+      id: randomUUID(),
+      user_id: acceso.userId,
+      hash: hashLlave(llave),
+      pista: pistaDeLlave(llave),
+      etiqueta,
+    });
+    if (error) throw error;
+
+    // Única vez que la llave existe en texto plano fuera de la memoria del
+    // teléfono que la va a guardar: el servidor solo guardó su hash, así que
+    // si esta respuesta se pierde, la única salida es revocar y crear otra.
+    return res.status(200).json({ llave, pista: pistaDeLlave(llave), etiqueta });
+  } catch (error: any) {
+    console.error('Error creando llave de atajo:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+app.get('/api/atajos/llave', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase en el servidor' });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const { data, error } = await cliente
+      .from('llaves_atajo')
+      .select('id, pista, etiqueta, creada_en, usada_en, revocada_en')
+      .eq('user_id', acceso.userId)
+      .order('creada_en', { ascending: false });
+    if (error) throw error;
+
+    return res.status(200).json({ llaves: data ?? [] });
+  } catch (error: any) {
+    console.error('Error listando llaves de atajo:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+app.post('/api/atajos/revocar', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase en el servidor' });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const id = typeof req.body?.id === 'string' ? req.body.id : '';
+    if (!id) return res.status(400).json({ error: 'Falta el id de la llave' });
+
+    // El `eq('user_id', ...)` es lo que impide que alguien revoque la llave de
+    // otro adivinando su id: sin sesión válida de ESE dueño, la fila no
+    // aparece y no pasa nada, en vez de un error que confirme que el id existe.
+    const { error } = await cliente
+      .from('llaves_atajo')
+      .update({ revocada_en: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', acceso.userId)
+      .is('revocada_en', null);
+    if (error) throw error;
+
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    console.error('Error revocando llave de atajo:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+app.post('/api/atajo/movimiento', async (req, res) => {
+  const llave = llaveDeCabecera(req.headers.authorization);
+  if (!llave) return res.status(401).json({ error: 'Falta la llave' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase en el servidor' });
+
+  try {
+    const { data: fila, error: errorLlave } = await cliente
+      .from('llaves_atajo')
+      .select('user_id, revocada_en')
+      .eq('hash', hashLlave(llave))
+      .single();
+
+    // Mismo mensaje tanto si la llave no existe como si fue revocada: decir
+    // "esta llave fue revocada" a quien no la tiene confirmaría que otra
+    // llave, la que sí probó, existe de verdad.
+    if (errorLlave || !fila || fila.revocada_en) {
+      return res.status(401).json({ error: 'Llave inválida o revocada' });
+    }
+
+    const resultado = movimientoDesdeAtajo(req.body ?? {}, fila.user_id);
+    if ('error' in resultado) return res.status(400).json({ error: resultado.error });
+
+    const { error: errorInsertar } = await cliente.from('transacciones').insert(resultado.fila);
+    // Un choque de id primario es un reintento del propio Atajo repitiendo la
+    // misma petición, no un fallo: el movimiento ya quedó guardado la primera
+    // vez, así que se responde éxito en vez de un error que Atajos le mostraría
+    // a la persona sin que haya nada roto de verdad.
+    if (errorInsertar && !errorInsertar.message.includes('duplicate key')) {
+      throw errorInsertar;
+    }
+
+    // Best-effort: si esto falla no se pierde el gasto, solo la fecha de "última
+    // vez usada" que se enseña en el panel.
+    void cliente
+      .from('llaves_atajo')
+      .update({ usada_en: new Date().toISOString() })
+      .eq('hash', hashLlave(llave))
+      .then(() => {});
+
+    return res.status(201).json({ success: true, id: resultado.fila.id });
+  } catch (error: any) {
+    console.error('Error registrando movimiento de atajo:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
 });
 
 app.post('/api/asesor-ia', async (req, res) => {

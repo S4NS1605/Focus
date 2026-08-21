@@ -27,6 +27,7 @@ import { AsesorView } from './components/AsesorView';
 import { ES_PASIVO } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
+import { PanelAtajos } from './components/PanelAtajos';
 import { PanelGmf } from './components/PanelGmf';
 import { PanelRespaldo } from './components/PanelRespaldo';
 import { PresupuestosView } from './components/PresupuestosView';
@@ -796,6 +797,8 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
                 existentes={transacciones}
                 onImportar={(nuevos) => void almacen.importarTransacciones(nuevos)}
               />
+            ) : panelAjustes === 'atajos' ? (
+              <PanelAtajos />
             ) : panelAjustes === 'gmf' ? (
               <PanelGmf
                 transacciones={transacciones}

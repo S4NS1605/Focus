@@ -9,6 +9,7 @@ import {
   PiggyBank,
   Repeat,
   Rocket,
+  Smartphone,
   Tag,
   Target,
   Users,
@@ -41,6 +42,7 @@ const ICONOS: Record<
   metas: Flag,
   recurrentes: Repeat,
   extractos: FileUp,
+  atajos: Smartphone,
   gmf: Landmark,
   nombres: Users,
   contraseña: Key,
@@ -51,7 +53,7 @@ const ICONOS: Record<
  * que leer las nueve filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
   { titulo: 'Tu dinero', paneles: ['cuentas', 'categorias', 'topes', 'metas', 'recurrentes'] },
-  { titulo: 'Herramientas', paneles: ['extractos', 'gmf'] },
+  { titulo: 'Herramientas', paneles: ['extractos', 'atajos', 'gmf'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
 ];
 
