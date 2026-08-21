@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Pencil, Plus, Receipt, Target, Trash2, TrendingUp } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Presupuesto, TonoPresupuesto } from '../lib/presupuestos';
 import { estadoDeTodos, promedioMensualCategoria, tonoDe } from '../lib/presupuestos';
 import { useCatalogo } from '../catalogoContexto';
 import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../lib/formatCop';
+import { RippleButton } from './RippleButton';
 
 interface PresupuestosViewProps {
   presupuestos: readonly Presupuesto[];
@@ -122,10 +124,15 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
         ) : null}
       </div>
 
+      <AnimatePresence initial={false}>
       {creando ? (
-        <form
+        <motion.form
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           onSubmit={crear}
-          className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3"
+          className="mt-3 overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3"
         >
           <label
             htmlFor="pre-categoria"
@@ -170,12 +177,13 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
           />
 
           <div className="mt-3 flex gap-2">
-            <button
+            <RippleButton
               type="submit"
+              rippleColor="rgba(255,255,255,0.5)"
               className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
             >
               Guardar
-            </button>
+            </RippleButton>
             <button
               type="button"
               onClick={() => setCreando(false)}
@@ -184,8 +192,9 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
               Cancelar
             </button>
           </div>
-        </form>
+        </motion.form>
       ) : null}
+      </AnimatePresence>
 
       {estados.length === 0 ? (
         <p className="mt-3 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
@@ -194,7 +203,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
         </p>
       ) : (
         <ul className="mt-3 flex flex-col gap-3">
-          {estados.map((e) => {
+          {estados.map((e, idx) => {
             const tono = tonoDe(e);
             const entrada = catalogo.de(e.categoria);
             const editandoEsta = editando === e.categoria;
@@ -242,12 +251,13 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                     />
 
                     <div className="mt-3 flex gap-2">
-                      <button
+                      <RippleButton
                         type="submit"
+                        rippleColor="rgba(255,255,255,0.5)"
                         className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
                       >
                         Guardar
-                      </button>
+                      </RippleButton>
                       <button
                         type="button"
                         onClick={() => {
@@ -265,7 +275,13 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
             }
 
             return (
-              <li key={e.categoria}>
+              <motion.li
+                key={e.categoria}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: Math.min(idx, 8) * 0.03, ease: 'easeOut' }}
+              >
                 <button
                   type="button"
                   onClick={() => setAbierto(abiertaEsta ? null : e.categoria)}
@@ -368,7 +384,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                     </button>
                   </div>
                 ) : null}
-              </li>
+              </motion.li>
             );
           })}
         </ul>

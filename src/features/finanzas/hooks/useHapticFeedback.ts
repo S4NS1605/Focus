@@ -1,6 +1,16 @@
+import { pulsarSwitchIOS } from '../lib/iosHapticSwitch';
+
 /**
  * Retroalimentación háptica (vibraciones) para hacer la app más premium.
  * Simula el comportamiento nativo de iOS con diferentes intensidades y patrones.
+ *
+ * En Safari de iOS `navigator.vibrate` no existe -- Apple nunca lo implementó,
+ * ni siquiera en la PWA instalada. `pulsarSwitchIOS()` es el único camino real
+ * que se encontró para sentir algo ahí (ver ese archivo para el porqué):
+ * aprovecha que iOS 18+ sí le da su haptic nativo a un switch cuando se toca
+ * con un clic de verdad. Se llama junto a `navigator.vibrate`, nunca en su
+ * lugar -- en Android/escritorio ese switch no hace nada y `vibrate` sigue
+ * siendo el camino de siempre.
  */
 
 export type HapticType =
@@ -33,6 +43,16 @@ export const useHapticFeedback = () => {
     typeof navigator.vibrate === 'function';
 
   const trigger = (type: HapticType): void => {
+    // Se intenta siempre, no solo cuando `supported` (que en iOS Safari
+    // siempre da falso, porque ahí `navigator.vibrate` no existe): el switch
+    // escondido es justo el camino para ESE caso. En cualquier otro
+    // navegador donde el switch no hace nada, este intento no cuesta nada.
+    try {
+      pulsarSwitchIOS();
+    } catch {
+      // Puramente decorativo -- si algo sale mal aquí, el resto sigue igual.
+    }
+
     if (!supported) return;
 
     try {

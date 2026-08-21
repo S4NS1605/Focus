@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Plus, Target, Trash2 } from 'lucide-react';
 import { COPY } from '../copy';
 import { iconoDeMeta } from '../cajitaIconos';
@@ -10,6 +11,7 @@ import { saldosPorCajita } from '../lib/cajitas';
 import type { CajitaMovimiento } from '../data/modelos';
 import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
 import { bogotaDate } from '../lib/localDate';
+import { RippleButton } from './RippleButton';
 
 interface MetasViewProps {
   metas: readonly Meta[];
@@ -103,8 +105,15 @@ export const MetasView: React.FC<MetasViewProps> = ({
     // sobre por qué un mx-auto sin w-full no llena dentro de un padre flex.
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+        <AnimatePresence initial={false}>
         {creando ? (
-          <form onSubmit={crear} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onSubmit={crear}
+            className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
               {COPY.metas.nueva}
             </h2>
@@ -207,13 +216,14 @@ export const MetasView: React.FC<MetasViewProps> = ({
             </select>
 
             <div className="mt-5 flex gap-2">
-              <button
+              <RippleButton
                 type="submit"
                 disabled={nombre.trim() === '' || parseAmountInput(objetivoTexto) === null}
+                rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 {COPY.metas.crear}
-              </button>
+              </RippleButton>
               <button
                 type="button"
                 onClick={() => setCreando(false)}
@@ -222,7 +232,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                 {COPY.confirm.cancel}
               </button>
             </div>
-          </form>
+          </motion.form>
         ) : (
           <button
             type="button"
@@ -233,6 +243,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
             {COPY.metas.nueva}
           </button>
         )}
+        </AnimatePresence>
 
         {filas.length === 0 && !creando ? (
           <div className="rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center flex flex-col items-center">
@@ -252,12 +263,16 @@ export const MetasView: React.FC<MetasViewProps> = ({
 
       {filas.length > 0 ? (
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {filas.map(({ meta, progreso }) => {
+          {filas.map(({ meta, progreso }, idx) => {
             const cajita = meta.cajitaId ? cajitas.find((c) => c.id === meta.cajitaId) : undefined;
 
             return (
-              <section
+              <motion.section
                 key={meta.id}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: Math.min(idx, 12) * 0.04, ease: 'easeOut' }}
                 className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"
               >
                 <div className="flex items-start gap-3">
@@ -340,13 +355,14 @@ export const MetasView: React.FC<MetasViewProps> = ({
                           className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] focus:outline-none"
                         />
                       </div>
-                      <button
+                      <RippleButton
                         type="button"
                         onClick={() => guardarAhorro(meta)}
+                        rippleColor="rgba(255,255,255,0.5)"
                         className="rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
                       >
                         {COPY.confirm.save}
-                      </button>
+                      </RippleButton>
                     </div>
                   ) : (
                     <button
@@ -361,7 +377,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                     </button>
                   )
                 ) : null}
-              </section>
+              </motion.section>
             );
           })}
         </div>

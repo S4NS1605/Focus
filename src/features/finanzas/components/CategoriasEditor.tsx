@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Lock, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import type { Transaction } from '../types';
 import {
@@ -10,6 +11,7 @@ import {
 import type { CategoriaPersonal } from '../categorias';
 import { useCatalogo } from '../catalogoContexto';
 import { tint } from '../types';
+import { RippleButton } from './RippleButton';
 
 export interface CategoriasEditorProps {
   categorias: readonly CategoriaPersonal[];
@@ -108,13 +110,17 @@ const Formulario: React.FC<{
   };
 
   return (
-    <form
+    <motion.form
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       onSubmit={(e) => {
         e.preventDefault();
         if (!listo) return;
         onGuardar({ nombre: nombre.trim(), icon, color });
       }}
-      className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"
+      className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"
     >
       <label
         htmlFor="cat-nombre"
@@ -143,13 +149,14 @@ const Formulario: React.FC<{
       </div>
 
       <div className="mt-5 flex gap-2">
-        <button
+        <RippleButton
           type="submit"
           disabled={!listo}
+          rippleColor="rgba(255,255,255,0.5)"
           className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
         >
           {inicial ? 'Guardar cambios' : 'Crear categoría'}
-        </button>
+        </RippleButton>
         <button
           type="button"
           onClick={onCancelar}
@@ -158,7 +165,7 @@ const Formulario: React.FC<{
           Cancelar
         </button>
       </div>
-    </form>
+    </motion.form>
   );
 };
 
@@ -207,20 +214,22 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
         ) : null}
       </div>
 
-      {creando ? (
-        <div className="mt-2">
-          <Formulario
-            onGuardar={(datos) => {
-              onCrear(datos);
-              setCreando(false);
-            }}
-            onCancelar={() => setCreando(false)}
-          />
-        </div>
-      ) : null}
+      <AnimatePresence initial={false}>
+        {creando ? (
+          <div className="mt-2">
+            <Formulario
+              onGuardar={(datos) => {
+                onCrear(datos);
+                setCreando(false);
+              }}
+              onCancelar={() => setCreando(false)}
+            />
+          </div>
+        ) : null}
+      </AnimatePresence>
 
       <ul className="mt-2 flex flex-col gap-2">
-        {propias.map((cat) => {
+        {propias.map((cat, idx) => {
           const enUso = usos.get(cat.id) ?? 0;
           const archivada = cat.archivedAt !== null;
 
@@ -241,8 +250,12 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
 
           const Icono = iconoDeCategoria(cat.icon);
           return (
-            <li
+            <motion.li
               key={cat.id}
+              layout
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: Math.min(idx, 8) * 0.03, ease: 'easeOut' }}
               className={`flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-3 py-3 ${
                 archivada ? 'opacity-55' : ''
               }`}
@@ -302,7 +315,7 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
                   <X className="h-4 w-4" strokeWidth={2.5} />
                 )}
               </button>
-            </li>
+            </motion.li>
           );
         })}
       </ul>
