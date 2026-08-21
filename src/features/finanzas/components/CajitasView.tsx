@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { PiggyBank, Plus } from 'lucide-react';
 import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';
@@ -8,6 +9,7 @@ import { CAJITA_ICONS } from '../data/modelos';
 import { resumenDeCajitas } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
+import { RippleButton } from './RippleButton';
 
 interface CajitasViewProps {
   /** Attributed ledger entries, so a balance reflects what was recorded. */
@@ -167,8 +169,15 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
         </section>
 
         {/* Create */}
+        <AnimatePresence initial={false}>
         {creando ? (
-          <form onSubmit={crear} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onSubmit={crear}
+            className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
               {esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
             </h2>
@@ -290,13 +299,14 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             ) : null}
 
             <div className="mt-5 flex gap-2">
-              <button
+              <RippleButton
                 type="submit"
                 disabled={nombre.trim() === ''}
+                rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 {esCuenta ? COPY.cajitas.crearCuenta : COPY.cajitas.crearCajita}
-              </button>
+              </RippleButton>
               <button
                 type="button"
                 onClick={() => setCreando(false)}
@@ -305,7 +315,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 {COPY.confirm.cancel}
               </button>
             </div>
-          </form>
+          </motion.form>
         ) : (
           <button
             type="button"
@@ -316,6 +326,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             {esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
           </button>
         )}
+        </AnimatePresence>
 
         {/* Pockets */}
         {resumenes.length === 0 && !creando ? (

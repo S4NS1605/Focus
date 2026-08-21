@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CreditCard, Plus, Trash2 } from 'lucide-react';
 import { CATEGORIES, CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import type { Category } from '../types';
@@ -8,6 +9,7 @@ import { iconoDeCajita } from '../cajitaIconos';
 import { historialDeCajita, resumenDePasivos } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
+import { RippleButton } from './RippleButton';
 
 interface DeudasViewProps {
   cajitas: readonly Cajita[];
@@ -263,13 +265,14 @@ const DeudaCard: React.FC<{
             </div>
           ) : null}
 
-          <button
+          <RippleButton
             type="submit"
             disabled={valor === null || (accion === 'abono' && cuentaId === '')}
+            rippleColor="rgba(255,255,255,0.5)"
             className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
           >
             Guardar
-          </button>
+          </RippleButton>
         </form>
       ) : null}
 
@@ -366,8 +369,15 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
           ) : null}
         </section>
 
+        <AnimatePresence initial={false}>
         {creando ? (
-          <form onSubmit={crear} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onSubmit={crear}
+            className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
               Nueva obligación
             </h2>
@@ -456,13 +466,14 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
             </fieldset>
 
             <div className="mt-5 flex gap-2">
-              <button
+              <RippleButton
                 type="submit"
                 disabled={nombre.trim() === ''}
+                rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 Crear
-              </button>
+              </RippleButton>
               <button
                 type="button"
                 onClick={() => setCreando(false)}
@@ -471,7 +482,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
                 Cancelar
               </button>
             </div>
-          </form>
+          </motion.form>
         ) : (
           <button
             type="button"
@@ -482,6 +493,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
             Nueva deuda o tarjeta
           </button>
         )}
+        </AnimatePresence>
 
         {filas.length === 0 && !creando ? (
           <div className="rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">

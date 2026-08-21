@@ -7,6 +7,7 @@ import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
 import { idsPasivos, saldosPorCajita } from '../lib/cajitas';
 import { formatAmountInput, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
+import { RippleButton } from './RippleButton';
 
 /**
  * Solo saldos. Categorías, 4x1000 y Respaldo vivían apiladas debajo de esto
@@ -235,12 +236,13 @@ const FilaCajita: React.FC<{
             </label>
           ) : null}
 
-          <button
+          <RippleButton
             type="submit"
+            rippleColor="rgba(255,255,255,0.5)"
             className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
           >
             Guardar cambios
-          </button>
+          </RippleButton>
         </motion.form>
       ) : null}
       </AnimatePresence>
