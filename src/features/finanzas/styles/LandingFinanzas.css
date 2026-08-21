@@ -1785,12 +1785,16 @@
   }
 }
 
-/* LAS BURBUJAS DEL HERO */
+/* LAS BURBUJAS DEL HERO
+   Por encima del teléfono y no detrás: con z-index 0 quedaban debajo del
+   marco (que al no declarar el suyo participa en el mismo nivel pero pinta
+   después por ir más tarde en el DOM), así que se escondían recortadas
+   contra los cantos en vez de flotar sobre la pantalla. */
 .landing-finanzas .burbujas {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  z-index: 2;
 }
 
 .landing-finanzas .burbuja {

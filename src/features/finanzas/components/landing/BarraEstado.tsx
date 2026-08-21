@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 /**
  * La barra de estado del teléfono de la portada: hora, cobertura, wifi y
@@ -21,6 +21,11 @@ import React, { useEffect, useState } from 'react';
  *  es de 12 horas y devuelve "2:09 p. m.", que es casi el doble de ancho y
  *  desbordaría la oreja izquierda de la pantalla. */
 export const horaDe = (d: Date): string => `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+/** La hora que enseña el mockup, fija. No la hora real del visitante: un
+ * screenshot de marketing no necesita reloj en vivo, y "11:11" es simétrica
+ * y se lee bien en la barra sin robarle atención a la isla dinámica. */
+const HORA_MOCKUP = '11:11';
 
 const IconoCobertura: React.FC = () => (
   <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden>
@@ -71,26 +76,9 @@ const IconoBateria: React.FC<{ nivel: number }> = ({ nivel }) => (
 const NIVEL_BATERIA = 0.86;
 
 export const BarraEstado: React.FC = () => {
-  const [hora, setHora] = useState(() => horaDe(new Date()));
-
-  /* El reloj se engancha al cambio de minuto en vez de despertarse cada
-     segundo: la pantalla ya se re-renderiza sola con el guion del dictado y no
-     hace falta añadirle 59 renders por minuto que no cambian nada. */
-  useEffect(() => {
-    let id: number;
-    const alSiguienteMinuto = () => {
-      id = window.setTimeout(() => {
-        setHora(horaDe(new Date()));
-        alSiguienteMinuto();
-      }, 60000 - (Date.now() % 60000));
-    };
-    alSiguienteMinuto();
-    return () => window.clearTimeout(id);
-  }, []);
-
   return (
     <div className="barra-estado">
-      <span className="estado-hora">{hora}</span>
+      <span className="estado-hora">{HORA_MOCKUP}</span>
       <span className="estado-iconos">
         <IconoCobertura />
         <IconoWifi />
