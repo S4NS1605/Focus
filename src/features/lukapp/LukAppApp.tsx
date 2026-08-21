@@ -71,7 +71,7 @@ import { AvisoGuardado } from './components/AvisoGuardado';
 import type { Guardado } from './components/AvisoGuardado';
 import { Onboarding } from './components/Onboarding';
 import { PANELES_AJUSTES, SECTIONS } from './sections';
-import { BASE_FINANZAS, segmentosDe, useRuta } from './data/useRuta';
+import { BASE_LUKAPP, segmentosDe, useRuta } from './data/useRuta';
 import type { PanelAjustes, SectionId } from './sections';
 import { TemaToggle } from './components/TemaToggle';
 import type { Tema } from './data/useTema';
@@ -244,7 +244,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   })();
   const setSection = useCallback(
     (destino: SectionId) =>
-      ir(destino === 'inicio' ? `${BASE_FINANZAS}/app` : `${BASE_FINANZAS}/${destino}`),
+      ir(destino === 'inicio' ? `${BASE_LUKAPP}/app` : `${BASE_LUKAPP}/${destino}`),
     [ir],
   );
   const [mostrarReporte, setMostrarReporte] = useState(false);
@@ -438,7 +438,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       : null;
   const setPanelAjustes = useCallback(
     (panel: PanelAjustes | null) =>
-      ir(panel ? `${BASE_FINANZAS}/ajustes/${panel}` : `${BASE_FINANZAS}/ajustes`),
+      ir(panel ? `${BASE_LUKAPP}/ajustes/${panel}` : `${BASE_LUKAPP}/ajustes`),
     [ir],
   );
   // Qué grupo de "Dinero" se abrió. La lista de Dinero es solo el resumen; las
