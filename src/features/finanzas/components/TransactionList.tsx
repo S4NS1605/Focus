@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Hand } from 'lucide-react';
 import { tint } from '../types';
 import type { Transaction } from '../types';
@@ -79,13 +80,23 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   if (transactions.length === 0) {
     return (
-      <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
-        <span className="mb-2 flex justify-center text-[var(--fin-ink-ghost)]" aria-hidden="true">
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-6 py-12 text-center"
+      >
+        <motion.span
+          className="mb-2 flex justify-center text-[var(--fin-ink-ghost)]"
+          aria-hidden="true"
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+        >
           <Hand className="h-9 w-9" strokeWidth={1.5} />
-        </span>
+        </motion.span>
         <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">{COPY.list.empty}</p>
         <p className="mt-1 text-[15px] text-[var(--fin-ink-faint)]">{COPY.list.emptyHint}</p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -113,13 +124,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
               return (
                 <li key={tx.id}>
-                  <button
+                  <motion.button
                     type="button"
                     onClick={onAbrir ? () => onAbrir(tx) : undefined}
                     // Sin onAbrir la fila no es pulsable: los listados de solo
                     // lectura no deben parecer que llevan a alguna parte.
                     disabled={!onAbrir}
                     aria-label={onAbrir ? `Ver ${tx.description}` : undefined}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: Math.min(idx, 8) * 0.02, ease: 'easeOut' }}
+                    whileTap={onAbrir ? { scale: 0.98, backgroundColor: 'var(--fin-soft)' } : undefined}
                     className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors enabled:hover:bg-[var(--fin-soft)]"
                     style={{ boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)' }}
                   >
@@ -160,7 +175,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     >
                       {formatSigned(tx.amountCop, tx.kind)}
                     </span>
-                  </button>
+                  </motion.button>
                 </li>
               );
             })}

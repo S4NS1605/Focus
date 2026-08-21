@@ -5,6 +5,7 @@ import { ES_PASIVO } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
 import { idsPasivos, saldosPorCajita, totalVisible } from '../lib/cajitas';
 import { formatCop } from '../lib/formatCop';
+import { AnimatedNumber } from './AnimatedNumber';
 
 interface DineroViewProps {
   transacciones: readonly Transaction[];
@@ -67,7 +68,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
           className="mt-1 text-center tabular-nums text-[var(--fin-ink)]"
           style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
         >
-          {formatCop(totalCop)}
+          <AnimatedNumber value={totalCop} format={formatCop} />
         </p>
       </div>
 

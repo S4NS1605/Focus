@@ -4,6 +4,7 @@ import type { Transaction } from '../types';
 import { formatCop } from '../lib/formatCop';
 import { monthKeyLabel } from '../lib/localDate';
 import { TransactionList } from './TransactionList';
+import { AnimatedNumber } from './AnimatedNumber';
 import type { Insight } from '../lib/insights';
 import { useDismissedInsights } from '../data/useDismissedInsights';
 
@@ -139,7 +140,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
       className="mt-1 self-center text-center tabular-nums text-[var(--fin-ink)]"
       style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
     >
-      {formatCop(patrimonioCop)}
+      <AnimatedNumber value={patrimonioCop} format={formatCop} />
     </button>
 
     {mostrarEfectivoSeparado && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
@@ -167,7 +168,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           className="px-4 py-2.5 text-[17px] font-semibold tabular-nums"
           style={{ color: 'var(--fin-out)' }}
         >
-          ↓ {formatCop(gastosCop)}
+          ↓ <AnimatedNumber value={gastosCop} format={formatCop} />
         </button>
         <button
           type="button"
@@ -175,7 +176,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           className="border-l border-[var(--fin-line)] px-4 py-2.5 text-[17px] font-semibold tabular-nums"
           style={{ color: 'var(--fin-in)' }}
         >
-          ↑ {formatCop(ingresosCop)}
+          ↑ <AnimatedNumber value={ingresosCop} format={formatCop} />
         </button>
       </div>
     </div>

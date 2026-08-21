@@ -36,12 +36,14 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
       onClick?.(e);
     };
 
+    const { className, ...rest } = props;
+
     return (
       <button
         ref={ref || buttonRef}
         onClick={handleClick}
-        className="relative overflow-hidden"
-        {...props}
+        className={`relative overflow-hidden ${className ?? ''}`}
+        {...rest}
       >
         {ripples.map(({ id, x, y }) => (
           <motion.span

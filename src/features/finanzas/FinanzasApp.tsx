@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import './styles/premium-effects.css';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
@@ -563,6 +564,18 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
           </div>
         ) : null}
 
+        {/* Transición entre las 5 secciones principales (Inicio/Dinero/Mes/
+ Asesor/Ajustes): el key={section} hace que AnimatePresence trate cada
+ cambio de sección como un montaje/desmontaje real, con un pequeño
+ slide+fade en vez del corte seco de antes. */}
+        <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={section}
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -12 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+        >
         {/* ------------------------------------------------------- 1. Inicio --- */}
         {section === 'inicio' ? (
           <InicioView
@@ -670,7 +683,10 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             }
           />
         ) : null}
+        </motion.div>
+        </AnimatePresence>
 
+        <AnimatePresence>
         {panelDinero !== null ? (
           <HojaPanel
             titulo={
@@ -738,11 +754,13 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             )}
           </HojaPanel>
         ) : null}
+        </AnimatePresence>
 
         {/* ------------------------------------------- los paneles de Ajustes ---
  Cada uno se abre a pantalla completa encima de la lista. Antes eran
  pestañas escondidas tras `hidden lg:grid`, y por eso cuatro de ellos
  no existían en el celular. */}
+        <AnimatePresence>
         {panelAjustes !== null ? (
           <HojaPanel
             titulo={PANELES_AJUSTES.find((p) => p.id === panelAjustes)?.label ?? ''}
@@ -848,8 +866,10 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             )}
           </HojaPanel>
         ) : null}
+        </AnimatePresence>
 
         {/* ------------------------------------------------------- el buscador --- */}
+        <AnimatePresence>
         {capa === 'buscar' ? (
           <HojaPanel
             titulo="Buscar"
@@ -869,6 +889,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({
             </div>
           </HojaPanel>
         ) : null}
+        </AnimatePresence>
 
         {/* ------------------------------------------------------------ capas --- */}
 

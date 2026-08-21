@@ -21,6 +21,7 @@ import { analizarAnomalias } from '../lib/senalesAvanzadas';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { useCatalogo } from '../catalogoContexto';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { RippleButton } from './RippleButton';
 
 export interface ConfirmDraft {
   kind: TxKind;
@@ -260,11 +261,17 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             ).map((option) => {
               const active = kind === option.value;
               return (
-                <button
+                <motion.button
                   key={option.value}
                   type="button"
-                  onClick={() => setKind(option.value)}
+                  onClick={() => {
+                    haptic.trigger('selection');
+                    setKind(option.value);
+                  }}
                   aria-pressed={active}
+                  whileTap={{ scale: 0.95 }}
+                  animate={{ scale: active ? 1.02 : 1 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
                   className="flex items-center justify-center gap-1.5 rounded-[var(--fin-r-control)] px-4 py-2.5 text-[17px] font-semibold transition-colors"
                   style={{
                     backgroundColor: active ? option.on : 'transparent',
@@ -273,7 +280,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                 >
                   <option.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {option.label}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -290,11 +297,17 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
               const active = category === option;
               const color = entrada.color;
               return (
-                <button
+                <motion.button
                   key={option}
                   type="button"
-                  onClick={() => setCategory(option)}
+                  onClick={() => {
+                    haptic.trigger('selection');
+                    setCategory(option);
+                  }}
                   aria-pressed={active}
+                  whileTap={{ scale: 0.94 }}
+                  animate={{ scale: active ? 1.04 : 1 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
                   className="flex items-center gap-1.5 rounded-[var(--fin-r-pill)] border-2 px-3 py-2 text-[15px] font-semibold transition-colors"
                   style={{
                     backgroundColor: active ? tint(color, 0.16) : 'var(--fin-card)',
@@ -307,7 +320,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                     return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
                   })()}
                   {entrada.nombre}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -418,16 +431,15 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         ) : null}
 
         {/* Actions */}
-        <motion.button
+        <RippleButton
           type="submit"
           disabled={amountCop === null}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
+          rippleColor="rgba(255,255,255,0.5)"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-all hover:bg-[var(--fin-accent-hover)] active:scale-[0.98] disabled:opacity-30"
         >
           <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
           {editando ? COPY.confirm.saveEditar : COPY.confirm.save}
-        </motion.button>
+        </RippleButton>
       </motion.form>
     </motion.div>
   );

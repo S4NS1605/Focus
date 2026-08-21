@@ -13,6 +13,7 @@ import type { CajitaMovimiento } from '../data/modelos';
 import { formatCop, formatAmountInput, parseAmountInput, parseSaldoInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { AnimatedNumber } from './AnimatedNumber';
 
 interface CajitaCardProps {
   resumen: ResumenCajita;
@@ -144,7 +145,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             {cajita.nombre}
           </h3>
           <p className="text-[28px] font-semibold tabular-nums text-[var(--fin-ink)]">
-            {formatCop(saldoCop)}
+            <AnimatedNumber value={saldoCop} format={formatCop} />
           </p>
         </div>
 
