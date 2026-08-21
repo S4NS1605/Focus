@@ -6,12 +6,22 @@ export interface UseDictation {
   /** Si tiene sentido ofrecer el botón de una sola tocada. */
   supported: boolean;
   status: DictationStatus;
-  /** Texto parcial mientras escucha. Con transcripción en servidor no hay. */
+  /**
+   * Lo último que Groq transcribió del audio acumulado hasta ahora, mientras
+   * se sigue grabando (ver `INTERVALO_PARCIAL_MS` en useAudioCapture.ts). No
+   * es una conexión en vivo a un motor de voz -- se resube el audio entero
+   * cada ~1.6s y por eso puede corregirse a sí mismo con más contexto, igual
+   * que hace Whisper con la versión final.
+   */
   interim: string;
+  /** Qué tan fuerte se está hablando ahora mismo, de 0 a 1. Decorativo. */
+  level: number;
   /** Lo último que salió mal, para decirlo en pantalla en vez de callarlo. */
   error: string | null;
   start: () => void;
   stop: () => void;
+  /** Corta y descarta: nunca llega a transcribirse. */
+  cancel: () => void;
 }
 
 /**
@@ -37,8 +47,10 @@ export const useDictation = (onFinal: (text: string) => void): UseDictation => {
     supported: captura.supported,
     status: captura.status,
     interim: captura.interim,
+    level: captura.level,
     error: captura.error,
     start: captura.start,
     stop: captura.stop,
+    cancel: captura.cancel,
   };
 };

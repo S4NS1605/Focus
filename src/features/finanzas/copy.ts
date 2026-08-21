@@ -17,6 +17,8 @@ export const COPY = {
     listening: 'Escuchando…',
     speak: 'Dictar',
     stop: 'Detener',
+    dictadoPrompt: 'Cuéntame qué gastaste o qué te llegó',
+    transcribiendo: 'Un momento…',
     keyboardHint: 'Toca el campo y usa la tecla del micrófono del teclado para dictar.',
     blocked:
       'El dictado de un toque no funciona con la app instalada. Usa la tecla del micrófono del teclado.',

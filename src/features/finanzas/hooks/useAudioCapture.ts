@@ -7,10 +7,18 @@ export interface UseAudioCapture {
   supported: boolean;
   status: AudioCaptureStatus;
   interim: string;
+  /**
+   * Qué tan fuerte está hablando ahora mismo, de 0 a 1. Puramente decorativo
+   * (el medidor de nivel del micrófono en la pantalla de dictado); si el
+   * navegador no da Web Audio, se queda en 0 y todo lo demás sigue igual.
+   */
+  level: number;
   /** Lo último que salió mal, en palabras que se puedan enseñar en pantalla. */
   error: string | null;
   start: () => void;
   stop: () => void;
+  /** Corta la grabación y la descarta: nunca se sube a transcribir. */
+  cancel: () => void;
 }
 
 /**
@@ -51,6 +59,18 @@ const MAX_MS = 60_000;
  * aquí es más honesto que adivinar después, y de paso ahorra la petición.
  */
 const MIN_MS = 800;
+
+/**
+ * Cada cuánto se manda a transcribir el audio acumulado HASTA AHORA, mientras
+ * se sigue grabando -- esto es todo el "streaming": no hay conexión en vivo a
+ * ningún motor, es Groq (rapidísimo) contestando cada vez con un trozo más
+ * largo. `MediaRecorder` entrega los trozos en orden y cada uno depende del
+ * anterior (el encabezado del contenedor solo va en el primero), así que lo
+ * que se manda cada vez es la concatenación completa de todos los trozos
+ * hasta ese punto -- un archivo válido y cada vez más largo, no un pedazo
+ * suelto que Whisper no sabría decodificar.
+ */
+const INTERVALO_PARCIAL_MS = 1600;
 
 /**
  * Lo que Whisper devuelve cuando le llega silencio.
@@ -114,6 +134,7 @@ const enPalabras = (motivo: string | undefined): string => {
 export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCapture => {
   const [status, setStatus] = useState<AudioCaptureStatus>('idle');
   const [interim, setInterim] = useState('');
+  const [level, setLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const permiso = usePermisoDeMicrófono();
 
@@ -122,6 +143,67 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   const topeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inicioRef = useRef(0);
   const onFinalRef = useRef(onFinal);
+  // Si se cancela mientras se graba (o mientras el permiso todavía se está
+  // pidiendo), el audio que ya se capturó se tira en vez de subirse.
+  const canceladoRef = useRef(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analiserRef = useRef<AnalyserNode | null>(null);
+  const medidorRafRef = useRef<number | null>(null);
+  // Identifica cada grabación: si una respuesta parcial llega tarde, después
+  // de que ya empezó otra grabación, se descarta en vez de pisar el texto
+  // de la sesión nueva.
+  const sesionRef = useRef(0);
+  // Nunca dos parciales en vuelo a la vez -- el siguiente trozo simplemente
+  // espera al que ya salió en vez de amontonar peticiones.
+  const parcialEnVueloRef = useRef(false);
+
+  const detenerMedidor = useCallback(() => {
+    if (medidorRafRef.current !== null) {
+      cancelAnimationFrame(medidorRafRef.current);
+      medidorRafRef.current = null;
+    }
+    analiserRef.current = null;
+    if (audioCtxRef.current) {
+      void audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
+    setLevel(0);
+  }, []);
+
+  /**
+   * El pulso que reacciona a la voz en la pantalla de dictado. Es puramente
+   * decorativo: si `AudioContext` no existe o falla, la grabación sigue
+   * exactamente igual, solo sin el medidor.
+   */
+  const iniciarMedidor = useCallback((stream: MediaStream) => {
+    try {
+      const AudioCtxCtor =
+        window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtxCtor) return;
+      const ctx = new AudioCtxCtor();
+      const fuente = ctx.createMediaStreamSource(stream);
+      const analiser = ctx.createAnalyser();
+      analiser.fftSize = 256;
+      analiser.smoothingTimeConstant = 0.6;
+      fuente.connect(analiser);
+      audioCtxRef.current = ctx;
+      analiserRef.current = analiser;
+
+      const datos = new Uint8Array(analiser.frequencyBinCount);
+      const tick = () => {
+        if (!analiserRef.current) return;
+        analiserRef.current.getByteFrequencyData(datos);
+        let suma = 0;
+        for (let i = 0; i < datos.length; i += 1) suma += datos[i];
+        const promedio = suma / datos.length;
+        setLevel(Math.min(1, promedio / 90));
+        medidorRafRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch {
+      // Sin medidor, pero la grabación sigue.
+    }
+  }, []);
 
   // Mantiene fresco el callback sin volver a crear la grabadora.
   useEffect(() => {
@@ -147,12 +229,33 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       // `onstop` hace el resto: cierra el micrófono y sube el audio.
       grabadora.stop();
     }
-    setInterim('');
+    // El último parcial se queda en pantalla mientras se confirma la versión
+    // definitiva -- borrar aquí hacía que el texto desapareciera y volviera a
+    // aparecer un instante después, como si se hubiera perdido lo dicho.
   }, [quitarTope]);
+
+  const cancel = useCallback(() => {
+    canceladoRef.current = true;
+    quitarTope();
+    detenerMedidor();
+    const grabadora = grabadoraRef.current;
+    if (grabadora && grabadora.state !== 'inactive') {
+      // `onstop` ve el flag y descarta el audio en vez de subirlo.
+      grabadora.stop();
+    } else {
+      // Todavía no hay grabadora (esperando el permiso). `start` revisa el
+      // flag apenas el permiso llega y bota el micrófono sin grabar nada.
+      setStatus('idle');
+    }
+    setInterim('');
+  }, [quitarTope, detenerMedidor]);
 
   const start = useCallback(async () => {
     if (!supported || grabadoraRef.current) return;
     setError(null);
+    setInterim('');
+    canceladoRef.current = false;
+    const miSesion = ++sesionRef.current;
 
     let stream: MediaStream;
     try {
@@ -177,7 +280,19 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       return;
     }
 
-    const cerrarMicrofono = () => stream.getTracks().forEach((pista) => pista.stop());
+    // Se pidió cancelar mientras el permiso todavía se estaba pidiendo: el
+    // micrófono nunca debe quedar encendido de fondo, y no hay nada que subir.
+    if (canceladoRef.current) {
+      canceladoRef.current = false;
+      stream.getTracks().forEach((pista) => pista.stop());
+      setStatus('idle');
+      return;
+    }
+
+    const cerrarMicrofono = () => {
+      stream.getTracks().forEach((pista) => pista.stop());
+      detenerMedidor();
+    };
 
     let grabadora: MediaRecorder;
     try {
@@ -194,8 +309,55 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
 
     trozosRef.current = [];
 
+    /**
+     * El "streaming": no hay conexión en vivo a ningún motor de voz, es Groq
+     * (rapidísimo) contestando de nuevo cada ~1.6s con el audio acumulado
+     * hasta ese momento. Cada respuesta reemplaza a la anterior -- Whisper a
+     * veces se corrige a sí mismo con más contexto, y eso es justo lo que se
+     * quiere mostrar, no un texto que solo crece y nunca se corrige.
+     */
+    const dispararParcial = () => {
+      if (parcialEnVueloRef.current) return;
+      if (trozosRef.current.length === 0) return;
+      parcialEnVueloRef.current = true;
+
+      const tipoParcial = grabadora.mimeType || 'audio/webm';
+      const audioHastaAhora = new Blob(trozosRef.current, { type: tipoParcial });
+      if (audioHastaAhora.size === 0) {
+        parcialEnVueloRef.current = false;
+        return;
+      }
+
+      fetch('/api/transcribir', {
+        method: 'POST',
+        headers: { 'Content-Type': tipoParcial },
+        body: audioHastaAhora,
+      })
+        .then((r) => r.json().catch(() => null))
+        .then((datos: { text?: string; offline?: boolean } | null) => {
+          // Otra grabación ya empezó (se canceló y se volvió a tocar el
+          // micrófono, por ejemplo): esta respuesta ya no es de nadie.
+          if (miSesion !== sesionRef.current) return;
+          if (!datos || datos.offline) return;
+          const texto = typeof datos.text === 'string' ? datos.text.trim() : '';
+          // Un parcial vacío no borra lo que ya se había mostrado: un
+          // silencio de medio segundo entre palabras no debe hacer
+          // parpadear el texto a blanco y de vuelta.
+          if (texto) setInterim(texto);
+        })
+        .catch(() => {})
+        .finally(() => {
+          parcialEnVueloRef.current = false;
+        });
+    };
+
     grabadora.ondataavailable = (evento) => {
       if (evento.data.size > 0) trozosRef.current.push(evento.data);
+      // El trozo final (el que suelta `stop()`) llega con el estado ya en
+      // 'inactive' -- ese lo procesa `onstop`, que hace la transcripción
+      // completa y definitiva. Un parcial solo tiene sentido mientras se
+      // sigue grabando.
+      if (grabadora.state === 'recording') dispararParcial();
     };
 
     grabadora.onerror = () => {
@@ -210,6 +372,13 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       quitarTope();
       cerrarMicrofono();
       grabadoraRef.current = null;
+
+      if (canceladoRef.current) {
+        canceladoRef.current = false;
+        trozosRef.current = [];
+        setStatus('idle');
+        return;
+      }
 
       // `grabadora.mimeType` es el formato REAL que quedó, que no siempre es el
       // que se pidió. El servidor decide por él qué extensión mandarle a
@@ -267,13 +436,14 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
 
     grabadoraRef.current = grabadora;
     inicioRef.current = Date.now();
-    grabadora.start();
+    grabadora.start(INTERVALO_PARCIAL_MS);
+    iniciarMedidor(stream);
     setStatus('listening');
     topeRef.current = setTimeout(stop, MAX_MS);
-  }, [supported, quitarTope, stop]);
+  }, [supported, quitarTope, stop, iniciarMedidor, detenerMedidor]);
 
   // Si la pantalla se va mientras graba, se cierra el micrófono igual.
   useEffect(() => stop, [stop]);
 
-  return { supported, status, interim, error, start, stop };
+  return { supported, status, interim, level, error, start, stop, cancel };
 };

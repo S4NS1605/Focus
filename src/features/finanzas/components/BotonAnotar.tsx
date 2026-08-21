@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Loader2, Mic, Plus, Search, Square } from 'lucide-react';
 import { useDictation } from '../hooks/useDictation';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
+import { RippleButton } from './RippleButton';
+import { DictadoOverlay } from './DictadoOverlay';
+import type { FaseDictado } from './DictadoOverlay';
 
 interface BotonAnotarProps {
   /** Se llama con lo que la persona dijo, ya transcrito. */
@@ -31,9 +34,28 @@ interface BotonAnotarProps {
  * apagara solo.
  */
 export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, onBuscar }) => {
-  const dictation = useDictation(onDictado);
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
+
+  // La pantalla completa se abre sola al empezar a grabar y se cierra sola al
+  // terminar de revelar el texto o al cancelar -- nunca queda desincronizada
+  // de `dictation.status` porque ambas cosas se disparan desde los mismos
+  // toques (ver `alTocarMicrofono`, `cancelarDictado`, `revelarCompleto`).
+  const [overlayAbierto, setOverlayAbierto] = useState(false);
+  const [textoRevelado, setTextoRevelado] = useState<string | null>(null);
+  // Si se cancela justo cuando Whisper ya iba a contestar, la respuesta que
+  // llegue tarde se descarta en vez de abrir el confirmador solo.
+  const descartadoRef = useRef(false);
+
+  const manejarTextoFinal = useCallback((texto: string) => {
+    if (descartadoRef.current) {
+      descartadoRef.current = false;
+      return;
+    }
+    setTextoRevelado(texto);
+  }, []);
+
+  const dictation = useDictation(manejarTextoFinal);
 
   const escuchando = dictation.status === 'listening';
   const procesando = dictation.status === 'processing';
@@ -56,9 +78,35 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
     } else {
       haptic.trigger('heavy');
       audio.play('warning');
+      setOverlayAbierto(true);
       dictation.start();
     }
   };
+
+  const cancelarDictado = () => {
+    haptic.trigger('light');
+    audio.play('click');
+    descartadoRef.current = true;
+    dictation.cancel();
+    setTextoRevelado(null);
+    setOverlayAbierto(false);
+  };
+
+  const confirmarDictado = () => {
+    haptic.trigger('medium');
+    audio.play('click');
+    dictation.stop();
+  };
+
+  const revelarCompleto = () => {
+    const texto = textoRevelado;
+    setTextoRevelado(null);
+    setOverlayAbierto(false);
+    if (texto) onDictado(texto);
+  };
+
+  const faseOverlay: FaseDictado =
+    textoRevelado !== null ? 'revelando' : procesando ? 'procesando' : dictation.error ? 'error' : 'escuchando';
 
   return (
     <div
@@ -69,17 +117,22 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
       // (`--fin-nav-h`) más su franja segura y un respiro propio.
       className="pointer-events-none fixed inset-x-0 z-30 flex flex-col items-center gap-2"
       style={{ bottom: 'calc(env(safe-area-inset-bottom) + var(--fin-nav-h) + 0.75rem)' }}
+      aria-hidden={overlayAbierto}
     >
-      {/* Lo que salió mal se dice. Antes un fallo de transcripción se tragaba
- en silencio y la única señal era que no pasaba nada. */}
-      {dictation.error ? (
-        <p
-          role="status"
-          className="pointer-events-auto mx-4 max-w-sm rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-2.5 text-center text-[13px] text-[var(--fin-ink-soft)] shadow-[0_8px_32px_rgb(0_0_0/0.18)]"
-        >
-          {dictation.error}
-        </p>
-      ) : null}
+      <DictadoOverlay
+        abierto={overlayAbierto}
+        fase={faseOverlay}
+        nivelAudio={dictation.level}
+        // Mientras se escucha o se procesa, lo que se ve es el parcial que
+        // useAudioCapture manda a transcribir cada ~1.6s. Apenas Whisper
+        // confirma la versión definitiva (`textoRevelado`), esa gana -- el
+        // mismo texto, sin ningún salto visible entre una y otra.
+        texto={textoRevelado ?? dictation.interim}
+        error={dictation.error}
+        onCancelar={cancelarDictado}
+        onConfirmar={confirmarDictado}
+        onRevelado={revelarCompleto}
+      />
 
       {/* `data-guia` ancla el globo de la guía de bienvenida al bloque entero
    —píldora y micrófono—, que es como se explica: los tres botones son
@@ -122,11 +175,12 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
               ✕
             </span>
           )}
-          <button
+          <RippleButton
             type="button"
             onClick={alTocarMicrofono}
             aria-pressed={escuchando}
             aria-busy={procesando}
+            rippleColor="rgba(255,255,255,0.55)"
             aria-label={
               procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
             }
@@ -145,7 +199,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
           ) : (
             <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
           )}
-          </button>
+          </RippleButton>
         </div>
       </div>
     </div>
