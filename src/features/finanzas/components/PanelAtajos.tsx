@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, KeyRound, Plus, Smartphone, Trash2 } from 'lucide-react';
+import { Check, Copy, ExternalLink, KeyRound, Plus, Smartphone, Trash2 } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
+
+/** El Atajo ya armado en iCloud: trae el disparador y la petición prellenados,
+    solo falta que cada quien pegue su llave en el encabezado Authorization.
+    Sin este link, montar el Atajo a mano son ~10 pasos que casi nadie termina. */
+const URL_ATAJO_ICLOUD = 'https://www.icloud.com/shortcuts/5331c6951e0e411c96a6bf39adaeb95c';
 
 interface LlaveAtajo {
   id: string;
@@ -223,38 +228,65 @@ export const PanelAtajos: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-        <p className="text-[13px] font-semibold text-[var(--fin-ink)]">Cómo armar el Atajo</p>
-        <ol className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          <li>
-            1. En la app <strong>Atajos</strong> del iPhone, crea una automatización personal con el
-            evento <strong>&quot;Cuando se realice una transacción con Apple Pay&quot;</strong>.
-          </li>
-          <li>
-            2. Añade la acción <strong>&quot;Obtener contenido de URL&quot;</strong>, método{' '}
-            <strong>POST</strong>, y pega esta dirección:
-          </li>
-        </ol>
-        <div className="flex items-center gap-2">
-          <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[13px] text-[var(--fin-ink)]">
-            {urlEndpoint}
-          </code>
-          <BotonCopiar valor={urlEndpoint} etiqueta="la dirección" />
-        </div>
-        <ol start={3} className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          <li>
-            3. En <strong>Encabezados</strong>, añade <code>Authorization</code> con el valor de tu
-            llave (la de arriba, tal cual — no hace falta escribir &quot;Bearer&quot;).
-          </li>
-          <li>
-            4. En <strong>Cuerpo de la petición</strong>, elige <strong>JSON</strong> y agrega los
-            campos <code>monto</code> y <code>comercio</code> con las variables de la transacción que
-            trae el evento.
-          </li>
-        </ol>
-        <p className="text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-          Cada pago llega ya categorizado, con la fecha del pago. La próxima vez que abras Finanzas
-          ya va a estar ahí.
+        <p className="text-[13px] font-semibold text-[var(--fin-ink)]">Instala el Atajo</p>
+        <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+          Ya viene armado — el disparador y la petición al servidor ya están puestos. Solo te falta
+          pegar tu llave.
         </p>
+        <a
+          href={URL_ATAJO_ICLOUD}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)]"
+        >
+          <ExternalLink className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+          Añadir atajo
+        </a>
+        <ol className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+          <li>1. Toca &quot;Añadir atajo&quot; arriba — se abre la app Atajos con todo ya listo.</li>
+          <li>
+            2. Toca <strong>&quot;Agregar atajo&quot;</strong> para instalarlo, luego ábrelo para
+            editarlo.
+          </li>
+          <li>
+            3. Busca la acción <strong>&quot;Obtener contenido de URL&quot;</strong> → Encabezados →
+            reemplaza <code>PEGA_TU_LLAVE_AQUI</code> por tu llave de arriba, tal cual (no hace falta
+            escribir &quot;Bearer&quot;).
+          </li>
+          <li>4. Guarda. Cada pago con tarjeta va a anotarse solo, ya categorizado y con la fecha correcta.</li>
+        </ol>
+
+        <details className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
+          <summary className="cursor-pointer font-semibold text-[var(--fin-ink-soft)]">
+            Prefiero armarlo yo mismo
+          </summary>
+          <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
+            <li>
+              1. En Atajos → Automatización, crea una automatización personal con el evento{' '}
+              <strong>&quot;Cuando se use Cualquier tarjeta&quot;</strong>.
+            </li>
+            <li>
+              2. Añade <strong>&quot;Obtener contenido de URL&quot;</strong>, método{' '}
+              <strong>POST</strong>, con esta dirección:
+            </li>
+          </ol>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[13px] text-[var(--fin-ink)]">
+              {urlEndpoint}
+            </code>
+            <BotonCopiar valor={urlEndpoint} etiqueta="la dirección" />
+          </div>
+          <ol start={3} className="mt-2 flex flex-col gap-2 leading-relaxed">
+            <li>
+              3. En Encabezados, añade <code>Authorization</code> con tu llave.
+            </li>
+            <li>
+              4. En Cuerpo de la petición (JSON), agrega <code>monto</code> con la variable{' '}
+              <strong>Cantidad</strong> de la transacción, y <code>comercio</code> con{' '}
+              <strong>Comercio</strong>.
+            </li>
+          </ol>
+        </details>
       </div>
     </section>
   );
