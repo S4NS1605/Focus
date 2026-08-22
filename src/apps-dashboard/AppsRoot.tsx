@@ -12,6 +12,7 @@ import { LandingLukApp } from '../features/lukapp/components/LandingLukApp';
 import { BASE_LUKAPP, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { registrarVisita } from '../lib/visita';
+import { activarProteccionCodigo } from '../lib/proteccionCodigo';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
 
@@ -27,6 +28,7 @@ export type AppId = 'finanzas' | 'superadmin' | 'estadisticas' | null;
 export const AppsRoot: React.FC = () => {
   useEffect(() => {
     registrarVisita();
+    activarProteccionCodigo();
   }, []);
 
   const sesion = useSesion();

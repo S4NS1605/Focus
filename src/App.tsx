@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { LanguageProvider } from './context/LanguageContext';
 import { registrarVisita } from './lib/visita';
+import { activarProteccionCodigo } from './lib/proteccionCodigo';
 import { WavesBackground } from './components/WavesBackground';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -12,7 +13,10 @@ import { Footer } from './components/Footer';
 const App: React.FC = () => {
   // Una sola vez por carga. El portafolio es una página con secciones ancladas,
   // no rutas, así que no hay navegación que volver a contar.
-  useEffect(() => registrarVisita(), []);
+  useEffect(() => {
+    registrarVisita();
+    activarProteccionCodigo();
+  }, []);
 
   return (
     <LanguageProvider>

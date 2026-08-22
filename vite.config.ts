@@ -60,7 +60,15 @@ export default defineConfig({
     tailwindcss(),
     ecosistemaTrailingSlash(),
   ],
+  esbuild: {
+    drop: ['console', 'debugger'],
+    legalComments: 'none',
+  },
   build: {
+    sourcemap: false,
+    minify: 'esbuild',
+    target: 'es2020',
+    cssMinify: true,
     rollupOptions: {
       // Two independent HTML entries. The private finance app needs its own
       // <head> (noindex, iOS standalone metas, manifest) which a single shared
