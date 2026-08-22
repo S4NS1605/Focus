@@ -11,6 +11,7 @@ import { EstadisticasPanel } from './EstadisticasPanel';
 import { LandingLukApp } from '../features/lukapp/components/LandingLukApp';
 import { BASE_LUKAPP, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
+import { registrarVisita } from '../lib/visita';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
 
@@ -24,6 +25,10 @@ interface AdminBackup {
 export type AppId = 'finanzas' | 'superadmin' | 'estadisticas' | null;
 
 export const AppsRoot: React.FC = () => {
+  useEffect(() => {
+    registrarVisita();
+  }, []);
+
   const sesion = useSesion();
   const { tema, setTema } = useTema();
   const [activeApp, setActiveApp] = useState<AppId>(() => {
