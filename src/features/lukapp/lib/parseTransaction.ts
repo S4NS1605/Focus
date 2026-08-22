@@ -798,11 +798,16 @@ export const parseTransaction = (
 
     const merchant = MERCHANTS[token.norm];
     if (merchant) {
-      addCategoryScore(merchant, 'merchant', 80);
+      // Wallet/Bank names like Nequi or Bancolombia map to 'transferencia' as payment methods.
+      // Score them low (25) so explicit expense keywords (food, transit, etc.) win category matching.
+      const score = merchant === 'transferencia' ? 25 : 80;
+      addCategoryScore(merchant, 'merchant', score);
     } else if (token.norm.length > 5) {
       const similar = buscarSimilar(token.norm, Object.keys(MERCHANTS), 2);
       if (similar && Math.abs(similar.length - token.norm.length) <= 1 && similar.length > 4) {
-        addCategoryScore(MERCHANTS[similar], 'merchant', 70);
+        const target = MERCHANTS[similar];
+        const score = target === 'transferencia' ? 20 : 70;
+        addCategoryScore(target, 'merchant', score);
       }
     }
 
@@ -983,21 +988,29 @@ export const parseTransaction = (
   }
 
   if (!description) {
+    const GREETINGS_NOISE = new Set([
+      'hola', 'como', 'estas', 'estás', 'buenas', 'buenos', 'dias', 'días', 'tardes', 'noches',
+      'porfa', 'porfavor', 'por', 'favor', 'anota', 'registra', 'guarda', 'pon', 'pón', 'escribe',
+      'oye', 'mira', 'saludos', 'holaa', 'holaaa'
+    ]);
+
     const words = tokens
       .filter((t, i) => {
         if (consumed[i]) return false;
         if (chunks.ignore.some((ign) => ign.index === i)) return false;
         if (isOCR && t.norm === 'ocr') return false; // Ignore the [OCR] tag
+        const n = t.norm.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (GREETINGS_NOISE.has(n)) return false;
         return true;
       })
       .map((t) => MERCHANT_DISPLAY[t.norm] ?? t.raw);
 
-    description = words.join(' ').trim();
-    if (description === '') {
+    const limpia = words.join(' ').trim();
+    const limpiaLower = limpia.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (limpia === '' || GREETINGS_NOISE.has(limpiaLower) || limpiaLower === 'hola como estas') {
       description = CATEGORY_LABELS[category as Category] ?? category;
     } else {
-      // Keep the full description with details, not just the category name
-      description = capitalize(description);
+      description = capitalize(limpia);
     }
   } else {
     description = capitalize(description);

@@ -899,6 +899,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {pending ? (
           <Captura
             parsed={pending}
+            cajitas={cajitas}
             cuentaPorDefecto={cuentaPorDefecto}
             onSave={handleSave}
             onCancel={cerrarCaptura}

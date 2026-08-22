@@ -1,8 +1,10 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Camera, Check, Keyboard, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Keyboard, Wallet, X } from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, TxKind } from '../types';
+import type { Cajita } from '../data/modelos';
+import { iconoDeCajita } from '../cajitaIconos';
 import { formatAmountInput } from '../lib/formatCop';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
@@ -18,41 +20,31 @@ import type { ConfirmDraft } from './ConfirmSheet';
 interface CapturaProps {
   /** Lo que el motor de texto entendió de lo que dijiste. */
   parsed: ParsedTransaction;
+  cajitas?: readonly Cajita[];
   onSave: (draft: ConfirmDraft) => void;
   onCancel: () => void;
   /** Se llama al tocar el botón de la foto del recibo. */
   onFoto?: () => void;
   /**
-   * La cuenta que se usa cuando no dices ninguna. Antes esto era un desplegable
-   * en pantalla; ahora se pone solo y se corrige después si hizo falta.
+   * La cuenta que se usa cuando no dices ninguna.
    */
   cuentaPorDefecto?: string | null;
 }
 
 /**
- * La pantalla de anotar un gasto.
+ * La pantalla de anotar un gasto / ingreso rápido.
  *
- * Antes esto era un formulario de 914px con 17 botones y 6 campos con etiqueta,
- * y el botón de Guardar nacía fuera de la pantalla: siempre tocaba hacer scroll.
- * Y lo curioso es que el motor de texto casi siempre ya había acertado todo.
- *
- * Así que aquí no hay campos: hay un monto grande y una descripción grande, que
- * son lo único que de verdad importa mirar antes de guardar. Todo lo demás
- * (la cuenta, la fecha, el tipo) se pone solo y se corrige tocándolo.
- *
- * Lo que NO cambia: sigues viendo el número antes de que se guarde. Esa regla
- * era la razón de existir de la pantalla vieja y se conserva entera — lo que se
- * quitó fue la sensación de estar llenando un formulario, no el paso de revisar.
+ * Incluye selección clara de Gasto vs Ingreso, selector desplegable de cuentas/bancos,
+ * y categorización automática optimizada.
  */
 export const Captura: React.FC<CapturaProps> = ({
   parsed,
+  cajitas = [],
   onSave,
   onCancel,
   onFoto,
   cuentaPorDefecto = null,
 }) => {
-  // El monto se guarda como una cadena de dígitos ('45000') y se formatea solo
-  // al pintarlo. Así el teclado nuestro solo tiene que pegar y quitar letras.
   const [digitos, setDigitos] = useState(() =>
     parsed.amount === null ? '' : String(Math.round(parsed.amount)),
   );
@@ -60,6 +52,21 @@ export const Captura: React.FC<CapturaProps> = ({
   const [category, setCategory] = useState<CategoriaClave>(parsed.category);
   const [description, setDescription] = useState(parsed.description);
   const [editandoTexto, setEditandoTexto] = useState(false);
+  const [desplegarCuentas, setDesplegarCuentas] = useState(false);
+
+  // Cuentas disponibles activas
+  const cuentasActivas = useMemo(() => cajitas.filter((c) => !c.archivedAt), [cajitas]);
+
+  const [cuentaId, setCuentaId] = useState<string | null>(() => {
+    if (parsed.cuentaId) return parsed.cuentaId;
+    if (cuentaPorDefecto && cuentasActivas.some((c) => c.id === cuentaPorDefecto)) return cuentaPorDefecto;
+    return cuentasActivas[0]?.id ?? null;
+  });
+
+  const cuentaSeleccionada = useMemo(
+    () => cuentasActivas.find((c) => c.id === cuentaId) ?? null,
+    [cuentasActivas, cuentaId],
+  );
 
   const descRef = useRef<HTMLTextAreaElement>(null);
   const capturaRef = useRef<HTMLDivElement>(null);
@@ -80,20 +87,15 @@ export const Captura: React.FC<CapturaProps> = ({
   const amountCop = digitos === '' ? null : Number(digitos);
   const esGasto = kind === 'gasto';
 
-  // La categoría que adivinó el motor va de primera, para que casi nunca haya
-  // que deslizar la fila. Si acertó, ya está puesta y no se toca nada.
   const opciones = useMemo(() => {
     const lista = catalogo.lista.some((c) => c.clave === category)
       ? catalogo.lista
       : [...catalogo.lista, catalogo.de(category)];
     return [...lista].sort((a, b) => (a.clave === category ? -1 : b.clave === category ? 1 : 0));
-    // Solo se reordena al abrir: si se recalculara con cada toque, las pastillas
-    // saltarían de sitio bajo el dedo justo al elegir una.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catalogo]);
 
   const escribirDigitos = (nuevos: string) => {
-    // Tope de 12 dígitos: más que eso no es un gasto, es un dedo trabado.
     setDigitos((prev) => (prev + nuevos).replace(/^0+(?=\d)/, '').slice(0, 12));
   };
 
@@ -109,16 +111,15 @@ export const Captura: React.FC<CapturaProps> = ({
       kind,
       amountCop,
       category,
-      // Si la persona no escribió nada, el nombre de la categoría es mejor
-      // etiqueta que una fila en blanco.
       description: description.trim() || catalogo.de(category).nombre,
-      cuentaId: parsed.cuentaId ?? cuentaPorDefecto,
+      cuentaId: cuentaId ?? parsed.cuentaId ?? cuentaPorDefecto,
       rawTranscript: parsed.raw,
       occurredOn: parsed.dateOverride,
     });
   };
 
   const colorMonto = esGasto ? 'var(--fin-out)' : 'var(--fin-in)';
+  const IconoCuenta = cuentaSeleccionada ? iconoDeCajita(cuentaSeleccionada.icon) : Wallet;
 
   return (
     <motion.div
@@ -126,33 +127,56 @@ export const Captura: React.FC<CapturaProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex flex-col bg-[var(--fin-bg)] px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+      className="fixed inset-0 z-50 flex flex-col bg-[var(--fin-bg)] px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-label="Anotar un movimiento"
     >
-      {/* Arriba: los datos que casi nunca se cambian, en pastillas diminutas.
- No son campos de formulario porque no son decisiones: son cosas que ya
- están bien y que uno solo toca cuando algo salió raro. */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] text-[var(--fin-ink-soft)]">
+      {/* Cabecera superior con Fecha, Selector Plegable de Banco/Cuenta, Selector Gasto/Ingreso y Cerrar */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {/* Fecha */}
+          <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[12px] font-medium text-[var(--fin-ink-soft)]">
             {parsed.dateOverride
               ? parsed.dateOverride.slice(8) + '/' + parsed.dateOverride.slice(5, 7)
               : 'Hoy'}
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              haptic.trigger('selection');
-              audio.play('selection');
-              setKind(esGasto ? 'ingreso' : 'gasto');
-            }}
-            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold transition-colors"
-            style={{ color: colorMonto }}
-          >
-            {esGasto ? 'Gasto' : 'Ingreso'}
-          </button>
+
+          {/* Toggle Gasto / Ingreso intuitivo */}
+          <div className="flex items-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                haptic.trigger('selection');
+                audio.play('selection');
+                setKind('gasto');
+              }}
+              className={`flex items-center gap-1 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[12px] font-bold transition-all ${
+                esGasto
+                  ? 'bg-[var(--fin-out)] text-white shadow-sm'
+                  : 'text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink-soft)]'
+              }`}
+            >
+              <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+              Gasto
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                haptic.trigger('selection');
+                audio.play('selection');
+                setKind('ingreso');
+              }}
+              className={`flex items-center gap-1 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[12px] font-bold transition-all ${
+                !esGasto
+                  ? 'bg-[var(--fin-in)] text-white shadow-sm'
+                  : 'text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink-soft)]'
+              }`}
+            >
+              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+              Ingreso
+            </button>
+          </div>
         </div>
 
         <button
@@ -165,10 +189,75 @@ export const Captura: React.FC<CapturaProps> = ({
         </button>
       </div>
 
-      {/* El centro: el monto y la descripción. No llevan etiqueta ni caja porque
- son lo único que hay en pantalla — no hace falta decir "Monto" encima
- de un número gigante. */}
-      <div className="mt-8 min-h-0 flex-1">
+      {/* Selector Plegable de Banco / Cuenta */}
+      {cuentasActivas.length > 0 && (
+        <div className="relative mt-3">
+          <button
+            type="button"
+            onClick={() => setDesplegarCuentas(!desplegarCuentas)}
+            className="flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--fin-ink)] shadow-sm transition-all hover:bg-[var(--fin-soft)]"
+          >
+            <IconoCuenta className="h-4 w-4 shrink-0 text-[var(--fin-ink-soft)]" />
+            <span className="truncate max-w-[160px]">
+              {cuentaSeleccionada ? cuentaSeleccionada.nombre : 'Seleccionar cuenta'}
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-[var(--fin-ink-faint)] transition-transform duration-200 ${
+                desplegarCuentas ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          <AnimatePresence>
+            {desplegarCuentas && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-0 top-full z-50 mt-2 min-w-[240px] rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-2 shadow-2xl backdrop-blur-xl"
+                style={{ backgroundColor: 'var(--fin-surface)' }}
+              >
+                <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
+                  Cuenta / Banco
+                </p>
+                <div className="mt-1 flex flex-col gap-1 max-h-52 overflow-y-auto">
+                  {cuentasActivas.map((c) => {
+                    const Icon = iconoDeCajita(c.icon);
+                    const activa = c.id === cuentaId;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          haptic.trigger('selection');
+                          audio.play('selection');
+                          setCuentaId(c.id);
+                          setDesplegarCuentas(false);
+                        }}
+                        className={`flex items-center justify-between rounded-[var(--fin-r-control)] px-3 py-2.5 text-left text-[14px] transition-colors ${
+                          activa
+                            ? 'bg-[var(--fin-soft)] font-bold text-[var(--fin-ink)]'
+                            : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]/60 hover:text-[var(--fin-ink)]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <Icon className="h-4 w-4 shrink-0 text-[var(--fin-ink-soft)]" />
+                          <span className="truncate">{c.nombre}</span>
+                        </div>
+                        {activa && <Check className="h-4 w-4 shrink-0 text-[var(--fin-accent)]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* El centro: Monto y Descripción */}
+      <div className="mt-6 min-h-0 flex-1">
         <div
           className="tabular-nums"
           style={{
@@ -200,7 +289,7 @@ export const Captura: React.FC<CapturaProps> = ({
           <button
             type="button"
             onClick={() => setEditandoTexto(true)}
-            className="mt-3 block w-full truncate text-left text-[28px] font-normal text-[var(--fin-ink)]"
+            className="mt-3 block w-full truncate text-left text-[26px] font-normal text-[var(--fin-ink)]"
           >
             {description.trim() || (
               <span className="text-[var(--fin-ink-ghost)]">¿En qué fue?</span>
@@ -208,13 +297,7 @@ export const Captura: React.FC<CapturaProps> = ({
           </button>
         )}
 
-        {/* Las categorías, en una fila que se desliza. La adivinada va primero y
- ya viene puesta, así que lo normal es no tocar nada aquí.
- `data-no-swipe`: sin esto, deslizar la fila para ver más categorías es
- indistinguible del swipe-para-cancelar que cierra toda la hoja (ambos
- gestos viven en el mismo `capturaRef`). `useSwipeGesture` ya sabe
- ignorar cualquier toque que empiece dentro de una zona marcada así —
- ver ese hook para el porqué no basta con un stopPropagation normal. */}
+        {/* Las categorías en carrusel horizontal */}
         <div
           data-no-swipe
           className="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -246,7 +329,7 @@ export const Captura: React.FC<CapturaProps> = ({
         </div>
       </div>
 
-      {/* Abajo: el teclado y guardar, al alcance del pulgar. */}
+      {/* Abajo: Teclado numérico y guardar */}
       <div className="mt-6 flex flex-col gap-3">
         <TecladoNumerico
           onDigito={escribirDigitos}
@@ -288,3 +371,4 @@ export const Captura: React.FC<CapturaProps> = ({
     </motion.div>
   );
 };
+
