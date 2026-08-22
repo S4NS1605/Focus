@@ -189,9 +189,9 @@ export const AppsRoot: React.FC = () => {
     }
   }, [sesion.estado]);
 
-  // Banner de impersonación — se muestra encima de cualquier vista
+  // Banner de impersonación — se muestra en la parte superior para no tapar la navegación de abajo
   const bannerAdmin = adminBackup ? (
-    <div className="fixed bottom-0 left-0 right-0 z-[200] flex items-center justify-between gap-3 border-t border-amber-400/30 bg-amber-500 px-4 py-2.5 shadow-sm">
+    <div className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-between gap-3 border-b border-amber-400/30 bg-amber-500 px-4 py-2.5 shadow-md">
       <div className="flex items-center gap-2 text-white">
         <ShieldAlert className="h-4 w-4 shrink-0" />
         <p className="text-xs font-semibold">
@@ -232,27 +232,35 @@ export const AppsRoot: React.FC = () => {
 
   if (activeApp === 'finanzas') {
     return (
-      <>
-        <LukAppMain onBack={() => setActiveApp(null)} />
+      <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
-      </>
+        <LukAppMain onBack={() => setActiveApp(null)} />
+      </div>
     );
   }
 
   if (activeApp === 'superadmin' && (rol === 'admin' || permisos.length > 0)) {
     return (
-      <SuperadminPanel
-        rol={rol}
-        permisos={permisos}
-        onBack={() => setActiveApp(null)}
-        tema={tema}
-        onCambiarTema={setTema}
-      />
+      <div className={adminBackup ? 'pt-11' : ''}>
+        {bannerAdmin}
+        <SuperadminPanel
+          rol={rol}
+          permisos={permisos}
+          onBack={() => setActiveApp(null)}
+          tema={tema}
+          onCambiarTema={setTema}
+        />
+      </div>
     );
   }
 
   if (activeApp === 'estadisticas' && (rol === 'admin' || permisos.includes('ver_visitantes'))) {
-    return <EstadisticasPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
+    return (
+      <div className={adminBackup ? 'pt-11' : ''}>
+        {bannerAdmin}
+        <EstadisticasPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />
+      </div>
+    );
   }
 
   const handleSalir = async () => {
@@ -267,7 +275,8 @@ export const AppsRoot: React.FC = () => {
   };
 
   return (
-    <>
+    <div className={adminBackup ? 'pt-11' : ''}>
+      {bannerAdmin}
       <AppLauncher
         rol={rol}
         tienePermisos={permisos.length > 0}
@@ -276,7 +285,6 @@ export const AppsRoot: React.FC = () => {
         onCambiarTema={setTema}
         onSalir={handleSalir}
       />
-      {bannerAdmin}
-    </>
+    </div>
   );
 };
