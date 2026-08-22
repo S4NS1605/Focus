@@ -73,8 +73,12 @@ export const GuiaApp: React.FC<GuiaAppProps> = ({ pasos, onCerrar }) => {
 
     const leer = (): Caja | null => {
       const el = document.querySelector(`[data-guia="${paso.ancla}"]`);
-      const r = el?.getBoundingClientRect();
-      return r ? { top: r.top, left: r.left, width: r.width, height: r.height } : null;
+      if (!el) return null;
+      const cs = window.getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return null;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return null;
+      return { top: r.top, left: r.left, width: r.width, height: r.height };
     };
 
     const aplicar = () => setCaja((previa) => (igual(previa, leer()) ? previa : leer()));

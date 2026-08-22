@@ -986,13 +986,12 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {/* LA GUÍA
             Dos recorridos que nunca coinciden: el básico enseña el mapa una
             sola vez, y el de cada sitio sale al llegar por primera vez. La
-            condición de `guiaSeccionAbierta` ya exige que el básico haya
-            pasado, así que no hace falta ordenarlos aquí. */}
-        {guiaBasicaAbierta ? (
+            guía solo se enseña si no hay ninguna pantalla ni modal flotante abierto (Captura, Detalle, etc). */}
+        {guiaBasicaAbierta && !pending && !detalle && !analizando && !editando && !mostrarImportar && !cajitaDetalleId && !creandoCajita && !editandoCajita && !panelAjustesAbierto && !panelHistorialAbierto && !mostrarReporte ? (
           <GuiaApp pasos={PASOS_BASICOS} onCerrar={guia.terminarBasica} />
         ) : null}
 
-        {guiaSeccionAbierta && pasoDeSeccion ? (
+        {guiaSeccionAbierta && pasoDeSeccion && !pending && !detalle && !analizando && !editando && !mostrarImportar && !cajitaDetalleId && !creandoCajita && !editandoCajita && !panelAjustesAbierto && !panelHistorialAbierto && !mostrarReporte ? (
           <GuiaApp
             key={section}
             pasos={[pasoDeSeccion]}
