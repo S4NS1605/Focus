@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Keyboard, Wallet, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Keyboard, Sparkles, Wallet, X } from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, TxKind } from '../types';
 import type { Cajita } from '../data/modelos';
@@ -29,6 +29,8 @@ interface CapturaProps {
    * La cuenta que se usa cuando no dices ninguna.
    */
   cuentaPorDefecto?: string | null;
+  /** Marca si es la primera prueba por micrófono del onboarding. */
+  esPrimeraPrueba?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export const Captura: React.FC<CapturaProps> = ({
   onCancel,
   onFoto,
   cuentaPorDefecto = null,
+  esPrimeraPrueba = false,
 }) => {
   const [digitos, setDigitos] = useState(() =>
     parsed.amount === null ? '' : String(Math.round(parsed.amount)),
@@ -132,6 +135,23 @@ export const Captura: React.FC<CapturaProps> = ({
       aria-modal="true"
       aria-label="Anotar un movimiento"
     >
+      {/* Banner de primera prueba por micrófono */}
+      {esPrimeraPrueba ? (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-3.5 flex items-start gap-2.5 rounded-[var(--fin-r-card)] border border-amber-500/35 bg-amber-500/10 p-3.5 text-[13px] text-amber-500 shadow-sm backdrop-blur-md"
+        >
+          <Sparkles className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-400" />
+          <div className="leading-snug">
+            <span className="font-bold">🎤 ¡Esta es tu primera prueba por voz!</span>
+            <p className="mt-1 text-[12px] opacity-90">
+              Di una frase como <em>«gasté 20 mil en almuerzo»</em>. Este registro es una prueba temporal para que conozcas la app y podrás editarlo o borrarlo fácilmente con un toque.
+            </p>
+          </div>
+        </motion.div>
+      ) : null}
+
       {/* Cabecera superior con Fecha, Selector Plegable de Banco/Cuenta, Selector Gasto/Ingreso y Cerrar */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">

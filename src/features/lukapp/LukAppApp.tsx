@@ -248,6 +248,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     [ir],
   );
   const [mostrarReporte, setMostrarReporte] = useState(false);
+  const [esPrimeraPrueba, setEsPrimeraPrueba] = useState(false);
   const guia = useGuiaApp();
 
   /* CUÁNDO SALE LA GUÍA
@@ -353,7 +354,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     setPending(quien ? { ...parseado, description: quien.nombre } : parseado);
   };
 
-  const handleSave = (draft: ConfirmDraft) => {
+  const handleSave = (draft: ConfirmDraft, esPrueba = false) => {
     const id = nuevoId('tx');
     void almacen.agregarTransaccion({
       id,
@@ -372,19 +373,16 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     setMonth(finalDate.slice(0, 7));
     cerrarCaptura();
 
-    // El aviso de "quedó guardado", con Deshacer. Antes guardar no decía nada:
-    // la hoja se cerraba y uno se quedaba sin saber si había quedado.
-    //
-    // Y aquí es donde va el aviso de "esto es más caro de lo normal". Antes
-    // salía JUSTO ENCIMA del botón de guardar, o sea frenando a la persona en
-    // el último segundo por algo que casi siempre estaba bien. Es un dato útil,
-    // pero no es motivo para parar: se cuenta después, al lado del Deshacer,
-    // que es lo único que sirve de verdad si resultó estar mal.
+    // El aviso de "quedó guardado", con Deshacer.
     const anomalia = analizarAnomalias(transacciones, draft.category, draft.amountCop);
     setGuardado({
       id,
-      texto: `${draft.description} · ${formatCop(draft.amountCop)}`,
-      aviso: anomalia?.esAnomalía
+      texto: esPrueba
+        ? '✨ ¡Primer movimiento de prueba guardado!'
+        : `${draft.description} · ${formatCop(draft.amountCop)}`,
+      aviso: esPrueba
+        ? 'Fue un registro de prueba. Puedes modificarlo o eliminarlo en la pestaña "Movimientos".'
+        : anomalia?.esAnomalía
         ? `Más de lo normal — sueles gastar ${formatCop(anomalia.promedio)} aquí.`
         : null,
     });
@@ -901,8 +899,16 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             parsed={pending}
             cajitas={cajitas}
             cuentaPorDefecto={cuentaPorDefecto}
-            onSave={handleSave}
-            onCancel={cerrarCaptura}
+            esPrimeraPrueba={esPrimeraPrueba}
+            onSave={(draft) => {
+              const eraPrueba = esPrimeraPrueba;
+              setEsPrimeraPrueba(false);
+              handleSave(draft, eraPrueba);
+            }}
+            onCancel={() => {
+              setEsPrimeraPrueba(false);
+              cerrarCaptura();
+            }}
           />
         ) : null}
 
@@ -979,7 +985,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               }
               onboarding.terminar();
             }}
-            onAnotarHablando={() => setPending(movimientoEnBlanco())}
+            onAnotarHablando={() => {
+              setEsPrimeraPrueba(true);
+              setPending(movimientoEnBlanco());
+            }}
           />
         ) : null}
 
