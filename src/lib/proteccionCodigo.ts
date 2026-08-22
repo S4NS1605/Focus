@@ -77,7 +77,25 @@ export const activarProteccionCodigo = (): void => {
       { capture: true },
     );
 
-    // 3. Sobrescribir consola en producción para no exponer nada
+    // 3. Imprimir advertencia de seguridad masiva estilo Meta / Facebook
+    const logOriginal = window.console.log;
+    const clearOriginal = window.console.clear;
+
+    clearOriginal();
+    logOriginal(
+      '%c¡DETENTE! / STOP!',
+      'color: #ef4444; font-size: 52px; font-weight: 900; text-shadow: 2px 2px 8px rgba(0,0,0,0.8); font-family: system-ui, sans-serif;',
+    );
+    logOriginal(
+      '%cEsta es una función del navegador destinada únicamente a desarrolladores y auditores de seguridad autorizados.\n\n' +
+        'Si alguien te dijo que copiaras y pegaras algo aquí para obtener una función "gratis", hackear una cuenta o clonar esta plataforma, ES UNA ESTAFA. Si lo haces, podrías darle a esa persona acceso a tus datos de sesión, credenciales financieras y claves de cifrado.\n\n' +
+        '⚠️ ADVERTENCIA DE SISTEMA ⚠️\n' +
+        'Este sistema cuenta con telemetría en tiempo real y registro de huella criptográfica. Tu dirección IP, firma de navegador y actividad de inspección han sido registradas para auditoría de seguridad.\n\n' +
+        'Para más información sobre la arquitectura de protección, visita: https://juliangonzalez.lat',
+      'color: #f59e0b; font-size: 15px; font-weight: 600; line-height: 1.6; font-family: system-ui, sans-serif;',
+    );
+
+    // 4. Sobrescribir consola en producción para no permitir ejecutar comandos maliciosos
     const noop = () => {};
     window.console.log = noop;
     window.console.warn = noop;

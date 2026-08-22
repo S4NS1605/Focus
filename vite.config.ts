@@ -61,7 +61,7 @@ export default defineConfig({
     ecosistemaTrailingSlash(),
   ],
   esbuild: {
-    drop: ['console', 'debugger'],
+    drop: ['debugger'],
     legalComments: 'none',
   },
   build: {
