@@ -16,7 +16,7 @@
  * quietly becomes a second source of truth that disagrees with the first.
  */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL = `ecosistema-shell-${VERSION}`;
 const ASSETS = `ecosistema-assets-${VERSION}`;
 
@@ -31,7 +31,7 @@ const SHELL_URL = '/ecosistema';
  * requests must pass straight through: falling back to this app's shell for a
  * portfolio URL would serve the wrong site the moment the network drops.
  */
-const RUTAS_APP = ['/ecosistema', '/lukapp', '/superadmin'];
+const RUTAS_APP = ['/ecosistema', '/lukapp', '/superadmin', '/estadisticas'];
 
 const esRutaDeLaApp = (url) =>
   RUTAS_APP.some((r) => url.pathname === r || url.pathname.startsWith(`${r}/`));
@@ -93,11 +93,22 @@ self.addEventListener('fetch', (evento) => {
     evento.respondWith(
       fetch(peticion)
         .then((respuesta) => {
-          const copia = respuesta.clone();
-          caches.open(SHELL).then((cache) => cache.put(SHELL_URL, copia));
+          // Only cache successful, same-origin HTML responses.
+          if (respuesta.ok && respuesta.type === 'basic') {
+            const copia = respuesta.clone();
+            caches.open(SHELL).then((cache) => cache.put(SHELL_URL, copia));
+          }
           return respuesta;
         })
-        .catch(() => caches.match(SHELL_URL).then((r) => r ?? Response.error())),
+        .catch(() =>
+          // Network failed: serve the cached shell so the app opens offline.
+          // If the shell isn't cached yet, fall through to a plain network
+          // request rather than returning Response.error() — that rejection
+          // is what causes the red "FetchEvent resulted in a network error"
+          // message in the console, which is more alarming than the actual
+          // failure and happens on first load before the cache is warm.
+          caches.match(SHELL_URL).then((r) => r ?? fetch(peticion).catch(() => Response.error())),
+        ),
     );
     return;
   }

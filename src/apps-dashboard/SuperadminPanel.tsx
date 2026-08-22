@@ -391,7 +391,27 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       });
       if (res.ok) {
         const data = await res.json();
-        setMetricasIA(data);
+        // Sanear campos numéricos: si el servidor devuelve null en cualquier
+        // campo numérico (p.ej. cuando no hay llamadas registradas todavía),
+        // `null.toLocaleString()` explota en el render con un TypeError.
+        // Coercionar a 0 es correcto: 0 tokens usados = no se usó nada.
+        const sano: MetricasIAResponse = {
+          ...data,
+          tokensHoy:              Number(data.tokensHoy)              || 0,
+          tokensRestantes:        Number(data.tokensRestantes)        || 0,
+          limiteDiarioTokens:     Number(data.limiteDiarioTokens)     || 0,
+          porcentajeTokens:       Number(data.porcentajeTokens)       || 0,
+          llamadasHoy:            Number(data.llamadasHoy)            || 0,
+          llamadasExitosas:       Number(data.llamadasExitosas)       || 0,
+          llamadasFallback:       Number(data.llamadasFallback)       || 0,
+          llamadasRestantes:      Number(data.llamadasRestantes)      || 0,
+          limiteDiarioLlamadas:   Number(data.limiteDiarioLlamadas)   || 0,
+          porcentajeLlamadas:     Number(data.porcentajeLlamadas)     || 0,
+          latenciaPromedioMs:     Number(data.latenciaPromedioMs)     || 0,
+          costoEstimadoCop:       Number(data.costoEstimadoCop)       || 0,
+          peticionesRecientes:    Array.isArray(data.peticionesRecientes) ? data.peticionesRecientes : [],
+        };
+        setMetricasIA(sano);
       }
     } catch {
       // ignore

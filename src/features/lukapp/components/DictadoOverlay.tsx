@@ -94,16 +94,17 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
             ) : palabras.length > 0 ? (
               <p className="text-[26px] font-bold leading-tight text-white sm:text-[30px]">
                 {palabras.map((palabra, i) => (
-                  <motion.span
-                    key={`${i}-${palabra}`}
-                    initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
-                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    transition={{ duration: 0.32, delay: i * stagger, ease: 'easeOut' }}
-                    className="inline-block"
-                  >
-                    {palabra}
+                  <React.Fragment key={`${i}-${palabra}`}>
+                    <motion.span
+                      initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                      transition={{ duration: 0.32, delay: i * stagger, ease: 'easeOut' }}
+                      className="inline-block"
+                    >
+                      {palabra}
+                    </motion.span>
                     {i < palabras.length - 1 ? ' ' : ''}
-                  </motion.span>
+                  </React.Fragment>
                 ))}
                 {/* El cursor que dice "sigo escuchando": solo tiene sentido
  mientras el parcial todavía puede seguir creciendo. En "revelando"
