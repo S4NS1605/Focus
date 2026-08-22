@@ -73,6 +73,30 @@ export type PaymentMethod =
   | 'cripto'
   | 'desconocido';
 
+/**
+ * Limpia muletillas de dictado de voz como "y pesos", "pesos En X mil pesos",
+ * "que pesos como snack" y corrijes fallos de transcripción ("Me pagar" -> "Pago").
+ */
+export const limpiarDescripcionFinanciera = (desc: string): string => {
+  if (!desc) return '';
+  let t = desc.trim();
+
+  // Corregir error común de dictado de voz "Me pagar" -> "Pago"
+  t = t.replace(/^me\s+pagar\b/i, 'Pago');
+
+  // Quitar coletillas de dictado de voz al final
+  t = t.replace(/\s+(?:que\s+)?pesos?(?:\s+[Ee]n\s+(?:\w+\s+)?mil\s+pesos?)?$/i, '');
+  t = t.replace(/\s+en\s+(?:\w+\s+)?(?:mil|millones|millón|lucas|palos)(?:\s+pesos?)?$/i, '');
+  t = t.replace(/\s+y\s+pesos?$/i, '');
+  t = t.replace(/\s+pesos?$/i, '');
+  t = t.replace(/\s+(?:que\s+)?pesos?\s+como\s+\w+$/i, '');
+
+  t = t.trim();
+  if (!t) return desc;
+
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
 export interface ParsedTransaction {
   kind: TxKind;
   amount: number | null;
@@ -1015,6 +1039,8 @@ export const parseTransaction = (
   } else {
     description = capitalize(description);
   }
+
+  description = limpiarDescripcionFinanciera(description);
 
   const timeMatch = raw.match(/\b([01]?[0-9]|2[0-3]):([0-5][0-9])\b/);
   if (timeMatch && !description.includes(timeMatch[0])) {
