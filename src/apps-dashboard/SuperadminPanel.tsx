@@ -143,6 +143,11 @@ const formatearFechaCorta = (iso: string): string => {
   return `${dia} ${meses[mes] || parts[1]}`;
 };
 
+const safeNum = (val: number | null | undefined): string => {
+  if (val === null || val === undefined || isNaN(Number(val))) return '0';
+  return Number(val).toLocaleString('es-CO');
+};
+
 interface BarraItem {
   id: string;
   etiqueta: string;
@@ -194,7 +199,7 @@ const GraficaBarrasUnificada: React.FC<{
               {activo.etiqueta}
             </span>
             <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[11px] font-extrabold text-sky-600 dark:text-sky-400 tabular-nums">
-              {activo.valor.toLocaleString('es-CO')} {activo.valor === 1 ? 'vista' : 'vistas'}
+              {safeNum(activo.valor)} {activo.valor === 1 ? 'vista' : 'vistas'}
             </span>
             {activo.secundario !== undefined && activo.secundario > 0 && (
               <span className="text-[10px] text-[var(--fin-ink-soft)] font-medium">
@@ -476,7 +481,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       .select('fecha,visitas_hoy,unicos_hoy');
 
     if (!error && data && data.length > 0) {
-      setVisitasHoy(data[0] as { fecha: string; visitas_hoy: number; unicos_hoy: number });
+      setVisitasHoy({
+        fecha: data[0].fecha ?? '',
+        visitas_hoy: Number(data[0].visitas_hoy) || 0,
+        unicos_hoy: Number(data[0].unicos_hoy) || 0,
+      });
     }
     setLoadingVisitasHoy(false);
   }, []);
@@ -1187,10 +1196,10 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         <Zap className="h-4 w-4 text-amber-500" />
                       </div>
                       <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-[var(--fin-ink)]">
-                        {metricasIA.tokensHoy.toLocaleString('es-CO')}
+                        {safeNum(metricasIA.tokensHoy)}
                       </p>
                       <p className="mt-1 text-[11px] text-[var(--fin-ink-soft)]">
-                        Límite diario: {metricasIA.limiteDiarioTokens.toLocaleString('es-CO')}
+                        Límite diario: {safeNum(metricasIA.limiteDiarioTokens)}
                       </p>
                     </div>
 
@@ -1200,7 +1209,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                       </div>
                       <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-                        {metricasIA.tokensRestantes.toLocaleString('es-CO')}
+                        {safeNum(metricasIA.tokensRestantes)}
                       </p>
                       <p className="mt-1 text-[11px] text-[var(--fin-ink-soft)]">
                         {100 - metricasIA.porcentajeTokens}% de cuota libre
@@ -1415,7 +1424,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         Páginas vistas
                       </p>
                       <p className="mt-2 text-4xl font-extrabold tabular-nums tracking-tight">
-                        {resumenVisitas.vistas.toLocaleString('es-CO')}
+                        {safeNum(resumenVisitas.vistas)}
                       </p>
                     </div>
 
@@ -1424,7 +1433,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         Visitantes por día, sumados
                       </p>
                       <p className="mt-2 text-4xl font-extrabold tabular-nums tracking-tight">
-                        {resumenVisitas.visitantes.toLocaleString('es-CO')}
+                        {safeNum(resumenVisitas.visitantes)}
                       </p>
                       <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
                         El identificador rota cada medianoche para garantizar privacidad absoluta.
@@ -1478,12 +1487,12 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                               </td>
                               <td className="px-4 py-3.5 text-right">
                                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/15 px-2.5 py-1 font-bold text-sky-600 dark:text-sky-400">
-                                  {visitasHoy.visitas_hoy.toLocaleString('es-CO')}
+                                  {safeNum(visitasHoy.visitas_hoy)}
                                 </span>
                               </td>
                               <td className="px-4 py-3.5 text-right">
                                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-2.5 py-1 font-bold text-emerald-600 dark:text-emerald-400">
-                                  {visitasHoy.unicos_hoy.toLocaleString('es-CO')}
+                                  {safeNum(visitasHoy.unicos_hoy)}
                                 </span>
                               </td>
                             </tr>

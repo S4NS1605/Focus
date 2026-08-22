@@ -40,6 +40,11 @@ const formatearFechaCorta = (iso: string): string => {
   return `${dia} ${meses[mes] || parts[1]}`;
 };
 
+const safeNum = (val: number | null | undefined): string => {
+  if (val === null || val === undefined || isNaN(Number(val))) return '0';
+  return Number(val).toLocaleString('es-CO');
+};
+
 interface BarraItem {
   id: string;
   etiqueta: string;
@@ -91,7 +96,7 @@ const GraficaBarrasUnificada: React.FC<{
               {activo.etiqueta}
             </span>
             <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-[11px] font-extrabold text-sky-600 dark:text-sky-400 tabular-nums">
-              {activo.valor.toLocaleString('es-CO')} {activo.valor === 1 ? 'vista' : 'vistas'}
+              {safeNum(activo.valor)} {activo.valor === 1 ? 'vista' : 'vistas'}
             </span>
             {activo.secundario !== undefined && activo.secundario > 0 && (
               <span className="text-[10px] text-[var(--fin-ink-soft)] font-medium">
@@ -197,7 +202,7 @@ const Tabla: React.FC<{
                       {pct}%
                     </span>
                     <span className="text-sm font-bold tabular-nums text-[var(--fin-ink)]">
-                      {fila.n.toLocaleString('es-CO')}
+                      {safeNum(fila.n)}
                     </span>
                   </div>
                 </div>
@@ -348,7 +353,7 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
                     Páginas vistas
                   </p>
                   <p className="mt-2 text-4xl font-extrabold tabular-nums tracking-tight">
-                    {resumen.vistas.toLocaleString('es-CO')}
+                    {safeNum(resumen.vistas)}
                   </p>
                 </div>
 
@@ -357,7 +362,7 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
                     Visitantes por día, sumados
                   </p>
                   <p className="mt-2 text-4xl font-extrabold tabular-nums tracking-tight">
-                    {resumen.visitantes.toLocaleString('es-CO')}
+                    {safeNum(resumen.visitantes)}
                   </p>
                   <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
                     Quien vuelve otro día cuenta de nuevo: el identificador rota cada medianoche
