@@ -8,7 +8,7 @@ const PUNTOS: { Icono: LucideIcon; titulo: string; texto: string }[] = [
     Icono: HardDrive,
     titulo: 'Empieza sin cuenta',
     texto:
-      'Tus movimientos se guardan en tu propio navegador. Puedes usar Lukapp entera sin registrarte en nada.'
+      'Tus movimientos se guardan en tu propio navegador. Puedes usar LukApp entera sin registrarte en nada.'
   },
   {
     Icono: RefreshCw,

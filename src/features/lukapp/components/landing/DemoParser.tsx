@@ -67,7 +67,7 @@ export const DemoParser: React.FC = () => {
         <span className="seccion-etiqueta">Pruébalo aquí mismo</span>
         <TituloPalabras texto="Escribe como hablas" resaltarUltimas={1} />
         <p className="seccion-sub">
-          Esto no es un video. Es el mismo motor que corre dentro de Lukapp.
+          Esto no es un video. Es el mismo motor que corre dentro de LukApp.
           Cambia la frase y mira cómo la entiende.
         </p>
       </Reveal>

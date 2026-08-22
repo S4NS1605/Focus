@@ -39,7 +39,7 @@ export const Cupo4x1000: React.FC = () => {
             Tu cupo del <em>4×1000</em>, contado de verdad
           </h2>
           <p>
-            Ninguna app de finanzas hecha afuera sabe qué es el GMF. Lukapp lleva
+            Ninguna app de finanzas hecha afuera sabe qué es el GMF. LukApp lleva
             la cuenta de tus {TOPE_EXENTO_UVT} UVT exentas al mes, repartidas
             entre todas tus cuentas como manda la norma desde diciembre de 2024,
             y te dice cuánto te va a costar mover la plata antes de que la muevas.

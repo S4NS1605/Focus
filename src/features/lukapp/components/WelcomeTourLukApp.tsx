@@ -16,7 +16,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
 
   const steps = [
     {
-      title: '¿Qué es Lukapp?',
+      title: '¿Qué es LukApp?',
       subtitle: 'Tu dinero, bajo control',
       Icon: Wallet,
       content: (
@@ -38,7 +38,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
           </div>
           <div className="arrow">↓</div>
           <div className="output-demo">
-            <div className="label">Lukapp entiende</div>
+            <div className="label">LukApp entiende</div>
             <div className="parsed-item">
               <span className="category-badge">Comida</span>
               <span className="desc">Almuerzo con Juan</span>
@@ -55,7 +55,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
       content: (
         <div className="tour-content-text">
           <p>Davivienda, Bancolombia, Nequi, Nu — descarga el PDF y sube.</p>
-          <p className="subtle">Lukapp no duplica transacciones. Separa lo nuevo de lo que ya estaba.</p>
+          <p className="subtle">LukApp no duplica transacciones. Separa lo nuevo de lo que ya estaba.</p>
           <div className="supported-banks">
             <span className="bank">Davivienda</span>
             <span className="bank">Bancolombia</span>

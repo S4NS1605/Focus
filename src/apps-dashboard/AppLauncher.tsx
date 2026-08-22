@@ -45,7 +45,7 @@ export const AppLauncher: React.FC<AppLauncherProps> = ({
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--fin-card)] shadow-sm">
             <BrandMark className="h-5 w-5" />
           </span>
-          <span className="text-[15px] font-semibold tracking-tight">Lukapp</span>
+          <span className="text-[15px] font-semibold tracking-tight">LukApp</span>
         </div>
 
         <div className="flex items-center gap-2">

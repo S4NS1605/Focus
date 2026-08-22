@@ -101,7 +101,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       <nav className={`nav-bar ${compacta ? 'compacta' : ''}`}>
         <BarraProgreso />
         <div className="nav-content">
-          <span className="logo">Lukapp</span>
+          <span className="logo">LukApp</span>
 
           <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
             {ENLACES.map(({ href, texto }) => (
@@ -164,7 +164,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       )}
 
       <footer className="footer">
-        <p>© 2026 Lukapp — Tu dinero, bajo control</p>
+        <p>© 2026 LukApp — Tu dinero, bajo control</p>
       </footer>
     </div>
   );

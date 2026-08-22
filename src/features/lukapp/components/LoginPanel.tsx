@@ -24,7 +24,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   sesion,
   tema,
   onCambiarTema,
-  permitirRegistro = false,
+  permitirRegistro = true,
 }) => {
   const [modo, setModo] = useState<Modo>('entrar');
   const [identidad, setIdentidad] = useState('');
@@ -80,7 +80,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             <BrandMark className="relative h-8 w-8" />
           </span>
           <h1 className="mt-4 text-[28px] font-semibold tracking-tight text-[var(--fin-ink)]">
-            Lukapp
+            LukApp
           </h1>
           <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             {modo === 'entrar' ? 'Tus finanzas, en un solo lugar.' : 'Crea tu cuenta para empezar.'}
@@ -135,17 +135,9 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           </label>
           <input
             id="login-identidad"
-            // Email, not text: 0017 quitó el login por nombre de usuario, y el
-            // tipo correcto es lo que hace que en un celular salga el teclado
-            // con la arroba.
             type="email"
             value={identidad}
             onChange={(e) => setIdentidad(e.target.value)}
-            // No placeholder on purpose. A sample value here is shown to every
-            // person who reaches the login screen, and a real address is half
-            // of a working credential — the label above already says what goes
-            // in the field, so the hint bought nothing and leaked something.
-            // Standard token so password managers recognise the form and fill it.
             autoComplete="email"
             autoCapitalize="none"
             autoCorrect="off"
@@ -213,7 +205,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             {sesion.ocupado ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" strokeWidth={3} />
-                Entrando…
+                {modo === 'entrar' ? 'Entrando…' : 'Creando cuenta…'}
               </>
             ) : (
               <>
@@ -225,6 +217,32 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               </>
             )}
           </motion.button>
+
+          {permitirRegistro ? (
+            <div className="mt-5 text-center">
+              <button
+                type="button"
+                onClick={() => cambiarModo(modo === 'entrar' ? 'registrarse' : 'entrar')}
+                className="text-[13px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
+              >
+                {modo === 'entrar' ? (
+                  <>
+                    ¿No tienes cuenta?{' '}
+                    <span className="text-[var(--fin-accent)] underline underline-offset-2">
+                      Crear cuenta
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    ¿Ya tienes cuenta?{' '}
+                    <span className="text-[var(--fin-accent)] underline underline-offset-2">
+                      Iniciar sesión
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          ) : null}
         </form>
       </motion.div>
     </div>
