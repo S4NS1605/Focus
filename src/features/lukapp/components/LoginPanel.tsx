@@ -12,10 +12,8 @@ import {
   MailCheck,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   User,
   X,
-  Zap,
 } from 'lucide-react';
 import type { Sesion } from '../data/useSesion';
 import type { Tema } from '../data/useTema';
@@ -143,16 +141,6 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
       >
         {/* Brand Header */}
         <div className="mb-7 flex flex-col items-center text-center">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
-            className="mb-3.5 inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3.5 py-1 text-[11.5px] font-semibold text-amber-500 shadow-sm backdrop-blur-md"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-            <span>Control Financiero Inteligente</span>
-          </motion.div>
-
           <div className="relative mb-3.5 flex items-center justify-center">
             <span className="absolute -inset-2.5 rounded-3xl bg-gradient-to-r from-amber-500/30 via-sky-500/20 to-emerald-500/30 blur-xl animate-pulse" />
             <span className="relative flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-[0_4px_20px_-2px_rgb(0_0_0/0.15)]">
@@ -423,18 +411,14 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           )}
 
           {/* Footer Features / Trust Highlights */}
-          <div className="mt-7 flex items-center justify-around border-t border-[var(--fin-line)]/50 pt-5 text-[11px] font-medium text-[var(--fin-ink-faint)]">
+          <div className="mt-7 flex items-center justify-center gap-6 border-t border-[var(--fin-line)]/50 pt-5 text-[12px] font-medium text-[var(--fin-ink-faint)]">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              Datos cifrados
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Zap className="h-3.5 w-3.5 text-amber-400" />
-              100% Gratuito
+              Datos cifrados y privados
             </span>
             <span className="flex items-center gap-1.5">
               <Smartphone className="h-3.5 w-3.5 text-sky-400" />
-              Atajos iOS & 4x1000
+              Integración con iOS
             </span>
           </div>
         </div>
